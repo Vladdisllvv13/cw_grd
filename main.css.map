@@ -1,0 +1,1 @@
+{"version":3,"file":"main.css","mappings":"AAAA;AACA,eAAe;AACf,MAAM;AACN,WAAW;AACX,C","sources":["webpack://virtual-shop/./src/init.css"],"sourcesContent":[".sticky {\r\nposition: fixed;\r\ntop: 0;\r\nwidth: 100%;\r\n}"],"names":[],"sourceRoot":""}
