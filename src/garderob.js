@@ -102,7 +102,7 @@ function addLights(){
 async function loadMannequin(){
     const loader = new GLTFLoader();
     loader.load(
-        '/3DModels/male/mannequinMale.glb',
+        './3DModels/male/mannequinMale.glb',
         (gltf) => {
             console.log('success');
             console.log(gltf);
@@ -122,7 +122,7 @@ async function loadMannequin(){
 async function loadCloth(modelName, clothType){
   const loader = new GLTFLoader();
   loader.load(
-      `/3DModels/clothes/${modelName}.glb`,
+      `./3DModels/clothes/${modelName}.glb`,
       (gltf) => {
           console.log('success');
           console.log(gltf);

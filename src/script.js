@@ -94,7 +94,7 @@ function addLights(){
 function loadModel(){
     const loader = new GLTFLoader();
     loader.load(
-        '/3DModels/male/MALE_mannequin1.glb',
+        './3DModels/male/MALE_mannequin1.glb',
         (gltf) => {
             console.log('success');
             console.log(gltf);
