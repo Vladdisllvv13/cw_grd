@@ -11,6 +11,21 @@
   stroke: black;
 }
 
+.darken-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Затемненный цвет */
+  z-index: 999; /* Устанавливаем поверх других элементов */
+  display: none; /* По умолчанию скрыт */
+}
+
+.darken-overlay.active {
+  display: block; /* Показываем затемнение при активации */
+}
+
 
 
 /*# sourceMappingURL=admin.css.map*/
