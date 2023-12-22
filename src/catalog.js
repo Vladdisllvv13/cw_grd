@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, getDoc, doc, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, getDoc, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 import './catalog.css';
 
@@ -61,6 +61,7 @@ clothesSnapshot.forEach((document) => {
 //Создаем ClothData
 async function createClothBlock(data) {
   try {
+    let imageUrl;
     const clothesList = document.getElementById('clothesList');
     const clothesBlock = document.createElement('div');
     clothesBlock.className = "xl:w-1/4 md:w-1/2 p-4 flex justify-center";
@@ -80,7 +81,7 @@ async function createClothBlock(data) {
         
         <div class="colorsOne flex mb-4"></div>
         <div class="flex items-stretch">
-          <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">
+          <button id="moreButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">
             Больше
           </button>
           <button id="addToWardrobeButton" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-r">
@@ -110,7 +111,7 @@ async function createClothBlock(data) {
       const imagePath = imagePathSnapshot.data().image;
       if (imagePath) {
         const storageImageRef = ref(storage, `images/${imagePath}.jpg`);
-        const imageUrl = await getDownloadURL(storageImageRef);
+        imageUrl = await getDownloadURL(storageImageRef);
         imageElement.src = imageUrl;
       }
       clothTypeElement.textContent = clothTypeValue;
@@ -132,6 +133,107 @@ async function createClothBlock(data) {
         addToWardrobe(clothId);
       });
 
+      const moreButton = clothesBlock.querySelector('#moreButton');
+      moreButton.addEventListener('click', (event) => {
+        event.stopPropagation(); // Stop the click event from propagating to the document
+        const moreInfoContainer = document.createElement('div');
+        moreInfoContainer.className = 'flex ml-50 mr-50 bg-gradient-to-r from-purple-100 to-purple-400 rounded-lg shadow dark:bg-gray-800 border-1 border-black';
+        moreInfoContainer.style.position = 'absolute';
+        moreInfoContainer.style.zIndex = '9999';
+        moreInfoContainer.style.overflow = 'auto';
+        moreInfoContainer.innerHTML = `
+          <div class="relative flex-none w-20 md:w-48">
+            <img alt="shopping image" class="clothImage absolute inset-0 object-cover w-full h-full rounded-lg"/>
+          </div>
+          <form id="clothInfoForm" class="clothInfoForm flex-auto p-6">
+            <div class="flex flex-wrap">
+              <h1 class="nameRef flex-auto text-xl font-semibold dark:text-gray-50">
+                Classic Utility Jacket
+              </h1>
+              <div class="priceRef text-xl font-semibold text-red-800 dark:text-gray-300">
+                $110.00
+              </div>
+              <div class="clothTypeRef flex-none w-full mt-2 text-sm font-medium text-gray-500 dark:text-gray-300">
+              </div>
+            </div>
+            <div class="sizesRadioGroup flex items-baseline mt-4 mb-6 text-gray-700 dark:text-gray-300"></div>
+            <div class="clothColors flex items-baseline mt-4 mb-6 text-gray-700 dark:text-gray-300"></div>
+            <div class="flex mb-4 text-sm font-medium">
+              <button id="addToCartButton" type="button" class="py-2 px-4  bg-purple-600 hover:bg-purple-700 focus:ring-purple-500 focus:ring-offset-purple-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-lg ">
+                В корзину
+              </button>
+            </div>
+          </form>
+            `;
+        clothesBlock.appendChild(moreInfoContainer);
+
+        const nameRef = moreInfoContainer.querySelector('.nameRef');
+        const priceRef = moreInfoContainer.querySelector('.priceRef');
+        const clothTypeRef = moreInfoContainer.querySelector('.clothTypeRef');
+        const clothImage = moreInfoContainer.querySelector('.clothImage');
+  
+        nameRef.textContent = nameSnapshot.data().name;
+        priceRef.textContent = `${priceSnapshot.data().price} руб.`;
+        clothTypeRef.textContent = clothTypeValue;
+        clothImage.src = imageUrl;
+        const clothInfoForm = moreInfoContainer.querySelector('#clothInfoForm');
+        
+        const sizesValues = sizeSnapshots.map((sizeSnapshot) => sizeSnapshot.data().name);
+        // Create color radio buttons
+        const sizeRadioGroup = document.createElement('div');
+        sizeRadioGroup.className = 'sizeRadioGroup flex space-x-2';
+        sizesValues.forEach((size) => {
+          const sizeRadio = document.createElement('label');
+          sizeRadio.className = 'text-center';
+          sizeRadio.innerHTML = `
+            <input type="radio" class="flex flex-wrap items-center justify-center w-6 h-6" name="size" value="${size}">
+            ${size}
+          `;
+          sizeRadioGroup.appendChild(sizeRadio);
+        });
+        clothInfoForm.appendChild(sizeRadioGroup);
+
+
+        const colorsValues = colorsSnapshots.map((colorSnapshot) => colorSnapshot.data().name);
+        // Create color radio buttons
+        const colorRadioGroup = document.createElement('div');
+        colorRadioGroup.className = 'colorRadioGroup flex space-x-2';
+        colorsValues.forEach((color) => {
+          const colorRadio = document.createElement('label');
+          colorRadio.className = 'text-center';
+          colorRadio.innerHTML = `
+            <input type="radio" class="flex flex-wrap items-center justify-center w-6 h-6" name="color" value="${color}">
+            ${color}
+          `;
+          colorRadioGroup.appendChild(colorRadio);
+        });
+        clothInfoForm.appendChild(colorRadioGroup);
+
+
+        const darkenOverlay = document.createElement('div');
+        darkenOverlay.className = 'darken-overlay';
+        document.body.appendChild(darkenOverlay);
+        darkenOverlay.classList.add('active');
+
+
+        const addToCartButton = clothesBlock.querySelector('#addToCartButton');
+        addToCartButton.addEventListener('click', () => {
+          const selectedSize = document.querySelector('input[name="size"]:checked').value;
+          const selectedColor = document.querySelector('input[name="color"]:checked').value;
+          addToCart(data, selectedSize, selectedColor);
+        });
+
+        // Close the window when clicking outside of it
+        const closeWindowHandler = (event) => {
+          if (!moreInfoContainer.contains(event.target)) {
+            moreInfoContainer.remove();
+            darkenOverlay.classList.remove('active');
+            document.removeEventListener('click', closeWindowHandler);
+          }
+        };
+        document.addEventListener('click', closeWindowHandler);
+      });
+
       const heartIcon = clothesBlock.querySelector('#heartIcon') 
       heartIcon.addEventListener('click', () => {
         heartIcon.classList.toggle('filled-heart');
@@ -140,6 +242,51 @@ async function createClothBlock(data) {
   } catch (error) {
     console.error("Error adding clothes:", error);
   }
+}
+
+async function addToCart(data, size, color){
+  const userId = await getUserId();
+  console.log(userId);
+  if(userId === 'ALL'){
+    alert('Нельзя добавить одежду в корзину для незарегистрированного пользователя. Вы можете зарегистрироваться в системе.');
+    return;
+  }
+  let idUser = userId;
+  let idColor = color;
+  let idSize = size;
+  let idCloth = data.nameRef.id;
+
+
+  const newShoppingCart = {
+    idSize,
+    idColor,
+    idCloth,
+    idUser,
+  };
+  console.log(newShoppingCart);
+
+  const shoppinCartCollection = collection(db, 'shoppingCart');
+  await addDoc(shoppinCartCollection, newShoppingCart);
+
+  let timerInterval;
+      Swal.fire({
+        title: "Товар добавлен в корзину!",
+        timer: 2000,
+        timerProgressBar: true,
+        didOpen: () => {
+          Swal.showLoading();
+          timerInterval = setInterval(() => {
+          }, 100);
+        },
+        willClose: () => {
+          clearInterval(timerInterval);
+        }
+      }).then((result) => {
+        /* Read more about handling dismissals below */
+        if (result.dismiss === Swal.DismissReason.timer) {
+          console.log("I was closed by the timer");
+        }
+      }); 
 }
 
 //Рендерим все найденное

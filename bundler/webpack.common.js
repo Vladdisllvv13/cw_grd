@@ -10,7 +10,8 @@ module.exports = {
         garderob: path.resolve(__dirname, '../src/garderob.js'),
         auth: path.resolve(__dirname, '../src/auth.js'),
         reg: path.resolve(__dirname, '../src/reg.js'),
-        admin: path.resolve(__dirname, '../src/admin.js')
+        admin: path.resolve(__dirname, '../src/admin.js'),
+        cart: path.resolve(__dirname, '../src/cart.js')
       },
     output:
     {
@@ -64,6 +65,12 @@ module.exports = {
             minify: true,
             chunks: ['admin'],
             filename: 'admin.html',
+          }),
+          new HtmlWebpackPlugin({
+            template: path.resolve(__dirname, '../src/cart.html'),
+            minify: true,
+            chunks: ['cart'],
+            filename: 'cart.html',
           }),
         new MiniCSSExtractPlugin()
     ],
