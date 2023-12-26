@@ -11,7 +11,8 @@ module.exports = {
         auth: path.resolve(__dirname, '../src/auth.js'),
         reg: path.resolve(__dirname, '../src/reg.js'),
         admin: path.resolve(__dirname, '../src/admin.js'),
-        cart: path.resolve(__dirname, '../src/cart.js')
+        cart: path.resolve(__dirname, '../src/cart.js'),
+        favourites: path.resolve(__dirname, '../src/favourites.js')
       },
     output:
     {
@@ -71,6 +72,12 @@ module.exports = {
             minify: true,
             chunks: ['cart'],
             filename: 'cart.html',
+          }),
+          new HtmlWebpackPlugin({
+            template: path.resolve(__dirname, '../src/favourites.html'),
+            minify: true,
+            chunks: ['favourites'],
+            filename: 'favourites.html',
           }),
         new MiniCSSExtractPlugin()
     ],

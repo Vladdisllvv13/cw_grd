@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, getDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, getDoc, doc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, setDoc } from 'firebase/firestore';
 import { getStorage, ref, getDownloadURL, uploadBytes } from 'firebase/storage';
 import './catalog.css';
 
@@ -35,6 +35,7 @@ clothesSnapshot.forEach((document) => {
   const imageRef = doc(clothesCollection, document.id);
   const priceRef = doc(clothesCollection, document.id);
   const clothTypeRef = doc(db, 'clothType', data.idClothType.toString());
+  const clothTypeGenderRef = doc(db, 'clothTypeGender', data.idClothTypeGender.toString());
   const colorsRef = data.idColors.map((colorId) => doc(db, 'colors', colorId.toString()));
   const modelRef = doc(clothesCollection, document.id);
   clothesData.push({
@@ -44,7 +45,8 @@ clothesSnapshot.forEach((document) => {
     priceRef,
     clothTypeRef,
     colorsRef,
-    modelRef
+    modelRef,
+    clothTypeGenderRef
   });
 });
 
@@ -230,10 +232,14 @@ async function changeCloth(data) {
   let clothTypeValue = clothTypeSnapshot.data().name;
   const clothTypesQuery = collection(db, 'clothType');
   const clothTypesSnapshot = await getDocs(clothTypesQuery);
+
+  const clothTypeGenderSnapshot = await getDoc(data.clothTypeGenderRef);
+  let clothTypeGenderValue = clothTypeGenderSnapshot.data().name;
+  const clothTypesGenderQuery = collection(db, 'clothTypeGender');
+  const clothTypesGenderSnapshot = await getDocs(clothTypesGenderQuery);
   const sizesSnapshot = await getDocs(collection(db, 'sizes'));
   const colorsSnapshot = await getDocs(collection(db, 'colors'));
 
-  const inputFields = ['Date', 'Content', 'Heading'];
 
   let sizesHtml = '';
   sizesSnapshot.forEach((sizeDoc) => {
@@ -266,6 +272,8 @@ async function changeCloth(data) {
     <input type="text" id="Name" class="swal2-input" placeholder="Наименование" value="${nameSnapshot.data().name}" required>
     <div>Тип одежды</div>
     <select name="clothType" class="swal2-input" id="clothType-select">
+    </select>
+    <select name="clothTypeGender" class="swal2-input" id="clothTypeGender-select">
     </select>
     <div>Цена</div>
     <form oninput="result.value = slider.value">
@@ -310,6 +318,18 @@ async function changeCloth(data) {
       clothTypeSelect.appendChild(option);
       });
       clothTypeSelect.value = clothTypeValue;
+
+      const clothTypeGenderSelect = document.getElementById('clothTypeGender-select');
+      clothTypesGenderSnapshot.forEach((clothTypeDoc) => {
+      const option = document.createElement('option');
+      option.value = clothTypeDoc.id; // Set the value to the document ID
+      option.textContent = clothTypeDoc.data().name;
+      // if (clothTypeDoc.data().name === clothTypeValue) {
+      //   option.value = clothTypeDoc.data().name; // Устанавливаем выбранный по умолчанию
+      // }
+      clothTypeGenderSelect.appendChild(option);
+      });
+      clothTypeGenderSelect.value = clothTypeValue;
     },
     preConfirm: async () => {
       const selectedSizes = Array.from(document.querySelectorAll('#sizes input[type="checkbox"]:checked')).map((checkbox) => parseInt(checkbox.value.replace(/\/sizes\//, '')));
@@ -368,13 +388,13 @@ async function changeCloth(data) {
 
       // Get the selected cloth type ID from the <select> element
       const selectedClothType = document.getElementById('clothType-select').value;
+      // Get the selected cloth type ID from the <select> element
+      const selectedClothTypeGender = document.getElementById('clothTypeGender-select').value;
 
-      // Update the cloth type ID in the Firestore document
-      updateDoc(clothTypeRef, { idClothType: selectedClothType });
 
       // Update the document in the "clothes" collection with the selected color and size IDs
       const docRef = doc(db, 'clothes', idCloth);
-      updateDoc(docRef, { idColors: selectedColorIds, idSizes: selectedSizeIds, idClothType: selectedClothType });
+      updateDoc(docRef, { idColors: selectedColorIds, idSizes: selectedSizeIds, idClothType: selectedClothType, idClothTypeGender: selectedClothTypeGender });
 
       Swal.fire({
         icon: "success",
@@ -389,6 +409,196 @@ async function changeCloth(data) {
   });
 }
 
+async function addCloth() {
+
+  const clothTypesQuery = collection(db, 'clothType');
+  const clothTypesSnapshot = await getDocs(clothTypesQuery);
+  const clothTypesGenderQuery = collection(db, 'clothTypeGender');
+  const clothTypesGenderSnapshot = await getDocs(clothTypesGenderQuery);
+  const sizesSnapshot = await getDocs(collection(db, 'sizes'));
+  const colorsSnapshot = await getDocs(collection(db, 'colors'));
+
+
+  let sizesHtml = '';
+  sizesSnapshot.forEach((sizeDoc) => {
+    const sizeData = sizeDoc.data();
+    sizesHtml += `
+      <li style="display: flex; align-items: center;">
+        <div>
+          <input id="checkbox-item-${sizeDoc.id}" type="checkbox" value="${sizeDoc.id}" >
+          <label for="checkbox-item-${sizeDoc.id}" > ${sizeData.name}</label>
+        </div>
+      </li>`;
+  });
+
+  let colorsHtml = '';
+  colorsSnapshot.forEach((colorDoc) => {
+    const colorData = colorDoc.data();
+    colorsHtml += `
+      <li style="display: flex; align-items: center;">
+        <div>
+          <input id="checkbox-item-${colorDoc.id}" type="checkbox" value="${colorDoc.id}" >
+          <label for="checkbox-item-${colorDoc.id}" > ${colorData.name}</label>
+        </div>
+      </li>`;
+  });
+
+  let clothesHtml = `
+    <div>Наименование</div>
+    <input type="text" id="Name" class="swal2-input" placeholder="Наименование" value="" required>
+    <div>Тип одежды</div>
+    <select name="clothType" class="swal2-input" id="clothType-select">
+    </select>
+    <select name="clothTypeGender" class="swal2-input" id="clothTypeGender-select">
+    </select>
+    <div>Цена</div>
+    <form oninput="result.value = slider.value">
+      <input type="range" id="slider" class="swal2-input" min="100" max="100000" step="10" value=""> <br />
+      Цена товара <output name="result" for="slider">0</output> руб.
+    </form>
+    <div>Размеры</div>
+    <ul id="sizes" class="border-2 border-black overflow-y-auto text-sm text-gray-700 dark:text-gray-200" style="list-style: none; padding: 0;">
+      ${sizesHtml}
+    </ul>
+    <div>Цвета</div>
+    <ul id="colors" class="border-2 border-black overflow-y-auto text-sm text-gray-700 dark:text-gray-200" style="list-style: none; padding: 0;">
+      ${colorsHtml}
+    </ul>
+    <div>Фото</div>
+    <input type="text" id="Image" class="swal2-input" placeholder="Фото" value="" required readonly>
+    <input type="file" id="image" class="swal2-input" name="image" placeholder="Фото" accept="image/jpeg" value=""/>
+    <div>3Д модель</div>
+    <input type="text" id="Model" class="swal2-input" placeholder="Модель" value="" required readonly>
+    <input type="file" id="model" class="swal2-input" name="model" placeholder="Модель" accept=".glb,.gltf" value=""/>
+  `;
+
+  // Отображение модального окна с формой для ввода данных и предварительно заполненными значениями
+  Swal.fire({
+    title: 'Добавление одежды',
+    html: clothesHtml,
+    showCancelButton: true,
+    confirmButtonText: 'Сохранить',
+    cancelButtonText: 'Отмена',
+    focusConfirm: false,
+    willOpen: () => {
+      const clothTypeSelect = document.getElementById('clothType-select');
+      clothTypesSnapshot.forEach((clothTypeDoc) => {
+      const option = document.createElement('option');
+      option.value = clothTypeDoc.id; // Set the value to the document ID
+      option.textContent = clothTypeDoc.data().name;
+      // if (clothTypeDoc.data().name === clothTypeValue) {
+      //   option.value = clothTypeDoc.data().name; // Устанавливаем выбранный по умолчанию
+      // }
+      clothTypeSelect.appendChild(option);
+      });
+
+      const clothTypeGenderSelect = document.getElementById('clothTypeGender-select');
+      clothTypesGenderSnapshot.forEach((clothTypeDoc) => {
+      const option = document.createElement('option');
+      option.value = clothTypeDoc.id; // Set the value to the document ID
+      option.textContent = clothTypeDoc.data().name;
+      // if (clothTypeDoc.data().name === clothTypeValue) {
+      //   option.value = clothTypeDoc.data().name; // Устанавливаем выбранный по умолчанию
+      // }
+      clothTypeGenderSelect.appendChild(option);
+      });
+    },
+    preConfirm: async () => {
+      const clothTypeSelectElement = document.getElementById('clothType-select');
+      const idClothType = clothTypeSelectElement.value;
+      const clothTypeGenderSelectElement = document.getElementById('clothTypeGender-select');
+      const idClothTypeGender = clothTypeGenderSelectElement.value;
+      const selectedSizes = Array.from(document.querySelectorAll('#sizes input[type="checkbox"]:checked')).map((checkbox) => parseInt(checkbox.value.replace(/\/sizes\//, '')));
+      const selectedColors = Array.from(document.querySelectorAll('#colors input[type="checkbox"]:checked')).map((checkbox) => parseInt(checkbox.value.replace(/\/colors\//, '')));
+      console.log('Selected Sizes:', selectedSizes);
+      console.log('Selected Colors:', selectedColors);
+
+      // Get the file input element
+      const imageFile = document.getElementById('image').files[0];
+      
+      const imageInput = document.getElementById('image');
+      imageInput.addEventListener('change', () => {
+        // Получите выбранный файл
+        const selectedFile = imageInput.files[0];
+      
+        // Если файл выбран, обновите значение поля "value" элемента <input type="text">
+        if (selectedFile) {
+          document.getElementById('Image').value = selectedFile.name;
+        }
+      });
+      // Generate a unique file name using a timestamp
+      const fileName = Date.now().toString();
+      // Create a reference to the file in Firebase Storage
+      const storageRef = ref(storage, `images/${fileName}.jpg`);
+      // Upload the file to Firebase Storage
+      await uploadBytes(storageRef, imageFile);
+      // Update the "image" field with the file name (without the extension)
+      const imageName = fileName.split('.')[0];
+      document.getElementById('Image').value = imageName;
+
+      const selectedImage = document.getElementById('Image').value;
+      const selectedModel = document.getElementById('Model').value;
+      const selectedName = document.getElementById('Name').value;
+      const selectedPrice = parseInt(document.getElementById('slider').value);
+
+      return { selectedSizes, selectedColors, idClothType, idClothTypeGender, selectedImage, selectedModel, selectedName, selectedPrice};
+    }
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      // Получите последний документ в коллекции "clothes"
+      const lastClothQuery = query(collection(db, 'clothes'), orderBy('__name__', 'desc'), limit(1));
+      const lastClothSnapshot = await getDocs(lastClothQuery);
+      const lastClothId = lastClothSnapshot.docs[0].id;
+
+      // Преобразуйте идентификатор в целое число
+      const lastClothIdNumber = parseInt(lastClothId);
+
+      // Вычислите новый идентификатор
+      const newClothIdNumber = lastClothIdNumber + 1;
+
+      // Присвойте новый идентификатор новому документу
+      const newClothId = newClothIdNumber.toString();
+
+      const selectedType = result.value.idClothType;
+      const selectedTypeGender = result.value.idClothTypeGender;
+      const selectedSizeIds = result.value.selectedSizes;
+      const selectedColorIds = result.value.selectedColors;
+      const selectedImage = result.value.selectedImage;
+      const selectedModel = result.value.selectedModel;
+      const selectedName = result.value.selectedName;
+      const selectedPrice = result.value.selectedPrice;
+
+
+      
+      console.log('New Cloth ID:', newClothId);
+
+      const newClothData = {
+        idClothType: selectedType,
+        idClothTypeGender: selectedTypeGender,
+        idColors: selectedColorIds,
+        idSizes: selectedSizeIds,
+        image: selectedImage,
+        model: selectedModel,
+        name: selectedName,
+        price: selectedPrice
+      };
+
+      // Добавьте новый документ в коллекцию "clothes" с новым идентификатором
+      const newClothDocRef = await setDoc(doc(db, 'clothes', newClothId), newClothData);
+
+
+      Swal.fire({
+        icon: "success",
+        title: "Информация сохранена!",
+        showConfirmButton: false,
+        timer: 1500
+      });
+      setTimeout(function() {
+        location.reload();
+      }, 2000);
+    }
+  });
+}
 
 const searchInput = document.getElementById('search');
 searchInput.addEventListener('input', handleSearchAndFilter);
@@ -417,6 +627,9 @@ const typeDropdownButton = document.getElementById('dropdownTypeButton');
 typeDropdownButton.addEventListener('click', function() {
   dropdownType.classList.toggle('hidden'); // Переключение класса для скрытия или показа выпадающего списка
 });
+
+const addNewButton = document.getElementById('addNewButton');
+addNewButton.addEventListener('click', addCloth);
 
 const authButton = document.getElementById('authButton');
 authButton.addEventListener('click', function() {

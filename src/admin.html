@@ -34,7 +34,7 @@
     <h1 class="text-4xl font-bold text-center mt-8 mb-8">Администратор</h1>
 
     <!-- Поиск, сортировка и фильтрация-->
-    <div class="flex justify-center items-center w-full mx-auto">
+    <div class="flex justify-center items-center w-full">
         <!-- Поиск -->
         <div class="w-2/5 lg:w-2/6 xl:w-2/5 flex items-center space-x-4">
           <form class="h-10 w-full">
@@ -51,7 +51,7 @@
           </svg></button>
       
           <!-- Dropdown menu -->
-          <div id="dropdownSizes" class="w-30 z-10 hidden bg-white rounded-lg shadow dark:bg-gray-700 absolute top-full mt-1">
+          <div id="dropdownSizes" class="w-30 hidden bg-white rounded-lg shadow dark:bg-gray-700 absolute top-full mt-1">
             <ul class="h-48 px-3 pb-3 overflow-y-auto text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownSizesButton">
               <li>
                 <div class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
@@ -92,6 +92,8 @@
             </ul>
           </div>
         </div>
+
+
   
         <!--Тип одежды-->
         <div class="relative ml-4">
@@ -100,7 +102,7 @@
           </svg></button>
       
           <!-- Dropdown menu -->
-          <div id="dropdownType" class="z-10 hidden bg-white rounded-lg shadow w-30 dark:bg-gray-700 absolute top-full mt-1">
+          <div id="dropdownType" class="hidden bg-white rounded-lg shadow w-30 dark:bg-gray-700 absolute top-full mt-1">
             <ul class="h-48 px-3 pb-3 overflow-y-auto text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownTypeButton">
               <li>
                 <div class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
@@ -125,9 +127,16 @@
         </div>
       </div>
       
-  
+      <div class="flex justify-center items-center mt-8">
+        <button id="addNewButton" class="align-middle select-none font-sans font-bold text-center uppercase transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 px-6 rounded-lg bg-gradient-to-tr from-purple-900 to-purple-800 text-white shadow-md shadow-gray-900/10 hover:shadow-lg hover:shadow-gray-900/20 active:opacity-[0.85] flex items-center gap-3"type="button">
+          <img class="w-5 h-5" src="images/plus.svg"></img>
+          Добавить
+        </button>
+      </div>
+      
+
       <!-- Блок с одеждой -->
-      <div class="flex justify-center mt-16 shadow-md">
+      <div class="flex justify-center mt-8 shadow-md">
         <div class="flex flex-wrap -m-4 flex justify-center mb-4" id="clothesList">
         </div>
       </div>

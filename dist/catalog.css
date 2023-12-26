@@ -26,6 +26,9 @@
   display: block; /* Показываем затемнение при активации */
 }
 
+.swal2-container {
+  z-index: 9999;
+}
 
 
 /*# sourceMappingURL=catalog.css.map*/

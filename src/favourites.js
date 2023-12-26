@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, getDoc, doc, updateDoc, addDoc } from 'firebase/firestore';
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, addDoc } from "firebase/firestore";
+import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import './catalog.css';
 
 // Получите идентификатор пользователя из локального хранилища
@@ -8,8 +8,10 @@ async function getUserId(){
   try{
     const userId = localStorage.getItem('userId');
     if(userId === null){
+      alert('Вы не зарегестрированы, поэтому будет предоставлена вся одежда');
       return 'ALL'
-    }else return userId;
+    }
+    else return userId;
   }
   catch(error){
     return "ALL"
@@ -18,57 +20,84 @@ async function getUserId(){
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAgfHpqhm8BYiQTE30cusEJMC4uK8lTPis",
-  authDomain: "virt-shop.firebaseapp.com",
-  databaseURL: "https://virt-shop-default-rtdb.firebaseio.com",
-  projectId: "virt-shop",
-  storageBucket: "virt-shop.appspot.com",
-  messagingSenderId: "72126462317",
-  appId: "1:72126462317:web:1eb5af9da767369cf84264",
-  measurementId: "G-ZS4NNVK5K5"
-};
-
+    apiKey: "AIzaSyAgfHpqhm8BYiQTE30cusEJMC4uK8lTPis",
+    authDomain: "virt-shop.firebaseapp.com",
+    projectId: "virt-shop",
+    storageBucket: "virt-shop.appspot.com",
+    messagingSenderId: "72126462317",
+    appId: "1:72126462317:web:1eb5af9da767369cf84264",
+    measurementId: "G-ZS4NNVK5K5"
+  };
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const storage = getStorage(firebaseApp);
 
-const userCollection = collection(db, 'users');
 const clothesCollection = collection(db, 'clothes');
 const clothesSnapshot = await getDocs(clothesCollection);
 const clothesData = [];
+let userClothesData = [];
 
-const userId = await getUserId();
+
+
+
+const exitButton = document.getElementById('exitButton');
+exitButton.addEventListener('click', function() {
+    localStorage.setItem('userId', 'ALL');
+    alert('Вы успешно вышли из системы');
+    exitButton.hidden = true;
+    location.reload();
+
+});
+
+
+
 
 
 //Получаем данные об одежде и записываем в clothesData
 clothesSnapshot.forEach((document) => {
-  const data = document.data();
-  const sizeRefs = data.idSizes.map((sizeId) => doc(db, 'sizes', sizeId.toString()));
-  const nameRef = doc(clothesCollection, document.id);
-  const imageRef = doc(clothesCollection, document.id);
-  const priceRef = doc(clothesCollection, document.id);
-  const clothTypeRef = doc(db, 'clothType', data.idClothType.toString());
-  const clothTypeGenderRef = doc(db, 'clothTypeGender', data.idClothTypeGender.toString());
-  const colorsRef = data.idColors.map((colorId) => doc(db, 'colors', colorId.toString()));
-  clothesData.push({
-    sizeRefs,
-    nameRef,
-    imageRef,
-    priceRef,
-    clothTypeRef,
-    colorsRef,
-    clothTypeGenderRef
+    const data = document.data();
+    const sizeRefs = data.idSizes.map((sizeId) => doc(db, 'sizes', sizeId.toString()));
+    const nameRef = doc(clothesCollection, document.id);
+    const imageRef = doc(clothesCollection, document.id);
+    const priceRef = doc(clothesCollection, document.id);
+    const clothTypeRef = doc(db, 'clothType', data.idClothType.toString());
+    const colorsRef = data.idColors.map((colorId) => doc(db, 'colors', colorId.toString()));
+    clothesData.push({
+      sizeRefs,
+      nameRef,
+      imageRef,
+      priceRef,
+      clothTypeRef,
+      colorsRef
+    });
   });
-});
+
+// Получаем данные о пользователе
+const userCollection = collection(db, 'users');
+const userId = await getUserId()
+console.log(userId);
+
+if(userId !== 'ALL'){
+  exitButton.hidden = false;
+}
+
+const userSnapshot = await getDoc(doc(userCollection, `${userId}`)); // Замените '1' на идентификатор пользователя, для которого вы хотите отобразить одежду
+const userData = userSnapshot.data();
+
+// Преобразуем идентификаторы в строковый формат
+const userFavouritesIds = userData.idFavourites.map(String);
+// Фильтруем данные об одежде по идентификаторам из коллекции clothes
+userClothesData = clothesData.filter((cloth) => userFavouritesIds.includes(cloth.nameRef.id));
+console.log(userClothesData);
 
 //Создаем ClothData
 async function createClothBlock(data) {
   try {
     let isFavourite = false;
     let imageUrl;
-    const clothesList = document.getElementById('clothesList');
+    const clothesList = document.getElementById('favouritesClothesList');
     const clothesBlock = document.createElement('div');
-    clothesBlock.className = "xl:w-1/4 md:w-1/2 p-4 flex justify-center";
+    clothesBlock.className = "p-4 flex justify-center";
     clothesBlock.innerHTML = `
       <div class="imageContainerClothesOne720x400 bg-gray-100 p-6 rounded-lg border border-gray-950 shadow hover:shadow-lg">
         <img class="object-scale-down h-40 rounded w-40 object-center mb-6" src="" alt="content">
@@ -136,23 +165,23 @@ async function createClothBlock(data) {
       if(userId !== 'ALL'){
         const userDoc = doc(userCollection, userId);
 
-      // Получаем текущие данные пользователя
-      getDoc(userDoc).then((userDocSnapshot) => {
-        if (userDocSnapshot.exists()) {
-          const userData = userDocSnapshot.data();
-          let favouritesClothesIds = userData.idFavourites || [];
+        // Получаем текущие данные пользователя
+        getDoc(userDoc).then((userDocSnapshot) => {
+          if (userDocSnapshot.exists()) {
+            const userData = userDocSnapshot.data();
+            let favouritesClothesIds = userData.idFavourites || [];
 
-          // Преобразуем идентификатор одежды в числовой формат
-          const clothIdNumber = parseInt(data.nameRef.id, 10);
+            // Преобразуем идентификатор одежды в числовой формат
+            const clothIdNumber = parseInt(data.nameRef.id, 10);
 
-          // Проверяем, содержит ли массив уже выбранный идентификатор одежды
-          if (favouritesClothesIds.includes(clothIdNumber)) {
-            isFavourite = true;
-            const heartIcon = clothesBlock.querySelector('#heartIcon');
-            heartIcon.classList.add('filled-heart');
-            console.log(`${data.nameRef.id} в избранном`);
-          }
-        }})
+            // Проверяем, содержит ли массив уже выбранный идентификатор одежды
+            if (favouritesClothesIds.includes(clothIdNumber)) {
+              isFavourite = true;
+              const heartIcon = clothesBlock.querySelector('#heartIcon');
+              heartIcon.classList.add('filled-heart');
+              console.log(`${data.nameRef.id} в избранном`);
+            }
+          }})
       }
 
       const addToWardrobeButton = clothesBlock.querySelector('#addToWardrobeButton');
@@ -167,7 +196,7 @@ async function createClothBlock(data) {
         const moreInfoContainer = document.createElement('div');
         moreInfoContainer.className = 'flex ml-50 mr-50 bg-gradient-to-r from-purple-100 to-purple-400 rounded-lg shadow dark:bg-gray-800 border-1 border-black';
         moreInfoContainer.style.position = 'absolute';
-        moreInfoContainer.style.zIndex = '5555';
+        moreInfoContainer.style.zIndex = '9999';
         moreInfoContainer.style.overflow = 'auto';
         moreInfoContainer.innerHTML = `
           <div class="relative flex-none w-20 md:w-48">
@@ -363,99 +392,57 @@ async function removeFromFavourites(clothId){
   }
 }
 
-async function addToCart(data, size, color){
-  const userId = await getUserId();
-  console.log(userId);
-  if(userId === 'ALL'){
-    alert('Нельзя добавить одежду в корзину для незарегистрированного пользователя. Вы можете зарегистрироваться в системе.');
-    return;
+  
+  async function addToCart(data, size, color){
+    const userId = await getUserId();
+    console.log(userId);
+    if(userId === 'ALL'){
+      alert('Нельзя добавить одежду в корзину для незарегистрированного пользователя. Вы можете зарегистрироваться в системе.');
+      return;
+    }
+    let idUser = userId;
+    let idColor = color;
+    let idSize = size;
+    let idCloth = data.nameRef.id;
+  
+  
+    const newShoppingCart = {
+      idSize,
+      idColor,
+      idCloth,
+      idUser,
+    };
+    console.log(newShoppingCart);
+  
+    const shoppinCartCollection = collection(db, 'shoppingCart');
+    await addDoc(shoppinCartCollection, newShoppingCart);
+  
+    let timerInterval;
+        Swal.fire({
+          title: "Товар добавлен в корзину!",
+          timer: 2000,
+          timerProgressBar: true,
+          didOpen: () => {
+            Swal.showLoading();
+            timerInterval = setInterval(() => {
+            }, 100);
+          },
+          willClose: () => {
+            clearInterval(timerInterval);
+          }
+        }).then((result) => {
+          /* Read more about handling dismissals below */
+          if (result.dismiss === Swal.DismissReason.timer) {
+            console.log("I was closed by the timer");
+          }
+        }); 
   }
-  let idUser = userId;
-  let idColor = color;
-  let idSize = size;
-  let idCloth = data.nameRef.id;
-
-
-  const newShoppingCart = {
-    idSize,
-    idColor,
-    idCloth,
-    idUser,
-  };
-  console.log(newShoppingCart);
-
-  const shoppinCartCollection = collection(db, 'shoppingCart');
-  await addDoc(shoppinCartCollection, newShoppingCart);
-
-  let timerInterval;
-  Swal.fire({
-    title: "Товар добавлен в корзину!",
-    timer: 2000,
-    timerProgressBar: true,
-    didOpen: () => {
-      Swal.showLoading();
-      timerInterval = setInterval(() => {
-      }, 100);
-    },
-    willClose: () => {
-      clearInterval(timerInterval);
-    }
-  }).then((result) => {
-    /* Read more about handling dismissals below */
-    if (result.dismiss === Swal.DismissReason.timer) {
-      console.log("I was closed by the timer");
-    }
-  }); 
-}
-
-//Рендерим все найденное
-async function renderClothes(clothes) {
-  const clothesList = document.getElementById('clothesList');
-  clothesList.innerHTML = ''; // Очищаем лист
-
-  clothes.forEach((data) => {
-    createClothBlock(data);
-  });
-}
-
-async function handleSearchAndFilter() {
-  try {
-    const searchTerm = searchInput.value.toLowerCase();
-    const selectedSizes = Array.from(document.querySelectorAll('#dropdownSizes input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
-    const selectedTypes = Array.from(document.querySelectorAll('#dropdownType input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
-    const selectedTypesGender = Array.from(document.querySelectorAll('#dropdownGender input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
-    const filteredClothesData = [];
-
-    for (const cloth of clothesData) {
-      const nameSnapshot = await getDoc(cloth.nameRef);
-      const name = nameSnapshot.data().name.toLowerCase();
-      const clothTypeSnapshot = await getDoc(cloth.clothTypeRef);
-      const clothTypeValue = clothTypeSnapshot.data().name.toLowerCase();
-      const clothTypeGenderSnapshot = await getDoc(cloth.clothTypeGenderRef);
-      const clothTypeGenderValue = clothTypeGenderSnapshot.data().name.toLowerCase();
-      const sizeIds = cloth.sizeRefs.map((sizeRef) => sizeRef.id);
-
-      if ((name.includes(searchTerm) || (clothTypeValue.includes(searchTerm)) || (clothTypeGenderValue.includes(searchTerm))) && selectedSizes.some((size) => sizeIds.includes(size)) 
-      && selectedTypes.includes(cloth.clothTypeRef.id) && selectedTypesGender.includes(cloth.clothTypeGenderRef.id)) {
-        filteredClothesData.push(cloth);
-      }
-    }
-
-    renderClothes(filteredClothesData);
-  } catch (error) {
-    console.error("Error handling search and filter:", error);
-  }
-}
 
 // Обработчик события для кнопки "to wardrobe"
 async function addToWardrobe(clothId) {
   const userCollection = collection(db, 'users');
   const userId = await getUserId();
   console.log(userId);
-  if(userId === 'ALL'){
-    alert('Нельзя добавить одежду для незарегистрированного пользователя. Вы можете перейти в гардероб где будет доступна вся одежда, либо зарегистрироваться в системе.');
-    return;
-  }
   const userDoc = doc(userCollection, userId);
 
   // Получаем текущие данные пользователя
@@ -488,6 +475,43 @@ async function addToWardrobe(clothId) {
 }
 
 
+//Рендерим все найденное
+async function renderClothes(clothes) {
+  const clothesList = document.getElementById('favouritesClothesList');
+  clothesList.innerHTML = ''; // Очищаем лист
+
+  clothes.forEach((data) => {
+    createClothBlock(data);
+  });
+}
+//Проверяем комбобоксы и поиск
+async function handleSearchAndFilter() {
+    try {
+    const searchTerm = searchInput.value.toLowerCase();
+    const selectedSizes = Array.from(document.querySelectorAll('#dropdownSizes input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
+    const selectedTypes = Array.from(document.querySelectorAll('#dropdownType input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
+    const filteredClothesData = [];
+
+    for (const cloth of userClothesData) {
+      const nameSnapshot = await getDoc(cloth.nameRef);
+      const name = nameSnapshot.data().name.toLowerCase();
+      const clothTypeSnapshot = await getDoc(cloth.clothTypeRef);
+      const clothTypeValue = clothTypeSnapshot.data().name.toLowerCase();
+      const sizeIds = cloth.sizeRefs.map((sizeRef) => sizeRef.id);
+
+      if ((name.includes(searchTerm) || (clothTypeValue.includes(searchTerm))) && selectedSizes.some((size) => sizeIds.includes(size)) && selectedTypes.includes(cloth.clothTypeRef.id)) {
+        filteredClothesData.push(cloth);
+      }
+    }
+
+    renderClothes(filteredClothesData);
+  } catch (error) {
+    console.error("Ошибка при обработке поиска и фильтрации:", error);
+  }
+}
+
+
+
 const searchInput = document.getElementById('search');
 searchInput.addEventListener('input', handleSearchAndFilter);
 
@@ -503,8 +527,6 @@ dropdownButton.addEventListener('click', function() {
   dropdownSizes.classList.toggle('hidden'); // Переключение класса для скрытия или показа выпадающего списка
 });
 
-
-
 const typeCheckboxes = document.querySelectorAll('#dropdownType input[type="checkbox"]');
 typeCheckboxes.forEach((checkbox) => {
   checkbox.addEventListener('change', handleSearchAndFilter);
@@ -516,38 +538,20 @@ typeDropdownButton.addEventListener('click', function() {
   dropdownType.classList.toggle('hidden'); // Переключение класса для скрытия или показа выпадающего списка
 });
 
-const genderCheckboxes = document.querySelectorAll('#dropdownGender input[type="checkbox"]');
-genderCheckboxes.forEach((checkbox) => {
-  checkbox.addEventListener('change', handleSearchAndFilter);
-});
-
-const genderDropdownButton = document.getElementById('dropdownGenderButton');
-// Обработчик события клика на кнопке
-genderDropdownButton.addEventListener('click', function() {
-  dropdownGender.classList.toggle('hidden'); // Переключение класса для скрытия или показа выпадающего списка
-});
 
 const authButton = document.getElementById('authButton');
 authButton.addEventListener('click', function() {
     window.location.href = "auth.html";
 });
 
-const exitButton = document.getElementById('exitButton');
-exitButton.addEventListener('click', function() {
-    localStorage.setItem('userId', 'ALL');
-    alert('Вы успешно вышли из системы');
-    exitButton.hidden = true;
-    location.reload();
-});
-
-
-if(userId !== 'ALL'){
-  exitButton.hidden = false;
-}
-
 
 async function main(){
-  await renderClothes(clothesData);
+    
+  if(userId !== 'ALL'){
+    await renderClothes(userClothesData);
+  }
 }
 
-main()
+main();
+
+

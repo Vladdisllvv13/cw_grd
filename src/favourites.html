@@ -31,51 +31,7 @@
       </div>
     </header>
 
-    <h1 id="txtTitle" class="text-4xl font-bold text-center mt-10">Гардероб</h1>
-
-    <div class="flex justify-center items-center mt-4 mb-4">
-      <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
-        <li class="me-2">
-            <a href="#" id="male" class="inline-block px-4 py-3 rounded-lg hover:text-white hover:bg-purple-700 active" aria-current="page">Мужчина</a>
-        </li>
-        <li class="me-2">
-            <a href="#" id="female" class="inline-block px-4 py-3 rounded-lg hover:text-white hover:bg-purple-700">Женщина</a>
-        </li>
-      </ul>
-    </div>
-    
-    
-    <!-- Канвас и интерфейс 3D -->
-    <div class="container mx-auto mt-5 flex justify-center">
-      <canvas class="canvas border-4 border-black shadow-md"></canvas>
-    </div>
-
-    <!-- Блоки добавленной одежды -->
-    <div class="container mx-auto mt-5 flex items-start">
-      <div id="TshirtBlock" class="w-1/4 mr-4 shadow hover:shadow-lg bg-gray-100 p-6 rounded-lg border border-gray-950">
-          <img class="imageContainer720x400 object-scale-down h-20 rounded w-20 object-center mb-6" src="images/tshirt.png" alt="content">
-          <h3 class="nameOne tracking-widest text-purple-500 text-2xl font-medium title-font"></h3>
-          <button class="mt-2 bg-transparent hover:bg-purple-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-purple-500 hover:border-transparent rounded" id="removeButton" hidden>Снять</button>
-      </div>
-
-      <div id="JacketBlock" class="w-1/4 mr-4 shadow hover:shadow-lg bg-gray-100 p-6 rounded-lg border border-gray-950">
-          <img class="imageContainer720x400 object-scale-down h-20 rounded w-20 object-center mb-6" src="images/jacket.png" alt="content">
-          <h3 class="nameOne tracking-widest text-purple-500 text-2xl font-medium title-font"></h3>
-          <button class="mt-2 bg-transparent hover:bg-purple-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-purple-500 hover:border-transparent rounded" id="removeButton" hidden>Снять</button>
-      </div>
-
-      <div id="CoatBlock" class="w-1/4 mr-4 shadow hover:shadow-lg bg-gray-100 p-6 rounded-lg border border-gray-950">
-          <img class="imageContainer720x400 object-scale-down h-20 rounded w-20 object-center mb-6" src="images/coat.png" alt="content">
-          <h3 class="nameOne tracking-widest text-purple-500 text-2xl font-medium title-font"></h3>
-          <button class="mt-2 bg-transparent hover:bg-purple-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-purple-500 hover:border-transparent rounded" id="removeButton" hidden>Снять</button>
-      </div>
-
-      <div id="PantsBlock" class="w-1/4 mr-4 shadow hover:shadow-lg bg-gray-100 p-6 rounded-lg border border-gray-950">
-          <img class="imageContainer720x400 object-scale-down h-20 rounded w-20 object-center mb-6" src="images/pants.png" alt="content">
-          <h3 class="nameOne tracking-widest text-purple-500 text-2xl font-medium title-font"></h3>
-          <button class="mt-2 bg-transparent hover:bg-purple-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-purple-500 hover:border-transparent rounded" id="removeButton" hidden>Снять</button>
-      </div>
-    </div>
+    <h1 id="txtTitle" class="text-4xl font-bold text-center mt-10">Избранное</h1>
 
 
 
@@ -172,11 +128,9 @@
 
 
 
-
-
     <!-- Блок с одеждой гардероба -->
     <div class="flex justify-center mt-8 shadow-md">
-      <div class="flex flex-wrap -m-4 flex justify-center mb-4" id="garderobClothesList">
+      <div class="flex flex-wrap -m-4 flex justify-center mb-4" id="favouritesClothesList">
       </div>
     </div>
 

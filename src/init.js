@@ -14,6 +14,7 @@ const init = () => {
 	const canvas = document.querySelector('.canvas');
 	
 	const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height);
+	camera.position.set(0,62,66);
 	scene.add(camera);
 
 	const controls = new OrbitControls(camera, canvas);

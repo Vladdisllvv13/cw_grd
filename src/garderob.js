@@ -13,6 +13,9 @@ let tshirtCounter = 0;
 let coatCounter = 0;
 let pantsCounter = 0;
 
+let isMale = true;
+let isFemale = false;
+
 // Получите идентификатор пользователя из локального хранилища
 async function getUserId(){
   try{
@@ -51,7 +54,7 @@ camera.position.y = 6;
 camera.position.z = 8;
 
 //Пол
-function addFloor(){
+async function addFloor(){
     const floor = new THREE.Mesh(
         new THREE.BoxGeometry(30,30,2),
         new THREE.MeshStandardMaterial({
@@ -84,7 +87,7 @@ function setMaterial(currentColor, currentMetalness, currentRoughness, currentMa
 }
 
 //Свет
-function addLights(){
+async function addLights(){
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.61);
     hemiLight.position.set(0, 50, 0);
     scene.add(hemiLight);
@@ -99,15 +102,21 @@ function addLights(){
 }
 
 //Загрузка модели
-async function loadMannequin(){
+function loadMannequin(){
+    const mannequinObject = scene.getObjectByName('mannequin');
+    scene.remove(mannequinObject);
+    let path = null;
+    if(isMale) path = './3DModels/male/mannequinMale.glb';
+    else if(isFemale) path = './3DModels/female/scene.gltf';
     const loader = new GLTFLoader();
     loader.load(
-        './3DModels/male/mannequinMale.glb',
+        path,
         (gltf) => {
             console.log('success');
             console.log(gltf);
             const mannequin = gltf.scene.children[0];
             scene.add(mannequin);
+            mannequin.name = 'mannequin';
         },
         (progress) => {
             // console.log('progess');
@@ -119,7 +128,7 @@ async function loadMannequin(){
         },
     );
 }
-async function loadCloth(modelName, clothType){
+function loadCloth(modelName, clothType){
   const loader = new GLTFLoader();
   loader.load(
       `./3DModels/clothes/${modelName}.glb`,
@@ -152,9 +161,10 @@ async function loadCloth(modelName, clothType){
   );
 }
 
-async function setColor(clothType, color){
+function setColor(clothType, color){
   console.log(clothType);
   const clothObject = scene.getObjectByName(clothType);
+  console.log(clothObject);
   clothObject.material = setMaterial(color, 0, 0.4);
 }
 
@@ -200,6 +210,7 @@ clothesSnapshot.forEach((document) => {
   const imageRef = doc(clothesCollection, document.id);
   const modelRef = doc(clothesCollection, document.id);
   const clothTypeRef = doc(db, 'clothType', data.idClothType.toString());
+  const clothTypeGenderRef = doc(db, 'clothTypeGender', data.idClothTypeGender.toString());
   const colorsRef = data.idColors.map((colorId) => doc(db, 'colors', colorId.toString()));
   clothesData.push({
     sizeRefs,
@@ -207,7 +218,8 @@ clothesSnapshot.forEach((document) => {
     imageRef,
     clothTypeRef,
     modelRef,
-    colorsRef
+    colorsRef,
+    clothTypeGenderRef
   });
 });
 
@@ -222,6 +234,11 @@ if(userId !== 'ALL'){
 
 const userSnapshot = await getDoc(doc(userCollection, `${userId}`)); // Замените '1' на идентификатор пользователя, для которого вы хотите отобразить одежду
 const userData = userSnapshot.data();
+const userGender = userData.gender;
+if(userGender === "Женский"){
+  isMale = false;
+  isFemale = true;
+}
 
 // Преобразуем идентификаторы в строковый формат
 const userWardrobeClothesIds = userData.idWardrobeClothes.map(String);
@@ -234,7 +251,7 @@ async function createClothBlock(data) {
   try {
     const clothesList = document.getElementById('garderobClothesList');
     const clothesBlock = document.createElement('div');
-    clothesBlock.className = "xl:w-1/4 md:w-1/2 p-4 flex justify-center";
+    clothesBlock.className = "p-4 flex justify-center";
     clothesBlock.innerHTML = `
       <div class="imageContainerClothesOne720x400 bg-gray-100 p-6 rounded-lg border border-gray-950 shadow hover:shadow-lg">
         <img class="object-scale-down h-40 rounded w-40 object-center mb-6" src="" alt="content">
@@ -358,7 +375,7 @@ async function removeFromScene(clothType){
       block = document.getElementById('TshirtBlock');
       imageElement = block.querySelector('.imageContainer720x400');
       nameElement = block.querySelector('.nameOne');
-      const removeButton = block.querySelector('#removeTshirtButton');
+      const removeButton = block.querySelector('#removeButton');
       colorsContainer = block.querySelector('.colorsContainer');
       imagePath = "images/tshirt.png";
       removeButton.hidden = true;
@@ -372,7 +389,7 @@ async function removeFromScene(clothType){
       block = document.getElementById('CoatBlock');
       imageElement = block.querySelector('.imageContainer720x400');
       nameElement = block.querySelector('.nameOne');
-      const removeButton = block.querySelector('#removeCoatButton');
+      const removeButton = block.querySelector('#removeButton');
       colorsContainer = block.querySelector('.colorsContainer');
       imagePath = "images/coat.png";
       removeButton.hidden = true;
@@ -386,7 +403,7 @@ async function removeFromScene(clothType){
       block = document.getElementById('PantsBlock');
       imageElement = block.querySelector('.imageContainer720x400');
       nameElement = block.querySelector('.nameOne');
-      const removeButton = block.querySelector('#removePantsButton');
+      const removeButton = block.querySelector('#removeButton');
       colorsContainer = block.querySelector('.colorsContainer');
       imagePath = "images/pants.png";
       removeButton.hidden = true;
@@ -421,7 +438,7 @@ async function addToScene(data) {
       imageElement = block.querySelector('.imageContainer720x400');
       nameElement = block.querySelector('.nameOne');
 
-      const removeButton = block.querySelector('#removeTshirtButton');
+      const removeButton = block.querySelector('#removeButton');
       if(tshirtCounter != 0){
         removeFromScene(clothTypeValue);
       }
@@ -435,7 +452,7 @@ async function addToScene(data) {
       imageElement = block.querySelector('.imageContainer720x400');
       nameElement = block.querySelector('.nameOne');
 
-      const removeButton = block.querySelector('#removeCoatButton');
+      const removeButton = block.querySelector('#removeButton');
       if(coatCounter != 0){
         removeFromScene(clothTypeValue);
       }
@@ -449,7 +466,7 @@ async function addToScene(data) {
       imageElement = block.querySelector('.imageContainer720x400');
       nameElement = block.querySelector('.nameOne');
 
-      const removeButton = block.querySelector('#removePantsButton');
+      const removeButton = block.querySelector('#removeButton');
       if(pantsCounter != 0){
         removeFromScene(clothTypeValue);
       }
@@ -472,8 +489,9 @@ async function addToScene(data) {
 
       colorButton.addEventListener('click', () => {
         setColor(clothTypeValue, color.trim());
+        console.log(color);
       });
-      console.log(color);
+      
     });
 
     const nameSnapshot = await getDoc(data.nameRef);
@@ -482,7 +500,7 @@ async function addToScene(data) {
     const imagePath = imagePathSnapshot.data().image;
 
 
-    // Обновляем содержимое блока "TshirtBlock"
+    // Обновляем содержимое блока
     if (imageElement && nameElement && colorsContainer) {
       if (imagePath) {
         const storageImageRef = ref(storage, `images/${imagePath}.jpg`);
@@ -515,9 +533,13 @@ async function renderClothes(clothes) {
 //Проверяем комбобоксы и поиск
 async function handleSearchAndFilter() {
     try {
+    let selectedTypesGender = [];
     const searchTerm = searchInput.value.toLowerCase();
     const selectedSizes = Array.from(document.querySelectorAll('#dropdownSizes input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
     const selectedTypes = Array.from(document.querySelectorAll('#dropdownType input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
+    if(isMale) selectedTypesGender = ['1','3'];
+    else if (isFemale) selectedTypesGender = ['2','3'];
+
     const filteredClothesData = [];
 
     for (const cloth of userClothesData) {
@@ -527,7 +549,8 @@ async function handleSearchAndFilter() {
       const clothTypeValue = clothTypeSnapshot.data().name.toLowerCase();
       const sizeIds = cloth.sizeRefs.map((sizeRef) => sizeRef.id);
 
-      if ((name.includes(searchTerm) || (clothTypeValue.includes(searchTerm))) && selectedSizes.some((size) => sizeIds.includes(size)) && selectedTypes.includes(cloth.clothTypeRef.id)) {
+      if ((name.includes(searchTerm) || (clothTypeValue.includes(searchTerm))) && selectedSizes.some((size) => sizeIds.includes(size)) 
+      && selectedTypes.includes(cloth.clothTypeRef.id) && selectedTypesGender.includes(cloth.clothTypeGenderRef.id)) {
         filteredClothesData.push(cloth);
       }
     }
@@ -536,6 +559,24 @@ async function handleSearchAndFilter() {
   } catch (error) {
     console.error("Ошибка при обработке поиска и фильтрации:", error);
   }
+}
+
+// Функция для обработки выбора мужской одежды
+function handleMaleSelection() {
+  // Ваш код для обработки выбора мужской одежды
+  console.log('Выбрана мужская одежда');
+  isMale = true;
+  isFemale = false;
+  handleSearchAndFilter();
+}
+
+// Функция для обработки выбора женской одежды
+function handleFemaleSelection() {
+  // Ваш код для обработки выбора женской одежды
+  console.log('Выбрана женская одежда');
+  isFemale = true;
+  isMale = false;
+  handleSearchAndFilter();
 }
 
 
@@ -583,19 +624,78 @@ const authButton = document.getElementById('authButton');
 authButton.addEventListener('click', function() {
     window.location.href = "auth.html";
 });
-const txtTitle = document.getElementById('txtTitle');
-txtTitle.textContent = userId;
 
 
+// Получаем ссылки на кнопки
+const maleButton = document.getElementById('male');
+const femaleButton = document.getElementById('female');
 
+if(isFemale){
+  femaleButton.classList.add('active');
+  maleButton.classList.remove('active');
+}
+
+// Добавляем обработчики событий для кнопок
+maleButton.addEventListener('click', function() {
+  // Добавляем класс активности к кнопке "Мужчина"
+  maleButton.classList.add('active');
+  // Удаляем класс активности с кнопки "Женщина"
+  femaleButton.classList.remove('active');
+  // Вызываем функцию для обработки выбора мужской одежды
+  handleMaleSelection();
+  scene.clear();
+  clearUiBlocks();
+  createScene();
+});
+
+femaleButton.addEventListener('click', function() {
+  // Добавляем класс активности к кнопке "Женщина"
+  femaleButton.classList.add('active');
+  // Удаляем класс активности с кнопки "Мужчина"
+  maleButton.classList.remove('active');
+  // Вызываем функцию для обработки выбора женской одежды
+  handleFemaleSelection();
+  scene.clear();
+  clearUiBlocks();
+  createScene();
+});
+
+async function createScene(){
+  await addFloor();
+  await addLights();
+  loadMannequin();
+}
+async function clearUiBlocks(){
+  const blocks = ['TshirtBlock', 'JacketBlock', 'CoatBlock', 'PantsBlock'];
+  const blocksImg = ['tshirt', 'jacket', 'coat', 'pants'];
+
+  let i = 0;
+  for(const blockElement of blocks){
+    const block = document.getElementById(`${blockElement}`);
+    let imageElement = block.querySelector('.imageContainer720x400');
+    let nameElement = block.querySelector('.nameOne');
+    const removeButton = block.querySelector('#removeButton');
+    let colorsContainer = block.querySelector('.colorsContainer');
+    let imagePath = `images/${blocksImg[i]}.png`;
+    removeButton.hidden = true;
+    if (colorsContainer) {
+      colorsContainer.remove(); // Удаление контейнера с кнопками-кружочками цветов
+    }
+    nameElement.textContent = '';
+    imageElement.src = imagePath;
+    i += 1;
+  }
+  tshirtCounter = 0;
+  pantsCounter = 0;
+  coatCounter = 0;
+}
 
 
 async function main(){
-    addFloor();
-    //setMaterial("#dda15e", 0, 0.4, texture1);
-    addLights();
+    await addFloor();
+    await addLights();
     loadMannequin();
-    await renderClothes(userClothesData);
+    await handleSearchAndFilter();
 }
 
 main();

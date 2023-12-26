@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, where, query } from "firebase/firestore";
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, where, query, deleteDoc } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 
 
@@ -19,6 +19,9 @@ async function getUserId(){
   }
 }
 
+let totalSum = 0;
+
+
 
 const firebaseConfig = {
     apiKey: "AIzaSyAgfHpqhm8BYiQTE30cusEJMC4uK8lTPis",
@@ -29,47 +32,60 @@ const firebaseConfig = {
     appId: "1:72126462317:web:1eb5af9da767369cf84264",
     measurementId: "G-ZS4NNVK5K5"
   };
+
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const storage = getStorage(firebaseApp);
 
-  const userId = await getUserId()
-  console.log(userId);
+const userId = await getUserId()
   
-//   if(userId !== 'ALL'){
-//     exitButton.hidden = false;
-//   }
-  
-// Запрос данных из коллекции shoppingCart для конкретного пользователя
-const shoppingCartRef = collection(db, 'shoppingCart');
-// Запрос данных из коллекции shoppingCart для конкретного пользователя
-const userCartItemsQuery = query(shoppingCartRef, where('idUser', '==', userId));
 
-// Получение данных из запроса
-getDocs(userCartItemsQuery).then((querySnapshot) => {
-  querySnapshot.forEach((doc) => {
-    // Доступ к данным каждого документа и вывод информации о каждом элементе одежды
-    const data = doc.data();
-    console.log('ID одежды:', data.idCloth);
-    console.log('ID цвета:', data.idColor);
-    console.log('ID размера:', data.idSize);
-    
-    populateTable(data)
+async function showAlert(title){
+  let timerInterval;
+      Swal.fire({
+        title: title,
+        timer: 2000,
+        timerProgressBar: true,
+        didOpen: () => {
+          Swal.showLoading();
+          timerInterval = setInterval(() => {
+          }, 100);
+        },
+        willClose: () => {
+          clearInterval(timerInterval);
+        }
+      }).then((result) => {
+        /* Read more about handling dismissals below */
+        if (result.dismiss === Swal.DismissReason.timer) {
+          console.log("I was closed by the timer");
+        }
+      }); 
+}
+
+async function getCart(){
+  const tableBody = document.querySelector('#clothTable tbody');
+  tableBody.innerHTML = '';
+
+  // Запрос данных из коллекции shoppingCart для конкретного пользователя
+  const shoppingCartRef = collection(db, 'shoppingCart');
+  // Запрос данных из коллекции shoppingCart для конкретного пользователя
+  const userCartItemsQuery = query(shoppingCartRef, where('idUser', '==', userId));
+
+  // Получение данных из запроса
+  getDocs(userCartItemsQuery).then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      // Доступ к данным каждого документа и вывод информации о каждом элементе одежды
+      const data = doc.data();
+      
+      populateTable(data, doc.id)
+    });
   });
-});
+}
 
 
-const exitButton = document.getElementById('exitButton');
-exitButton.addEventListener('click', function() {
-    localStorage.setItem('userId', 'ALL');
-    alert('Вы успешно вышли из системы');
-    exitButton.hidden = true;
-    location.reload();
-
-});
 
 
-async function populateTable(data) {
+async function populateTable(data, itemId) {
 
     const clothesRef = collection(db, 'clothes');
     const userClothesItemsQuery = doc(clothesRef, data.idCloth);
@@ -79,9 +95,6 @@ async function populateTable(data) {
         if (doc.exists()) {
         // Доступ к данным документа и вывод информации о каждом элементе одежды
         const clothData = doc.data();
-        console.log('Название:', clothData.name);
-        console.log('Цена:', clothData.price);
-        console.log('Фото:', clothData.image);
         
         
         const tableBody = document.querySelector('#clothTable tbody');
@@ -108,7 +121,7 @@ async function populateTable(data) {
             ${clothData.price} руб.
           </td>
           <td class="px-6 py-4 text-right">
-            <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Удалить из корзины</a>
+            <button id="delteFromCartButton" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Удалить из корзины</button>
           </td>
         `;
         const clothImage = newRow.querySelector('.clothImage');
@@ -124,6 +137,16 @@ async function populateTable(data) {
         // Append the new row to the table body
         tableBody.appendChild(newRow);
 
+        totalSum += clothData.price;
+        const totalSumText = document.getElementById('totalSum');
+        totalSumText.textContent = `₽ ${totalSum}`;
+
+        const delteFromCartButton = newRow.querySelector('#delteFromCartButton');
+        delteFromCartButton.addEventListener('click', () => {
+          console.log(itemId);
+          deleteFromCart(itemId);
+        });
+
 
         } else {
         console.log('Документ не найден!');
@@ -133,6 +156,39 @@ async function populateTable(data) {
     });
 }
 
+async function deleteFromCart(itemId){
+  const shoppingCartRef = collection(db, 'shoppingCart');
+  const itemDocRef = doc(shoppingCartRef, itemId);
+
+  try {
+    await deleteDoc(itemDocRef);
+    console.log('Документ успешно удален из корзины');
+    totalSum = 0;
+    getCart();
+    showAlert("Успешно удалено!");
+  } catch (error) {
+    console.log('Ошибка при удалении документа:', error);
+    showAlert("Не удалось удалить товар из корзины!");
+  }
+}
+
+
+
+
+
+
+const exitButton = document.getElementById('exitButton');
+exitButton.addEventListener('click', function() {
+    localStorage.setItem('userId', 'ALL');
+    alert('Вы успешно вышли из системы');
+    exitButton.hidden = true;
+    location.reload();
+
+});
+if(userId !== 'ALL'){
+  exitButton.hidden = false;
+}
+
 // //Рендерим все найденное
 // async function renderCard(clothes) {
 //     clothes.forEach((data) => {
@@ -140,11 +196,16 @@ async function populateTable(data) {
 //     });
 //   }
 
-// async function main(){
-//     await renderCard(clothesData);
-//   }
+const toCatalogButton = document.getElementById('toCatalogButton');
+toCatalogButton.addEventListener('click', function() {
+    window.location = 'catalog.html';
+});
+
+async function main(){
+    await getCart();
+}
   
-//   main()
+main()
 
 
 
