@@ -3,7 +3,7 @@ import TWEEN from 'three/examples/jsm/libs/tween.module';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import init from './init';
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, query, where } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import './garderob.css';
 
@@ -15,6 +15,9 @@ let pantsCounter = 0;
 
 let isMale = true;
 let isFemale = false;
+
+let isClothes = true;
+let isStyles = false;
 
 // Получите идентификатор пользователя из локального хранилища
 async function getUserId(){
@@ -49,6 +52,30 @@ const clothesCollection = collection(db, 'clothes');
 const clothesSnapshot = await getDocs(clothesCollection);
 const clothesData = [];
 let userClothesData = [];
+
+let userStylesData = [];
+
+
+//Получаем данные об одежде и записываем в clothesData
+clothesSnapshot.forEach((document) => {
+  const data = document.data();
+  const sizeRefs = data.idSizes.map((sizeId) => doc(db, 'sizes', sizeId.toString()));
+  const nameRef = doc(clothesCollection, document.id);
+  const imageRef = doc(clothesCollection, document.id);
+  const modelRef = doc(clothesCollection, document.id);
+  const clothTypeRef = doc(db, 'clothType', data.idClothType.toString());
+  const clothTypeGenderRef = doc(db, 'clothTypeGender', data.idClothTypeGender.toString());
+  const colorsRef = data.idColors.map((colorId) => doc(db, 'colors', colorId.toString()));
+  clothesData.push({
+    sizeRefs,
+    nameRef,
+    imageRef,
+    clothTypeRef,
+    modelRef,
+    colorsRef,
+    clothTypeGenderRef
+  });
+});
 
 camera.position.y = 6;
 camera.position.z = 8;
@@ -202,26 +229,7 @@ exitButton.addEventListener('click', function() {
 
 
 
-//Получаем данные об одежде и записываем в clothesData
-clothesSnapshot.forEach((document) => {
-  const data = document.data();
-  const sizeRefs = data.idSizes.map((sizeId) => doc(db, 'sizes', sizeId.toString()));
-  const nameRef = doc(clothesCollection, document.id);
-  const imageRef = doc(clothesCollection, document.id);
-  const modelRef = doc(clothesCollection, document.id);
-  const clothTypeRef = doc(db, 'clothType', data.idClothType.toString());
-  const clothTypeGenderRef = doc(db, 'clothTypeGender', data.idClothTypeGender.toString());
-  const colorsRef = data.idColors.map((colorId) => doc(db, 'colors', colorId.toString()));
-  clothesData.push({
-    sizeRefs,
-    nameRef,
-    imageRef,
-    clothTypeRef,
-    modelRef,
-    colorsRef,
-    clothTypeGenderRef
-  });
-});
+
 
 // Получаем данные о пользователе
 const userCollection = collection(db, 'users');
@@ -247,11 +255,12 @@ userClothesData = clothesData.filter((cloth) => userWardrobeClothesIds.includes(
 console.log(userClothesData);
 
 //Создаем ClothData
-async function createClothBlock(data) {
+async function createClothBlock(data, list) {
   try {
-    const clothesList = document.getElementById('garderobClothesList');
+    const clothesList = document.getElementById(list);
     const clothesBlock = document.createElement('div');
-    clothesBlock.className = "p-4 flex justify-center";
+    clothesBlock.className = "p-4 flex flex-shrink-0 justify-center items-center mb-4";
+    clothesBlock.classList.add('inline-flex');
     clothesBlock.innerHTML = `
       <div class="imageContainerClothesOne720x400 bg-gray-100 p-6 rounded-lg border border-gray-950 shadow hover:shadow-lg">
         <img class="object-scale-down h-40 rounded w-40 object-center mb-6" src="" alt="content">
@@ -527,7 +536,7 @@ async function renderClothes(clothes) {
   clothesList.innerHTML = ''; // Очищаем лист
 
   clothes.forEach((data) => {
-    createClothBlock(data);
+    createClothBlock(data, 'garderobClothesList');
   });
 }
 //Проверяем комбобоксы и поиск
@@ -561,9 +570,80 @@ async function handleSearchAndFilter() {
   }
 }
 
+async function populateList(data, userStylesData) {
+  const stylesLists = document.getElementById('garderobStylesList');
+  stylesLists.className = "-m-4 justify-center items-center";
+
+  // Блок со стилями гардероба
+  const stylesBlock = document.createElement('div');
+  stylesBlock.className = "-m-4 justify-center items-center";
+  stylesBlock.innerHTML = `
+    <div flex items-center justify-center>
+      <h1 id="txtName" class="text-4xl justify-center font-bold text-purple-800 text-center mt-10">${data.name}</h1>
+      <h1 id="txtDescription" class="text-xl justify-center font-bold text-center mt-4">${data.description}</h1>
+      <div class="w-full mt-4 mb-8 justify-center">
+        <div class="h-1 mx-auto gradient w-84 opacity-25 my-0 py-0 rounded-t"></div>
+      </div>
+    </div>
+  `;
+
+  stylesLists.appendChild(stylesBlock);
+
+  userStylesData.forEach((data) => {
+    createClothBlock(data, 'garderobStylesList');
+  });
+
+  console.log(userStylesData);
+}
+
+async function getStyles(){
+  const stylesBody = document.getElementById('garderobStylesList');
+  stylesBody.innerHTML = '';
+
+  // Запрос данных из коллекции shoppingCart для конкретного пользователя
+  const stylesRef = collection(db, 'styles');
+  // Запрос данных из коллекции shoppingCart для конкретного пользователя
+  const userStylesItemsQuery = query(stylesRef, where('idUser', '==', userId));
+
+  // Получение данных из запроса
+  getDocs(userStylesItemsQuery).then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      // Доступ к данным каждого документа и вывод информации о каждом элементе одежды
+      const data = doc.data();
+
+      // Преобразуем идентификаторы в строковый формат
+      const userStylesIds = data.idClothes.map(String);
+      // Фильтруем данные об одежде по идентификаторам из коллекции clothes
+      userStylesData = clothesData.filter((cloth) => userStylesIds.includes(cloth.nameRef.id));
+      
+      populateList(data, userStylesData)
+    });
+  });
+}
+
+
+const garderobStylesBlock = document.getElementById('garderobStylesBlock');
+const garderobClothesBlock = document.getElementById('garderobClothesBlock');
+// Функция для обработки выбора одежды
+function handleClothesSelection() {
+  isClothes = true;
+  isStyles = false;
+  garderobStylesBlock.hidden = true;
+  garderobClothesBlock.hidden = false;
+}
+
+// Функция для обработки выбора стилей
+function handleStylesSelection() {
+  isStyles = true;
+  isClothes = false;
+  
+  garderobStylesBlock.hidden = false;
+  garderobClothesBlock.hidden = true;
+  getStyles();
+}
+
 // Функция для обработки выбора мужской одежды
 function handleMaleSelection() {
-  // Ваш код для обработки выбора мужской одежды
   console.log('Выбрана мужская одежда');
   isMale = true;
   isFemale = false;
@@ -572,7 +652,6 @@ function handleMaleSelection() {
 
 // Функция для обработки выбора женской одежды
 function handleFemaleSelection() {
-  // Ваш код для обработки выбора женской одежды
   console.log('Выбрана женская одежда');
   isFemale = true;
   isMale = false;
@@ -655,6 +734,36 @@ femaleButton.addEventListener('click', function() {
   maleButton.classList.remove('active');
   // Вызываем функцию для обработки выбора женской одежды
   handleFemaleSelection();
+  scene.clear();
+  clearUiBlocks();
+  createScene();
+});
+
+// Получаем ссылки на кнопки
+const clothesButton = document.getElementById('clothes');
+const stylesButton = document.getElementById('styles');
+
+
+// Добавляем обработчики событий для кнопок
+clothesButton.addEventListener('click', function() {
+  // Добавляем класс активности к кнопке "Мужчина"
+  clothesButton.classList.add('active');
+  // Удаляем класс активности с кнопки "Женщина"
+  stylesButton.classList.remove('active');
+  console.log('выбрана одежда');
+  handleClothesSelection();
+  scene.clear();
+  clearUiBlocks();
+  createScene();
+});
+
+stylesButton.addEventListener('click', function() {
+  // Добавляем класс активности к кнопке "Женщина"
+  stylesButton.classList.add('active');
+  // Удаляем класс активности с кнопки "Мужчина"
+  clothesButton.classList.remove('active');
+  console.log('выбраны стили');
+  handleStylesSelection();
   scene.clear();
   clearUiBlocks();
   createScene();

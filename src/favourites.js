@@ -61,6 +61,7 @@ clothesSnapshot.forEach((document) => {
     const imageRef = doc(clothesCollection, document.id);
     const priceRef = doc(clothesCollection, document.id);
     const clothTypeRef = doc(db, 'clothType', data.idClothType.toString());
+    const clothTypeGenderRef = doc(db, 'clothTypeGender', data.idClothTypeGender.toString());
     const colorsRef = data.idColors.map((colorId) => doc(db, 'colors', colorId.toString()));
     clothesData.push({
       sizeRefs,
@@ -68,7 +69,8 @@ clothesSnapshot.forEach((document) => {
       imageRef,
       priceRef,
       clothTypeRef,
-      colorsRef
+      colorsRef,
+      clothTypeGenderRef
     });
   });
 
@@ -490,6 +492,7 @@ async function handleSearchAndFilter() {
     const searchTerm = searchInput.value.toLowerCase();
     const selectedSizes = Array.from(document.querySelectorAll('#dropdownSizes input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
     const selectedTypes = Array.from(document.querySelectorAll('#dropdownType input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
+    const selectedTypesGender = Array.from(document.querySelectorAll('#dropdownGender input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
     const filteredClothesData = [];
 
     for (const cloth of userClothesData) {
@@ -497,9 +500,12 @@ async function handleSearchAndFilter() {
       const name = nameSnapshot.data().name.toLowerCase();
       const clothTypeSnapshot = await getDoc(cloth.clothTypeRef);
       const clothTypeValue = clothTypeSnapshot.data().name.toLowerCase();
+      const clothTypeGenderSnapshot = await getDoc(cloth.clothTypeGenderRef);
+      const clothTypeGenderValue = clothTypeGenderSnapshot.data().name.toLowerCase();
       const sizeIds = cloth.sizeRefs.map((sizeRef) => sizeRef.id);
 
-      if ((name.includes(searchTerm) || (clothTypeValue.includes(searchTerm))) && selectedSizes.some((size) => sizeIds.includes(size)) && selectedTypes.includes(cloth.clothTypeRef.id)) {
+      if ((name.includes(searchTerm) || (clothTypeValue.includes(searchTerm)) || (clothTypeGenderValue.includes(searchTerm))) && selectedSizes.some((size) => sizeIds.includes(size)) 
+      && selectedTypes.includes(cloth.clothTypeRef.id) && selectedTypesGender.includes(cloth.clothTypeGenderRef.id)) {
         filteredClothesData.push(cloth);
       }
     }
@@ -536,6 +542,17 @@ const typeDropdownButton = document.getElementById('dropdownTypeButton');
 // Обработчик события клика на кнопке
 typeDropdownButton.addEventListener('click', function() {
   dropdownType.classList.toggle('hidden'); // Переключение класса для скрытия или показа выпадающего списка
+});
+
+const genderCheckboxes = document.querySelectorAll('#dropdownGender input[type="checkbox"]');
+genderCheckboxes.forEach((checkbox) => {
+  checkbox.addEventListener('change', handleSearchAndFilter);
+});
+
+const genderDropdownButton = document.getElementById('dropdownGenderButton');
+// Обработчик события клика на кнопке
+genderDropdownButton.addEventListener('click', function() {
+  dropdownGender.classList.toggle('hidden'); // Переключение класса для скрытия или показа выпадающего списка
 });
 
 

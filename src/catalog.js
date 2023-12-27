@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, getDoc, doc, updateDoc, addDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, getDoc, doc, updateDoc, addDoc, query, where } from 'firebase/firestore';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 import './catalog.css';
 
@@ -16,6 +16,8 @@ async function getUserId(){
   }
 }
 
+let isClothes = true;
+let isStyles = false;
 
 const firebaseConfig = {
   apiKey: "AIzaSyAgfHpqhm8BYiQTE30cusEJMC4uK8lTPis",
@@ -36,6 +38,7 @@ const userCollection = collection(db, 'users');
 const clothesCollection = collection(db, 'clothes');
 const clothesSnapshot = await getDocs(clothesCollection);
 const clothesData = [];
+let userStylesData = [];
 
 const userId = await getUserId();
 
@@ -62,13 +65,14 @@ clothesSnapshot.forEach((document) => {
 });
 
 //Создаем ClothData
-async function createClothBlock(data) {
+async function createClothBlock(data, list) {
   try {
     let isFavourite = false;
     let imageUrl;
-    const clothesList = document.getElementById('clothesList');
+    const clothesList = document.getElementById(list);
     const clothesBlock = document.createElement('div');
-    clothesBlock.className = "xl:w-1/4 md:w-1/2 p-4 flex justify-center";
+    clothesBlock.className = "p-4 flex flex-shrink-0 justify-center items-center mb-4";
+    clothesBlock.classList.add('inline-flex');
     clothesBlock.innerHTML = `
       <div class="imageContainerClothesOne720x400 bg-gray-100 p-6 rounded-lg border border-gray-950 shadow hover:shadow-lg">
         <img class="object-scale-down h-40 rounded w-40 object-center mb-6" src="" alt="content">
@@ -408,13 +412,64 @@ async function addToCart(data, size, color){
   }); 
 }
 
+async function populateList(data, userStylesData) {
+  const stylesLists = document.getElementById('garderobStylesList');
+  stylesLists.className = "-m-4 justify-center items-center";
+
+  // Блок со стилями гардероба
+  const stylesBlock = document.createElement('div');
+  stylesBlock.className = "-m-4 justify-center items-center";
+  stylesBlock.innerHTML = `
+    <div flex items-center justify-center>
+      <h1 id="txtName" class="text-4xl justify-center font-bold text-purple-800 text-center mt-10">${data.name}</h1>
+      <h1 id="txtDescription" class="text-xl justify-center font-bold text-center mt-4">${data.description}</h1>
+      <div class="w-full mt-4 mb-8 justify-center">
+        <div class="h-1 mx-auto gradient w-84 opacity-25 my-0 py-0 rounded-t"></div>
+      </div>
+    </div>
+  `;
+
+  stylesLists.appendChild(stylesBlock);
+
+  userStylesData.forEach((data) => {
+    createClothBlock(data, 'garderobStylesList');
+  });
+
+  console.log(userStylesData);
+}
+
+async function getStyles(){
+  const stylesBody = document.getElementById('garderobStylesList');
+  stylesBody.innerHTML = '';
+
+  // Запрос данных из коллекции shoppingCart для конкретного пользователя
+  const stylesRef = collection(db, 'styles');
+  // Запрос данных из коллекции shoppingCart для конкретного пользователя
+  const userStylesItemsQuery = query(stylesRef, where('idUser', '==', 'ALL'));
+
+  // Получение данных из запроса
+  getDocs(userStylesItemsQuery).then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      // Доступ к данным каждого документа и вывод информации о каждом элементе одежды
+      const data = doc.data();
+
+      // Преобразуем идентификаторы в строковый формат
+      const userStylesIds = data.idClothes.map(String);
+      // Фильтруем данные об одежде по идентификаторам из коллекции clothes
+      userStylesData = clothesData.filter((cloth) => userStylesIds.includes(cloth.nameRef.id));
+      
+      populateList(data, userStylesData)
+    });
+  });
+}
+
 //Рендерим все найденное
 async function renderClothes(clothes) {
   const clothesList = document.getElementById('clothesList');
   clothesList.innerHTML = ''; // Очищаем лист
 
   clothes.forEach((data) => {
-    createClothBlock(data);
+    createClothBlock(data, 'clothesList');
   });
 }
 
@@ -487,6 +542,50 @@ async function addToWardrobe(clothId) {
   });
 }
 
+
+const garderobStylesBlock = document.getElementById('catalogStylesBlock');
+const garderobClothesBlock = document.getElementById('catalogClothesBlock');
+// Функция для обработки выбора одежды
+function handleClothesSelection() {
+  isClothes = true;
+  isStyles = false;
+  garderobStylesBlock.hidden = true;
+  garderobClothesBlock.hidden = false;
+}
+
+// Функция для обработки выбора стилей
+function handleStylesSelection() {
+  isStyles = true;
+  isClothes = false;
+  
+  garderobStylesBlock.hidden = false;
+  garderobClothesBlock.hidden = true;
+  getStyles();
+}
+
+// Получаем ссылки на кнопки
+const clothesButton = document.getElementById('clothes');
+const stylesButton = document.getElementById('styles');
+
+
+// Добавляем обработчики событий для кнопок
+clothesButton.addEventListener('click', function() {
+  // Добавляем класс активности к кнопке "Мужчина"
+  clothesButton.classList.add('act');
+  // Удаляем класс активности с кнопки "Женщина"
+  stylesButton.classList.remove('act');
+  console.log('выбрана одежда');
+  handleClothesSelection();
+});
+
+stylesButton.addEventListener('click', function() {
+  // Добавляем класс активности к кнопке "Женщина"
+  stylesButton.classList.add('act');
+  // Удаляем класс активности с кнопки "Мужчина"
+  clothesButton.classList.remove('act');
+  console.log('выбраны стили');
+  handleStylesSelection();
+});
 
 const searchInput = document.getElementById('search');
 searchInput.addEventListener('input', handleSearchAndFilter);

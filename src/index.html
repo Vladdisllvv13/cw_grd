@@ -2,11 +2,8 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
     <title>Virtual shop</title>
-    <meta name="description" content="Free open source Tailwind CSS starter template (Hero Product) to use with node.js/npm, postcss+purgecss!">
-    <meta name="keywords" content="tailwind,tailwindcss,tailwind css,css,starter template,free template,hero, product">
     
     
   
@@ -35,8 +32,12 @@
           <a class="mr-5 text-white hover:text-gray-700" href="index.html">Главная</a>
           <a class="mr-5 text-white hover:text-gray-700" href="catalog.html">Каталог</a>
           <a class="mr-5 text-white hover:text-gray-700" href="garderob.html">Гардероб</a>
+          <a class="mr-5 ml-12 text-white hover:text-gray-700 flex title-font font-medium items-center mb-4 md:mb-0" href="favourites.html">
+            <span class="">Избранное</span>
+            <img src="images/Favourites.svg" width="30" height="20" class="w-10 h-10 text-white p-2">
+          </a>
         </nav>
-        <div id="exitButton" class="mr-5 text-red-400 hover:text-red-900" hidden>Выйти</div>
+        <button id="exitButton" class="inline-flex items-center mr-5 text-red-600 bg-gray-900 hover:text-red-700 border-0 py-1 px-3 focus:outline-none hover:bg-gray-800 rounded text-base mt-4 md:mt-0" hidden>Выйти</button>
         <button id="authButton" class="inline-flex items-center bg-gray-100 border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 rounded text-base mt-4 md:mt-0">Войти
           <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="w-4 h-4 ml-1" viewBox="0 0 24 24">
             <path d="M5 12h14M12 5l7 7-7 7"></path>
