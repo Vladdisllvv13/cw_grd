@@ -5,27 +5,39 @@
 // import './init.css';
 
 // Получите идентификатор пользователя из локального хранилища
-async function getUserId(){
-    try{
-      const userId = localStorage.getItem('userId');
-      if(userId === null){
-        return 'ALL'
-      }else return userId;
+async function getUserId() {
+  try {
+    const userId = localStorage.getItem('userId');
+    if (userId === null) {
+      return 'ALL';
+    } else {
+      return userId;
     }
-    catch(error){
-      return "ALL"
-    }
+  } catch (error) {
+    return 'ALL';
   }
+}
 
-const exitButton = document.getElementById('exitButton');
-exitButton.addEventListener('click', function() {
-    localStorage.setItem('userId', 'ALL');
-    alert('Вы успешно вышли из системы');
-    exitButton.hidden = true;
-    location.reload();
+const authButton = document.getElementById('authButton');
+authButton.addEventListener('click', function() {
+  window.location.href = 'auth.html';
 });
 
-const userId = getUserId()
-if(userId !== 'ALL'){
-    exitButton.hidden = false;
+const exitButton = document.getElementById('exitButton');
+exitButton.addEventListener('click', async function() {
+  localStorage.setItem('userId', 'ALL');
+  alert('Вы успешно вышли из системы');
+  exitButton.style.display = 'none';
+  location.reload();
+});
+
+async function main() {
+  const userId = await getUserId();
+  if (userId !== 'ALL') {
+    exitButton.style.display = 'inline-flex';
+  } else {
+    exitButton.style.display = 'none';
+  }
 }
+
+main();

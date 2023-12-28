@@ -1,2 +1,0 @@
-(()=>{const t=document.getElementById("exitButton");t.addEventListener("click",(function(){localStorage.setItem("userId","ALL"),alert("Вы успешно вышли из системы"),t.hidden=!0,location.reload()})),"ALL"!==async function(){try{const t=localStorage.getItem("userId");return null===t?"ALL":t}catch(t){return"ALL"}}()&&(t.hidden=!1)})();
-//# sourceMappingURL=bundle.8e5e56b8cb157d7b.js.map

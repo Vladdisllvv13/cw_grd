@@ -3,6 +3,26 @@ import { getFirestore, collection, getDocs, getDoc, doc, updateDoc, deleteDoc, a
 import { getStorage, ref, getDownloadURL, uploadBytes } from 'firebase/storage';
 import './catalog.css';
 
+async function getUserId(){
+  try{
+    const userId = localStorage.getItem('userId');
+    if(userId === null){
+      return 'ALL'
+    }else return userId;
+  }
+  catch(error){
+    return "ALL"
+  }
+}
+
+
+async function checkId(){
+  const userId = await getUserId()
+  if(userId !== '1'){
+      window.location = 'index.html';
+  }
+}
+checkId()
 
 
 const firebaseConfig = {
