@@ -35,4 +35,8 @@
   color: white;
 }
 
+.gradient {
+  background: linear-gradient(90deg, #2d044131 0%, #890cc4 100%);
+}
+
 /*# sourceMappingURL=favourites.css.map*/

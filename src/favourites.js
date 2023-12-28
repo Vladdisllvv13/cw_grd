@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, addDoc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, addDoc, query, where } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import './catalog.css';
 
@@ -36,6 +36,7 @@ const clothesCollection = collection(db, 'clothes');
 const clothesSnapshot = await getDocs(clothesCollection);
 const clothesData = [];
 let userClothesData = [];
+let userStylesData = [];
 
 
 
@@ -92,14 +93,17 @@ const userFavouritesIds = userData.idFavourites.map(String);
 userClothesData = clothesData.filter((cloth) => userFavouritesIds.includes(cloth.nameRef.id));
 console.log(userClothesData);
 
+
+
 //Создаем ClothData
-async function createClothBlock(data) {
+async function createClothBlock(data, list) {
   try {
     let isFavourite = false;
     let imageUrl;
-    const clothesList = document.getElementById('favouritesClothesList');
+    const clothesList = document.getElementById(list);
     const clothesBlock = document.createElement('div');
-    clothesBlock.className = "p-4 flex justify-center";
+    clothesBlock.className = "p-4 flex flex-shrink-0 justify-center items-center mb-4";
+    clothesBlock.classList.add('inline-flex');
     clothesBlock.innerHTML = `
       <div class="imageContainerClothesOne720x400 bg-gray-100 p-6 rounded-lg border border-gray-950 shadow hover:shadow-lg">
         <img class="object-scale-down h-40 rounded w-40 object-center mb-6" src="" alt="content">
@@ -476,6 +480,231 @@ async function addToWardrobe(clothId) {
   });
 }
 
+async function addStyleToWardrobe(data){
+
+  if(userId === 'ALL'){
+    alert('Нельзя добавить стиль в гардероб для незарегистрированного пользователя. Вы можете зарегистрироваться в системе.');
+    return;
+  }
+
+  let idUser = userId;
+  let name = data.name;
+  let description = data.description;
+  let idClothes = data.idClothes;
+
+
+  const newStyle = {
+    name,
+    description,
+    idClothes,
+    idUser,
+  };
+
+  const stylesCollection = collection(db, 'styles');
+  await addDoc(stylesCollection, newStyle);
+
+  let timerInterval;
+  Swal.fire({
+    title: "Стиль добавлен в гардероб!",
+    timer: 2000,
+    timerProgressBar: true,
+    didOpen: () => {
+      Swal.showLoading();
+      timerInterval = setInterval(() => {
+      }, 100);
+    },
+    willClose: () => {
+      clearInterval(timerInterval);
+    }
+  }).then((result) => {
+    /* Read more about handling dismissals below */
+    if (result.dismiss === Swal.DismissReason.timer) {
+      console.log("I was closed by the timer");
+    }
+  }); 
+}
+
+async function populateList(data, userStylesData, styleId, index) {
+  let isFavourite = false;
+  const stylesLists = document.getElementById('garderobStylesList');
+  stylesLists.className = "p-4 -m-4 justify-center items-center";
+
+  // Создание уникального id для блока
+  const blockId = `stylesBlock${index}`;
+
+  // Блок со стилями гардероба
+  const stylesBlock = document.createElement('div');
+  stylesBlock.id = blockId;
+  stylesBlock.className = "-m-4 justify-center items-center";
+  stylesBlock.innerHTML = `
+    <div flex items-center justify-center>
+    <div class="justify-center" style="display: flex; align-items: center;">
+        <h1 id="txtName" class="text-4xl justify-center font-bold text-purple-800 text-center mt-10">${data.name}</h1>
+        <svg id="styleHeartIcon" class="h-8 w-8 mt-10 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M12,4.595c-1.104-1.006-2.512-1.558-3.996-1.558c-1.578,0-3.072,0.623-4.213,1.758c-2.353,2.363-2.352,6.059,0.002,8.412 l7.332,7.332c0.17,0.299,0.498,0.492,0.875,0.492c0.322,0,0.609-0.163,0.792-0.409l7.415-7.415 c2.354-2.354,2.354-6.049-0.002-8.416c-1.137-1.131-2.631-1.754-4.209-1.754C14.513,3.037,13.104,3.589,12,4.595z M18.791,6.205 c1.563,1.571,1.564,4.025,0.002,5.588L12,18.586l-6.793-6.793C3.645,10.23,3.646,7.776,5.205,6.209 c0.76-0.756,1.754-1.172,2.799-1.172s2.035,0.416,2.789,1.17l0.5,0.5c0.391,0.391,1.023,0.391,1.414,0l0.5-0.5 C14.719,4.698,17.281,4.702,18.791,6.205z" />
+        </svg>
+    </div>
+      <h1 id="txtDescription" class="text-xl justify-center font-bold text-center mt-4">${data.description}</h1>
+      <div class="w-full mt-4 mb-8 justify-center">
+        <div class="h-1 mx-auto gradient w-84 opacity-25 my-0 py-0 rounded-t"></div>
+      </div>
+    </div>
+  `;
+
+  stylesLists.appendChild(stylesBlock);
+
+  userStylesData.forEach((data) => {
+    createClothBlock(data, 'garderobStylesList');
+  });
+  const buttonBlock = document.createElement('div');
+  buttonBlock.className = "-m-4 justify-center items-center mb-8";
+  buttonBlock.innerHTML = `
+    <button id="addStyleToWardrobeButton" type="button" class="gradient py-2 px-4  bg-purple-600 hover:bg-purple-700 focus:ring-purple-500 focus:ring-offset-purple-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-lg ">
+    Добавить стиль в гардероб</button>
+  `;
+  stylesBlock.appendChild(buttonBlock);
+
+  const addStyleToWardrobeButton = stylesBlock.querySelector('#addStyleToWardrobeButton');
+  addStyleToWardrobeButton.addEventListener('click', () => {
+    addStyleToWardrobe(data);
+  });
+
+  if(userId !== 'ALL'){
+    const userDoc = doc(userCollection, userId);
+
+  // Получаем текущие данные пользователя
+  getDoc(userDoc).then((userDocSnapshot) => {
+    if (userDocSnapshot.exists()) {
+      const userData = userDocSnapshot.data();
+      let favouritesStylesIds = userData.idFavouriteStyles || [];
+
+      // Преобразуем идентификатор стиля в числовой формат
+      console.log(styleId);
+
+      // Проверяем, содержит ли массив уже выбранный идентификатор стиля
+      if (favouritesStylesIds.includes(styleId)) {
+        isFavourite = true;
+        const heartIcon = stylesBlock.querySelector('#styleHeartIcon');
+        heartIcon.classList.add('filled-heart');
+        console.log(`${styleId} в избранном`);
+      }
+    }})
+  }
+
+  const styleHeartIcon = stylesBlock.querySelector('#styleHeartIcon') 
+  styleHeartIcon.addEventListener('click', () => {
+  styleHeartIcon.classList.toggle('filled-heart');
+  if(userId !== 'ALL'){
+    if(!isFavourite){
+      addStyleToFavourites(styleId);
+      isFavourite = true;
+    } 
+    else if(isFavourite){
+      removeStyleFromFavourites(styleId);
+      isFavourite = false;
+    } 
+  }
+});
+}
+
+async function addStyleToFavourites(styleId){
+  const userCollection = collection(db, 'users');
+  const userId = await getUserId();
+  console.log(userId);
+  if(userId === 'ALL'){
+    alert('Нельзя добавить стиль в избранное для незарегистрированного пользователя.');
+    return;
+  }
+  const userDoc = doc(userCollection, userId);
+
+  // Получаем текущие данные пользователя
+  getDoc(userDoc).then((userDocSnapshot) => {
+    if (userDocSnapshot.exists()) {
+      const userData = userDocSnapshot.data();
+      let favouritesStylеsIds = userData.idFavouriteStyles || [];
+
+
+      // Проверяем, содержит ли массив уже выбранный идентификатор одежды
+      if (!favouritesStylеsIds.includes(styleId)) {
+        // Добавляем идентификатор одежды к массиву
+        favouritesStylеsIds.push(styleId);
+
+        // Обновляем данные пользователя в базе данных
+        updateDoc(userDoc, { idFavouriteStyles: favouritesStylеsIds }).then(() => {
+          Swal.fire({
+            icon: "success",
+            title: "Стиль добавлен в избранное!",
+            showConfirmButton: false,
+            timer: 1500
+          });
+          setTimeout(function() {
+          }, 2000);
+        }).catch((error) => {
+          console.error('Error updating user data:', error);
+        });
+      }
+    }
+  }).catch((error) => {
+    console.error('Error fetching user data:', error);
+  });
+}
+async function removeStyleFromFavourites(styleId){
+  try {
+    const userCollection = collection(db, 'users');
+    const userDoc = doc(userCollection, userId);
+
+    // Retrieve the user document
+    const userDocSnapshot = await getDoc(userDoc);
+    if (userDocSnapshot.exists()) {
+      const userData = userDocSnapshot.data();
+      let favouritesStylesIds = userData.idFavouriteStyles || [];
+
+      favouritesStylesIds = favouritesStylesIds.filter((id) => id !== styleId);
+
+      // Update the user document with the modified wardrobeClothesIds array
+      await updateDoc(userDoc, { idFavouriteStyles: favouritesStylesIds });
+
+      // Optional: You can also update the UI to reflect the deletion
+      // For example, remove the deleted cloth from the DOM
+
+      Swal.fire({
+        icon: "success",
+        title: "Стиль удален из избранного!",
+        showConfirmButton: false,
+        timer: 1500
+      });
+      setTimeout(function() {
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('Error deleting style:', error);
+  }
+}
+
+async function getStyles(){
+  let i = 0;
+  const stylesBody = document.getElementById('garderobStylesList');
+  stylesBody.innerHTML = '';
+
+
+  const userFavouriteStyles = userData.idFavouriteStyles; // Получение списка избранных стилей пользователя
+  console.log(userFavouriteStyles);
+
+  // Запрос данных из коллекции "styles" с использованием фильтра по идентификаторам избранных стилей пользователя
+  const stylesRef = collection(db, 'styles');
+  const stylesDocs = await Promise.all(userFavouriteStyles.map(styleId => getDoc(doc(stylesRef, styleId))));
+
+  // Получение данных из запроса
+  stylesDocs.forEach((styleDoc) => {
+    i += 1;
+    const data = styleDoc.data();
+    if (data && data.idClothes) { // Проверка наличия свойства 'idClothes'
+      const userStylesIds = data.idClothes.map(String);
+      userStylesData = clothesData.filter((cloth) => userStylesIds.includes(cloth.nameRef.id));
+      populateList(data, userStylesData, styleDoc.id, i);
+    }
+  });
+}
 
 //Рендерим все найденное
 async function renderClothes(clothes) {
@@ -483,7 +712,7 @@ async function renderClothes(clothes) {
   clothesList.innerHTML = ''; // Очищаем лист
 
   clothes.forEach((data) => {
-    createClothBlock(data);
+    createClothBlock(data, 'favouritesClothesList');
   });
 }
 //Проверяем комбобоксы и поиск
@@ -516,6 +745,47 @@ async function handleSearchAndFilter() {
   }
 }
 
+
+const garderobStylesBlock = document.getElementById('favouritesStylesBlock');
+const garderobClothesBlock = document.getElementById('favouritesClothesBlock');
+// Функция для обработки выбора одежды
+function handleClothesSelection() {
+
+  garderobStylesBlock.hidden = true;
+  garderobClothesBlock.hidden = false;
+}
+
+// Функция для обработки выбора стилей
+function handleStylesSelection() {
+
+  garderobStylesBlock.hidden = false;
+  garderobClothesBlock.hidden = true;
+  getStyles();
+}
+
+// Получаем ссылки на кнопки
+const clothesButton = document.getElementById('clothes');
+const stylesButton = document.getElementById('styles');
+
+
+// Добавляем обработчики событий для кнопок
+clothesButton.addEventListener('click', function() {
+  // Добавляем класс активности к кнопке "Мужчина"
+  clothesButton.classList.add('act');
+  // Удаляем класс активности с кнопки "Женщина"
+  stylesButton.classList.remove('act');
+  console.log('выбрана одежда');
+  handleClothesSelection();
+});
+
+stylesButton.addEventListener('click', function() {
+  // Добавляем класс активности к кнопке "Женщина"
+  stylesButton.classList.add('act');
+  // Удаляем класс активности с кнопки "Мужчина"
+  clothesButton.classList.remove('act');
+  console.log('выбраны стили');
+  handleStylesSelection();
+});
 
 
 const searchInput = document.getElementById('search');

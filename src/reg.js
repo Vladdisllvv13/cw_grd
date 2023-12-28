@@ -35,7 +35,9 @@ async function registerUser() {
       email,
       gender,
       password,
-      idWardrobeClothes: [] // Initialize the idWardrobeClothes field as an empty array
+      idWardrobeClothes: [], // Initialize the idWardrobeClothes field as an empty array
+      idFavourites: [],
+      idFavouriteStyles: []
     };
   
     // Add the new user to the "users" collection in Firestore

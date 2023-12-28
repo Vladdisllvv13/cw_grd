@@ -34,3 +34,7 @@
   background-color: rgb(29, 27, 29);
   color: white;
 }
+
+.gradient {
+  background: linear-gradient(90deg, #2d044131 0%, #890cc4 100%);
+}

@@ -16,3 +16,8 @@
     background-color: rgb(29, 27, 29);
     color: white;
   }
+
+.filled-heart {
+fill: red;
+stroke: black;
+}
