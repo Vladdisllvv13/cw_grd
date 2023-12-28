@@ -3,7 +3,7 @@ import TWEEN from 'three/examples/jsm/libs/tween.module';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import init from './init';
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, query, where, addDoc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, query, where, addDoc, deleteDoc } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import './garderob.css';
 
@@ -291,7 +291,7 @@ async function saveStyle(){
   
         const stylesCollection = collection(db, 'styles');
         await addDoc(stylesCollection, newStyle);
-  
+        getStyles();
         Swal.fire({
           icon: "success",
           title: "Информация сохранена!",
@@ -835,6 +835,7 @@ async function addStyleToFavourites(styleId){
     console.error('Error fetching user data:', error);
   });
 }
+
 async function removeStyleFromFavourites(styleId){
   try {
     const userCollection = collection(db, 'users');
@@ -868,6 +869,58 @@ async function removeStyleFromFavourites(styleId){
   }
 }
 
+async function deleteStyle(styleId){
+  Swal.fire({
+    title: "Вы уверены, что хотите удалить стиль?",
+    text: "Вы больше не сможете вернуть его",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    cancelButtonText: "Отмена",
+    confirmButtonText: "Да, удалить!"
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        const stylesCollection = collection(db, 'styles');
+        const stylesDoc = doc(stylesCollection, styleId);
+
+        // Удаляем документ из коллекции "clothes" в Firestore
+        await deleteDoc(stylesDoc);
+
+        // Обновляем массив idWardrobeClothes каждого пользователя
+        const usersCollection = collection(db, 'users');
+        const usersQuerySnapshot = await getDocs(usersCollection);
+
+        usersQuerySnapshot.forEach(async (userDoc) => {
+          const userData = userDoc.data();
+          let wardrobeStylesIds = userData.idFavouriteStyles || [];
+
+          // Удаляем идентификатор удаляемой одежды из массива idWardrobeClothes
+          wardrobeStylesIds = wardrobeStylesIds.filter((id) => id !== styleId);
+          
+          // Обновляем документ пользователя в Firestore с измененным массивом idWardrobeClothes
+          await updateDoc(userDoc.ref, { idFavouriteStyles: wardrobeStylesIds });
+        });
+        getStyles();
+
+        Swal.fire({
+          title: "Удалено!",
+          text: "Стиль был удален.",
+          icon: "success"
+        });
+      } catch (error) {
+        console.error("Ошибка при удалении одежды:", error);
+        Swal.fire({
+          title: "Ошибка!",
+          text: "Произошла ошибка при удалении одежды.",
+          icon: "error"
+        });
+      }
+    }
+  });
+}
+
 async function populateList(data, userStylesData, styleId, index) {
   let isFavourite = false;
   const stylesLists = document.getElementById('garderobStylesList');
@@ -897,30 +950,46 @@ async function populateList(data, userStylesData, styleId, index) {
 
   stylesLists.appendChild(stylesBlock);
 
+  const buttonBlock = document.createElement('div');
+  buttonBlock.className = "-m-4 justify-center items-center mb-8";
+  buttonBlock.innerHTML = `
+    <button hidden id="removeStyleFromWardrobeButton" type="button" class="gradient py-2 px-4  bg-purple-600 hover:bg-purple-700 focus:ring-purple-500 focus:ring-offset-purple-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-lg ">
+    Удалить стиль</button>
+  `;
+  stylesBlock.appendChild(buttonBlock);
   userStylesData.forEach((data) => {
     createClothBlock(data, 'garderobStylesList');
   });
 
+  
+
   if(userId !== 'ALL'){
+    
+    const removeStyleFromWardrobeButton = stylesBlock.querySelector('#removeStyleFromWardrobeButton');
+    removeStyleFromWardrobeButton.hidden = false;
+    removeStyleFromWardrobeButton.addEventListener('click', () => {
+      deleteStyle(styleId);
+    });
+
     const userDoc = doc(userCollection, userId);
 
-  // Получаем текущие данные пользователя
-  getDoc(userDoc).then((userDocSnapshot) => {
-    if (userDocSnapshot.exists()) {
-      const userData = userDocSnapshot.data();
-      let favouritesStylesIds = userData.idFavouriteStyles || [];
+    // Получаем текущие данные пользователя
+    getDoc(userDoc).then((userDocSnapshot) => {
+      if (userDocSnapshot.exists()) {
+        const userData = userDocSnapshot.data();
+        let favouritesStylesIds = userData.idFavouriteStyles || [];
 
-      // Преобразуем идентификатор стиля в числовой формат
-      console.log(styleId);
+        // Преобразуем идентификатор стиля в числовой формат
+        console.log(styleId);
 
-      // Проверяем, содержит ли массив уже выбранный идентификатор стиля
-      if (favouritesStylesIds.includes(styleId)) {
-        isFavourite = true;
-        const heartIcon = stylesBlock.querySelector('#styleHeartIcon');
-        heartIcon.classList.add('filled-heart');
-        console.log(`${styleId} в избранном`);
-      }
-    }})
+        // Проверяем, содержит ли массив уже выбранный идентификатор стиля
+        if (favouritesStylesIds.includes(styleId)) {
+          isFavourite = true;
+          const heartIcon = stylesBlock.querySelector('#styleHeartIcon');
+          heartIcon.classList.add('filled-heart');
+          console.log(`${styleId} в избранном`);
+        }
+      }})
   }
 
   const styleHeartIcon = stylesBlock.querySelector('#styleHeartIcon') 

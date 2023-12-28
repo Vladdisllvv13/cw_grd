@@ -480,49 +480,6 @@ async function addToWardrobe(clothId) {
   });
 }
 
-async function addStyleToWardrobe(data){
-
-  if(userId === 'ALL'){
-    alert('Нельзя добавить стиль в гардероб для незарегистрированного пользователя. Вы можете зарегистрироваться в системе.');
-    return;
-  }
-
-  let idUser = userId;
-  let name = data.name;
-  let description = data.description;
-  let idClothes = data.idClothes;
-
-
-  const newStyle = {
-    name,
-    description,
-    idClothes,
-    idUser,
-  };
-
-  const stylesCollection = collection(db, 'styles');
-  await addDoc(stylesCollection, newStyle);
-
-  let timerInterval;
-  Swal.fire({
-    title: "Стиль добавлен в гардероб!",
-    timer: 2000,
-    timerProgressBar: true,
-    didOpen: () => {
-      Swal.showLoading();
-      timerInterval = setInterval(() => {
-      }, 100);
-    },
-    willClose: () => {
-      clearInterval(timerInterval);
-    }
-  }).then((result) => {
-    /* Read more about handling dismissals below */
-    if (result.dismiss === Swal.DismissReason.timer) {
-      console.log("I was closed by the timer");
-    }
-  }); 
-}
 
 async function populateList(data, userStylesData, styleId, index) {
   let isFavourite = false;
@@ -556,18 +513,9 @@ async function populateList(data, userStylesData, styleId, index) {
   userStylesData.forEach((data) => {
     createClothBlock(data, 'garderobStylesList');
   });
-  const buttonBlock = document.createElement('div');
-  buttonBlock.className = "-m-4 justify-center items-center mb-8";
-  buttonBlock.innerHTML = `
-    <button id="addStyleToWardrobeButton" type="button" class="gradient py-2 px-4  bg-purple-600 hover:bg-purple-700 focus:ring-purple-500 focus:ring-offset-purple-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-lg ">
-    Добавить стиль в гардероб</button>
-  `;
-  stylesBlock.appendChild(buttonBlock);
 
-  const addStyleToWardrobeButton = stylesBlock.querySelector('#addStyleToWardrobeButton');
-  addStyleToWardrobeButton.addEventListener('click', () => {
-    addStyleToWardrobe(data);
-  });
+
+
 
   if(userId !== 'ALL'){
     const userDoc = doc(userCollection, userId);
