@@ -1,2 +1,0 @@
-(()=>{document.getElementById("authButton").addEventListener("click",(function(){window.location.href="auth.html"}));const t=document.getElementById("exitButton");t.addEventListener("click",(async function(){localStorage.setItem("userId","ALL"),alert("Вы успешно вышли из системы"),t.style.display="none",location.reload()})),async function(){const n=await async function(){try{const t=localStorage.getItem("userId");return null===t?"ALL":t}catch(t){return"ALL"}}();t.style.display="ALL"!==n?"inline-flex":"none"}()})();
-//# sourceMappingURL=bundle.c02fad7c0c7f096b.js.map
