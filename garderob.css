@@ -17,5 +17,9 @@
     color: white;
   }
 
+.filled-heart {
+fill: red;
+stroke: black;
+}
 
 /*# sourceMappingURL=garderob.css.map*/
