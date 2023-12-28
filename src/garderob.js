@@ -1149,6 +1149,13 @@ maleButton.addEventListener('click', function() {
   maleButton.classList.add('active');
   // Удаляем класс активности с кнопки "Женщина"
   femaleButton.classList.remove('active');
+  tshirtCounter = 0;
+  coatCounter = 0;
+  pantsCounter = 0;
+
+  tshirtId = 0;
+  coatId = 0;
+  pantsId = 0;
   // Вызываем функцию для обработки выбора мужской одежды
   handleMaleSelection();
   scene.clear();
@@ -1161,6 +1168,13 @@ femaleButton.addEventListener('click', function() {
   femaleButton.classList.add('active');
   // Удаляем класс активности с кнопки "Мужчина"
   maleButton.classList.remove('active');
+  tshirtCounter = 0;
+  coatCounter = 0;
+  pantsCounter = 0;
+
+  tshirtId = 0;
+  coatId = 0;
+  pantsId = 0;
   // Вызываем функцию для обработки выбора женской одежды
   handleFemaleSelection();
   scene.clear();
@@ -1180,6 +1194,13 @@ clothesButton.addEventListener('click', function() {
   // Удаляем класс активности с кнопки "Женщина"
   stylesButton.classList.remove('active');
   console.log('выбрана одежда');
+  tshirtCounter = 0;
+  coatCounter = 0;
+  pantsCounter = 0;
+
+  tshirtId = 0;
+  coatId = 0;
+  pantsId = 0;
   handleClothesSelection();
   scene.clear();
   clearUiBlocks();
@@ -1192,6 +1213,13 @@ stylesButton.addEventListener('click', function() {
   // Удаляем класс активности с кнопки "Мужчина"
   clothesButton.classList.remove('active');
   console.log('выбраны стили');
+  tshirtCounter = 0;
+  coatCounter = 0;
+  pantsCounter = 0;
+
+  tshirtId = 0;
+  coatId = 0;
+  pantsId = 0;
   handleStylesSelection();
   scene.clear();
   clearUiBlocks();
