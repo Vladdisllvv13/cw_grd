@@ -18,6 +18,21 @@ async function getUserId() {
   }
 }
 
+const toCatalogButton = document.getElementById('toCatalogButton');
+toCatalogButton.addEventListener('click', function() {
+  window.location.href = 'catalog.html';
+});
+
+const toWardrobeButton = document.getElementById('toWardrobeButton');
+toWardrobeButton.addEventListener('click', function() {
+  window.location.href = 'garderob.html';
+});
+
+const toAuthButton = document.getElementById('toAuthButton');
+toAuthButton.addEventListener('click', function() {
+  window.location.href = 'auth.html';
+});
+
 const authButton = document.getElementById('authButton');
 authButton.addEventListener('click', function() {
   window.location.href = 'auth.html';
