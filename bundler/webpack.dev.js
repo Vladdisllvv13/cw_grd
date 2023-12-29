@@ -18,6 +18,9 @@ module.exports = merge(commonConfiguration, {
         historyApiFallback: true,
         open: true,
         https: false,
+        proxy: {
+            '/upload': 'http://localhost:3001',
+        },
         allowedHosts: 'all',
         hot: true,
         watchFiles: ['src/**', 'static/**'],

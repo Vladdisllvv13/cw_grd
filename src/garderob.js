@@ -1158,6 +1158,7 @@ maleButton.addEventListener('click', function() {
   pantsId = 0;
   // Вызываем функцию для обработки выбора мужской одежды
   handleMaleSelection();
+  saveStyleContainer.style.display = 'none';
   scene.clear();
   clearUiBlocks();
   createScene();
@@ -1177,6 +1178,7 @@ femaleButton.addEventListener('click', function() {
   pantsId = 0;
   // Вызываем функцию для обработки выбора женской одежды
   handleFemaleSelection();
+  saveStyleContainer.style.display = 'none';
   scene.clear();
   clearUiBlocks();
   createScene();
@@ -1202,6 +1204,7 @@ clothesButton.addEventListener('click', function() {
   coatId = 0;
   pantsId = 0;
   handleClothesSelection();
+  saveStyleContainer.style.display = 'none';
   scene.clear();
   clearUiBlocks();
   createScene();
@@ -1221,6 +1224,7 @@ stylesButton.addEventListener('click', function() {
   coatId = 0;
   pantsId = 0;
   handleStylesSelection();
+  saveStyleContainer.style.display = 'none';
   scene.clear();
   clearUiBlocks();
   createScene();

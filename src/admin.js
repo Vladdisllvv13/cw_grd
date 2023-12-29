@@ -247,6 +247,8 @@ async function deleteCloth(clothId) {
 // Обработчик события для кнопки "Изменить"
 async function changeCloth(data) {
 
+  const isImageFile = false;
+
   const idCloth = data.nameRef.id;
   const nameSnapshot = await getDoc(data.nameRef);
   const priceSnapshot = await getDoc(data.priceRef);
@@ -333,59 +335,83 @@ async function changeCloth(data) {
     willOpen: () => {
       const clothTypeSelect = document.getElementById('clothType-select');
       clothTypesSnapshot.forEach((clothTypeDoc) => {
-      const option = document.createElement('option');
-      option.value = clothTypeDoc.id; // Set the value to the document ID
-      option.textContent = clothTypeDoc.data().name;
-      // if (clothTypeDoc.data().name === clothTypeValue) {
-      //   option.value = clothTypeDoc.data().name; // Устанавливаем выбранный по умолчанию
-      // }
-      clothTypeSelect.appendChild(option);
+        const option = document.createElement('option');
+        option.value = clothTypeDoc.id;
+        option.textContent = clothTypeDoc.data().name;
+        if (clothTypeDoc.data().name === clothTypeValue) {
+          option.selected = true; // Устанавливаем выбранный по умолчанию
+        }
+        clothTypeSelect.appendChild(option);
       });
-      clothTypeSelect.value = clothTypeValue;
 
       const clothTypeGenderSelect = document.getElementById('clothTypeGender-select');
       clothTypesGenderSnapshot.forEach((clothTypeDoc) => {
-      const option = document.createElement('option');
-      option.value = clothTypeDoc.id; // Set the value to the document ID
-      option.textContent = clothTypeDoc.data().name;
-      // if (clothTypeDoc.data().name === clothTypeValue) {
-      //   option.value = clothTypeDoc.data().name; // Устанавливаем выбранный по умолчанию
-      // }
-      clothTypeGenderSelect.appendChild(option);
+        const option = document.createElement('option');
+        option.value = clothTypeDoc.id;
+        option.textContent = clothTypeDoc.data().name;
+        if (clothTypeDoc.data().name === clothTypeGenderValue) {
+          option.selected = true; // Устанавливаем выбранный по умолчанию
+        }
+        clothTypeGenderSelect.appendChild(option);
       });
-      clothTypeGenderSelect.value = clothTypeValue;
+
+
+      const imageInput = document.getElementById('image');
+      const imageOutput = document.getElementById('Image');
+      imageInput.addEventListener('change', () => {
+        // Получите выбранный файл
+        const selectedFile = imageInput.files[0];
+        // Получите название файла
+        const fullFileName = selectedFile.name;
+        const fileName = fullFileName.substring(0, fullFileName.lastIndexOf('.'));
+        // Запишите название файла в элемент с id="Image"
+        imageOutput.value = fileName;
+      });
+
+      const modelInput = document.getElementById('model');
+      const modelOutput = document.getElementById('Model');
+      modelInput.addEventListener('change', () => {
+        // Получите выбранный файл
+        const selectedFile = modelInput.files[0];
+        // Получите название файла
+        const fullFileName = selectedFile.name;
+        const fileName = fullFileName.substring(0, fullFileName.lastIndexOf('.'));
+        // Запишите название файла в элемент с id="Image"
+        modelOutput.value = fileName;
+      });
     },
     preConfirm: async () => {
       const selectedSizes = Array.from(document.querySelectorAll('#sizes input[type="checkbox"]:checked')).map((checkbox) => parseInt(checkbox.value.replace(/\/sizes\//, '')));
       const selectedColors = Array.from(document.querySelectorAll('#colors input[type="checkbox"]:checked')).map((checkbox) => parseInt(checkbox.value.replace(/\/colors\//, '')));
-      console.log('Selected Sizes:', selectedSizes);
-      console.log('Selected Colors:', selectedColors);
 
-      // Get the file input element
-      const imageFile = document.getElementById('image').files[0];
       
       const imageInput = document.getElementById('image');
-      imageInput.addEventListener('change', () => {
-        // Получите выбранный файл
-        const selectedFile = imageInput.files[0];
+      const selectedFile = imageInput.files[0];
+      if(selectedFile){
+        const fullFileName = selectedFile.name;
+        const imageFileName = fullFileName.substring(0, fullFileName.lastIndexOf('.'));
+        const storageRef = ref(storage, `images/${imageFileName}.jpg`);
+        await uploadBytes(storageRef, selectedFile);
+      }
       
-        // Если файл выбран, обновите значение поля "value" элемента <input type="text">
-        if (selectedFile) {
-          document.getElementById('Image').value = selectedFile.name;
-        }
-      });
-      // Generate a unique file name using a timestamp
-      const fileName = Date.now().toString();
-      // Create a reference to the file in Firebase Storage
-      const storageRef = ref(storage, `images/${fileName}.jpg`);
-      // Upload the file to Firebase Storage
-      await uploadBytes(storageRef, imageFile);
-      // Update the "image" field with the file name (without the extension)
-      const imageName = fileName.split('.')[0];
-      document.getElementById('Image').value = imageName;
+      const modelInput = document.getElementById('model');
+      const selectedModel = modelInput.files[0];
+      if (selectedModel) {
+        const formData = new FormData();
+        formData.append('file', selectedModel);
 
-
-      
+        fetch('http://localhost:3001/upload', {
+          method: 'POST',
+          body: formData,
+        })
+          .then(response => response.text())
+          .then(data => {
+            console.log(data); // Выводим ответ сервера в консоль
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+      }
 
 
       return { selectedSizes, selectedColors };
@@ -395,8 +421,7 @@ async function changeCloth(data) {
       const selectedSizeIds = result.value.selectedSizes;
       const selectedColorIds = result.value.selectedColors;
 
-      console.log('Selected Sizes:', selectedSizeIds);
-      console.log('Selected Colors:', selectedColorIds);
+
 
       const nameRef = doc(db, 'clothes', data.nameRef.id);
       const priceRef = doc(db, 'clothes', data.priceRef.id);
@@ -427,7 +452,6 @@ async function changeCloth(data) {
         timer: 1500
       });
       setTimeout(function() {
-        location.reload();
       }, 2000);
     }
   });
@@ -526,6 +550,30 @@ async function addCloth() {
       // }
       clothTypeGenderSelect.appendChild(option);
       });
+
+      const imageInput = document.getElementById('image');
+      const imageOutput = document.getElementById('Image');
+      imageInput.addEventListener('change', () => {
+        // Получите выбранный файл
+        const selectedFile = imageInput.files[0];
+        // Получите название файла
+        const fullFileName = selectedFile.name;
+        const fileName = fullFileName.substring(0, fullFileName.lastIndexOf('.'));
+        // Запишите название файла в элемент с id="Image"
+        imageOutput.value = fileName;
+      });
+
+      const modelInput = document.getElementById('model');
+      const modelOutput = document.getElementById('Model');
+      modelInput.addEventListener('change', () => {
+        // Получите выбранный файл
+        const selectedFile = modelInput.files[0];
+        // Получите название файла
+        const fullFileName = selectedFile.name;
+        const fileName = fullFileName.substring(0, fullFileName.lastIndexOf('.'));
+        // Запишите название файла в элемент с id="Image"
+        modelOutput.value = fileName;
+      });
     },
     preConfirm: async () => {
       const clothTypeSelectElement = document.getElementById('clothType-select');
@@ -534,38 +582,42 @@ async function addCloth() {
       const idClothTypeGender = clothTypeGenderSelectElement.value;
       const selectedSizes = Array.from(document.querySelectorAll('#sizes input[type="checkbox"]:checked')).map((checkbox) => parseInt(checkbox.value.replace(/\/sizes\//, '')));
       const selectedColors = Array.from(document.querySelectorAll('#colors input[type="checkbox"]:checked')).map((checkbox) => parseInt(checkbox.value.replace(/\/colors\//, '')));
-      console.log('Selected Sizes:', selectedSizes);
-      console.log('Selected Colors:', selectedColors);
 
-      // Get the file input element
-      const imageFile = document.getElementById('image').files[0];
-      
+
       const imageInput = document.getElementById('image');
-      imageInput.addEventListener('change', () => {
-        // Получите выбранный файл
-        const selectedFile = imageInput.files[0];
+      const selectedFile = imageInput.files[0];
+      if(selectedFile){
+        const fullFileName = selectedFile.name;
+        const imageFileName = fullFileName.substring(0, fullFileName.lastIndexOf('.'));
+        const storageRef = ref(storage, `images/${imageFileName}.jpg`);
+        await uploadBytes(storageRef, selectedFile);
+      }
       
-        // Если файл выбран, обновите значение поля "value" элемента <input type="text">
-        if (selectedFile) {
-          document.getElementById('Image').value = selectedFile.name;
-        }
-      });
-      // Generate a unique file name using a timestamp
-      const fileName = Date.now().toString();
-      // Create a reference to the file in Firebase Storage
-      const storageRef = ref(storage, `images/${fileName}.jpg`);
-      // Upload the file to Firebase Storage
-      await uploadBytes(storageRef, imageFile);
-      // Update the "image" field with the file name (without the extension)
-      const imageName = fileName.split('.')[0];
-      document.getElementById('Image').value = imageName;
+      const modelInput = document.getElementById('model');
+      const selectedModel = modelInput.files[0];
+      if (selectedModel) {
+        const formData = new FormData();
+        formData.append('file', selectedModel);
+
+        fetch('http://localhost:3001/upload', {
+          method: 'POST',
+          body: formData,
+        })
+          .then(response => response.text())
+          .then(data => {
+            console.log(data); // Выводим ответ сервера в консоль
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+      }
 
       const selectedImage = document.getElementById('Image').value;
-      const selectedModel = document.getElementById('Model').value;
+      const selectedModelname = document.getElementById('Model').value;
       const selectedName = document.getElementById('Name').value;
       const selectedPrice = parseInt(document.getElementById('slider').value);
 
-      return { selectedSizes, selectedColors, idClothType, idClothTypeGender, selectedImage, selectedModel, selectedName, selectedPrice};
+      return { selectedSizes, selectedColors, idClothType, idClothTypeGender, selectedImage, selectedModelname, selectedName, selectedPrice};
     }
   }).then(async (result) => {
     if (result.isConfirmed) {
@@ -588,7 +640,7 @@ async function addCloth() {
       const selectedSizeIds = result.value.selectedSizes;
       const selectedColorIds = result.value.selectedColors;
       const selectedImage = result.value.selectedImage;
-      const selectedModel = result.value.selectedModel;
+      const selectedModel = result.value.selectedModelname;
       const selectedName = result.value.selectedName;
       const selectedPrice = result.value.selectedPrice;
 
