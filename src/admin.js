@@ -670,7 +670,6 @@ async function addCloth() {
         timer: 1500
       });
       setTimeout(function() {
-        location.reload();
       }, 2000);
     }
   });

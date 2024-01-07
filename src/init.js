@@ -14,11 +14,13 @@ const init = () => {
 	const canvas = document.querySelector('.canvas');
 	
 	const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height);
-	camera.position.set(0,62,66);
+	camera.position.set(0,24,18);
+	camera.lookAt(new THREE.Vector3(0,40,10));
 	scene.add(camera);
 
 	const controls = new OrbitControls(camera, canvas);
 	controls.enableDamping = true;
+	controls.dampingFactor = 0.05;
 	
 	// const stats = new Stats();
 	// stats.showPanel(0);
