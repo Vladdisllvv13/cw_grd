@@ -81,6 +81,7 @@ console.log(userId);
 if(userId !== 'ALL'){
   exitButton.hidden = false;
 }
+else window.location.href = "catalog.html";
 
 const userSnapshot = await getDoc(doc(userCollection, `${userId}`)); // Замените '1' на идентификатор пользователя, для которого вы хотите отобразить одежду
 const userData = userSnapshot.data();

@@ -110,13 +110,8 @@ async function addFloor(){
 }
 
 //Текстуры
-    const textureLoader = new THREE.TextureLoader();
-    const texture = textureLoader.load('/textures/fabric2/fabric_130_roughness-1K.png');
-    const texture1 = textureLoader.load('/textures/tkan2/fabric_138_basecolor-1K.png');
-    const texture2 = textureLoader.load('/textures/tkan2/fabric_138_roughness-1K.png');
-    const texture3 = textureLoader.load('/textures/fabric2/fabric_130_albedo-1K.png');
-    const texture4 = textureLoader.load('/textures/fabric1/Fabric_037_basecolor.jpg');
-    const texture5 = textureLoader.load('/textures/fabric2/fabric_130_ambientocclusion-1K.png');
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load('textures/1K_fabric_73_roughness.png');
 
 //Материал
 function setMaterial(currentColor, currentMetalness, currentRoughness, currentMap){
@@ -124,7 +119,7 @@ function setMaterial(currentColor, currentMetalness, currentRoughness, currentMa
         color: currentColor,
         metalness: currentMetalness,
         roughness: currentRoughness,
-        map: texture5
+        map: texture
     });
 }
 
