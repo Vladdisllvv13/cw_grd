@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="ru">
   <head>
-    <title>Virtual shop</title>
+    <title>VirtS</title>
     <meta charset="UTF-8"/>
     <!-- Подключение Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="shortcut icon" href="images/icon.svg" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
@@ -13,25 +14,27 @@
       }
     </style>
   </head>
-  <body>
+  <body class="leading-normal tracking-normal">
 
     <header class="text-gray-600 body-font border border-gray-300 shadow-md">
       <div class="container mx-auto flex flex-wrap p-5 flex-col md:flex-row items-center ">
         <a class="flex title-font font-medium items-center text-gray-900 mb-4 md:mb-0" href="index.html">
           <img src="images/icon.svg" width="30" height="20" class="w-10 h-10 text-white p-2 bg-indigo-500 rounded-full">
-          <span class="ml-3 text-xl">Virtual shop</span>
+          <span class="ml-3 text-xl">VirtS</span>
         </a>
         <nav class="md:ml-auto md:mr-auto flex flex-wrap items-center text-base justify-center">
           <a class="mr-5 hover:text-gray-900" href="index.html">Главная</a>
           <a class="mr-5 hover:text-gray-900" href="catalog.html">Каталог</a>
           <a class="mr-5 hover:text-gray-900" href="garderob.html">Гардероб</a>
-          <a class="mr-5 ml-12 hover:text-gray-900 flex title-font font-medium items-center mb-4 md:mb-0" href="favourites.html">
-            <span class="">Избранное</span>
-            <img src="images/Favourites.svg" width="30" height="20" class="w-10 h-10 text-white p-2">
-          </a>
+          <section id="favouritesSection" hidden>
+            <a class="mr-5 ml-12 hover:text-gray-900 flex title-font font-medium items-center mb-4 md:mb-0" href="favourites.html">
+              <span class="">Избранное</span>
+              <img src="images/Favourites.svg" width="30" height="20" class="w-10 h-10 text-white p-2">
+            </a>
+          </section>
         </nav>
         <div id="exitButton" class="mr-5 text-red-400 hover:text-red-900" hidden>Выйти</div>
-        <button id="authButton" class="inline-flex items-center bg-gray-100 border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 rounded text-base mt-4 md:mt-0">Войти
+        <button id="authButton" class="inline-flex items-center bg-gray-100 border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 rounded text-base mt-4 md:mt-0" onclick="window.location.href = 'auth.html'">Войти
           <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="w-4 h-4 ml-1" viewBox="0 0 24 24">
             <path d="M5 12h14M12 5l7 7-7 7"></path>
           </svg>
@@ -45,58 +48,65 @@
     </div>
     
     
-
-    <div class="relative overflow-x-auto shadow-md sm:rounded-lg mt-8 ml-16 mr-16">
+    <section id="tableSection" hidden>
+      <div class="relative overflow-x-auto shadow-md sm:rounded-lg mt-8 ml-16 mr-16">
         <table id="clothTable" class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                    <tr>
-                    <th scope="col" class="image px-6 py-3">
-                        
-                    </th>
-                    <th scope="col" class="name px-6 py-3">
-                        Товар
-                    </th>
-                    <th scope="col" class="size px-6 py-3">
-                        Размер
-                    </th>
-                    <th scope="col" class="color px-6 py-3">
-                        Цвет
-                    </th>
-                    <th scope="col" class="price px-6 py-3">
-                        Цена
-                    </th>
-                    <th scope="col" class="px-6 py-3">
-                        <span class="sr-only">Удалить</span>
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
+              <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                  <tr>
+                      <th scope="col" class="image px-6 py-3">
+                          
+                      </th>
+                      <th scope="col" class="name px-6 py-3">
+                          Товар
+                      </th>
+                      <th scope="col" class="size px-6 py-3">
+                          Размер
+                      </th>
+                      <th scope="col" class="color px-6 py-3">
+                          Цвет
+                      </th>
+                      <th scope="col" class="price px-6 py-3">
+                          Цена
+                      </th>
+                      <th scope="col" class="px-6 py-3">
+                          <span class="sr-only">Удалить</span>
+                      </th>
+                  </tr>
+              </thead>
+              <tbody>
+              </tbody>
         </table>
-    </div>
-
-    <div class="border-t border-gray-200 px-4 py-6 sm:px-6 mt-4 mb-4 ml-16 mr-16">
-      <div class="flex justify-between text-base font-medium text-gray-900">
-        <p class="text-2xl">Всего</p>
-        <p id="totalSum" class="text-3xl">0 руб.</p>
       </div>
-      <p class="mt-0.5 text-sm text-gray-500">Доставка и налоги рассчитываются при оформлении заказа.</p>
-      <div class="mt-6">
-        <a href="#" class="flex items-center justify-center rounded-md border border-transparent bg-purple-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700">Оплатить</a>
+
+      <div class="border-t border-gray-200 px-4 py-6 sm:px-6 mt-4 mb-4 ml-16 mr-16">
+        <div class="flex justify-between text-base font-medium text-gray-900">
+          <p class="text-2xl">Всего</p>
+          <p id="totalSum" class="text-3xl">0 руб.</p>
+        </div>
+        <p class="mt-0.5 text-sm text-gray-500">Доставка и налоги рассчитываются при оформлении заказа.</p>
+        <div class="mt-6">
+          <button id="checkoutButton" class="w-full rounded-md border border-transparent bg-purple-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700 ">Оплатить</a>
+        </div>
+        <div class="mt-6 flex justify-center text-center text-sm text-gray-500">
+          <p>
+            или
+            <button type="button" id="toCatalogButton" class="font-medium text-purple-600 hover:text-purple-500">
+              Вернуться к каталогу
+              <span aria-hidden="true"> &rarr;</span>
+            </button>
+          </p>
+        </div>
       </div>
-      <div class="mt-6 flex justify-center text-center text-sm text-gray-500">
-        <p>
-          или
-          <button type="button" id="toCatalogButton" class="font-medium text-purple-600 hover:text-purple-500">
-            Вернуться к каталогу
-            <span aria-hidden="true"> &rarr;</span>
-          </button>
-        </p>
+    </section>
+    
+    <section id="emptyCartSection" hidden>
+      <div class="flex flex-col justify-center items-center text-center mt-8 mb-8">
+        <h1 class="text-3xl text-lg font-medium">Корзина пуста..</h1>
+        <img class="object-scale-down mx-auto" src="images/empty-cart.png">
       </div>
-    </div>
+    </section>
 
-
-
+    
     <footer class="text-gray-600 body-font flex-shrink-0">
       <div class="container px-5 py-8 mx-auto flex items-center sm:flex-row flex-col">
         <a class="flex title-font font-medium items-center md:justify-start justify-center text-gray-900">

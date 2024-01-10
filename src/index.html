@@ -3,13 +3,14 @@
   <head>
     <meta charset="UTF-8">
 
-    <title>Virtual shop</title>
+    <title>VirtS</title>
     
     
   
   
   
     <link rel="stylesheet" href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <link rel="shortcut icon" href="images/icon.svg" type="image/x-icon">
 
     <!-- Define your gradient here - use online tools to find a gradient matching your branding-->
     <style>
@@ -19,23 +20,25 @@
     </style>
   
   </head>
-  <body class="leading-normal tracking-normal text-white gradient" style="font-family: 'Source Sans Pro', sans-serif;">
+  <body class="leading-normal tracking-normal text-white gradient">
   
     <!-- Header -->
     <header class="text-gray-600 body-font border border-gray-300 shadow-md">
       <div class="container mx-auto flex flex-wrap p-5 flex-col md:flex-row items-center ">
         <a class="flex title-font font-medium items-center text-gray-900 mb-4 md:mb-0" href="index.html">
           <img src="images/icon.svg" width="30" height="20" class="w-10 h-10 text-white p-2 bg-indigo-500 rounded-full">
-          <span class="ml-3 text-xl">Virtual shop</span>
+          <span class="ml-3 text-xl">VirtS</span>
         </a>
         <nav class="md:ml-auto md:mr-auto flex flex-wrap items-center text-base justify-center">
           <a class="mr-5 text-white hover:text-gray-700" href="index.html">Главная</a>
           <a class="mr-5 text-white hover:text-gray-700" href="catalog.html">Каталог</a>
           <a class="mr-5 text-white hover:text-gray-700" href="garderob.html">Гардероб</a>
-          <a class="mr-5 ml-12 text-white hover:text-gray-700 flex title-font font-medium items-center mb-4 md:mb-0" href="favourites.html">
-            <span class="">Избранное</span>
-            <img src="images/Favourites.svg" width="30" height="20" class="w-10 h-10 text-white p-2">
-          </a>
+          <section id="favouritesSection" hidden>
+            <a class="mr-5 ml-12 text-white hover:text-gray-700 flex title-font font-medium items-center mb-4 md:mb-0" href="favourites.html">
+              <span class="">Избранное</span>
+              <img src="images/Favourites.svg" width="30" height="20" class="w-10 h-10 text-white p-2">
+            </a>
+          </section>
         </nav>
         <button id="exitButton" class="inline-flex items-center mr-5 text-red-600 bg-gray-100 hover:text-red-700 border-0 py-1 px-3 focus:outline-none hover:bg-gray-800 rounded text-base mt-4 md:mt-0">Выйти</button>
         <button id="authButton" class="inline-flex items-center bg-gray-100 border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 rounded text-base mt-4 md:mt-0">Войти
@@ -116,6 +119,33 @@
             <div class="align-middle">
               <h3 class="text-3xl text-gray-800 font-bold leading-none mb-3">Добавляйте одежду в гардероб</h3>
               <p class="text-gray-600 mb-8">Надевайте одежду на виртуальный 3D манекен. Смотрите, примеряйте, комбинируйте!<br><br></p>
+            </div>
+          </div>
+  
+        </div>
+
+        <div class="flex flex-wrap">
+          <div class="w-5/6 sm:w-1/2 p-6">
+            <h3 class="text-3xl text-gray-800 font-bold leading-none mb-3">Собирайте собственные стили</h3>
+            <p class="text-gray-600 mb-8">Добавляйте созданные наряды в ваш собственный стиль. На работу, в кино или куда угодно!<br><br>
+  
+          </div>
+          <div class="w-full sm:w-1/2 p-6">
+            <img class="w-full sm:h-64 mx-auto" src="images/styles.svg">
+  
+          </div>
+        </div>
+  
+  
+        <div class="flex flex-wrap flex-col-reverse sm:flex-row">
+          <div class="w-full sm:w-1/2 p-6 mt-6">
+            <img class="w-full sm:h-64 mx-auto" src="images/cartItems.svg">
+  
+          </div>
+          <div class="w-full sm:w-1/2 p-6 mt-6">
+            <div class="align-middle">
+              <h3 class="text-3xl text-gray-800 font-bold leading-none mb-3">Приобретайте</h3>
+              <p class="text-gray-600 mb-8">Добавляйте товары в корзину и покупайте любимую одежду!<br><br></p>
             </div>
           </div>
   

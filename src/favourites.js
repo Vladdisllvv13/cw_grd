@@ -8,7 +8,6 @@ async function getUserId(){
   try{
     const userId = localStorage.getItem('userId');
     if(userId === null){
-      alert('Вы не зарегестрированы, поэтому будет предоставлена вся одежда');
       return 'ALL'
     }
     else return userId;
@@ -44,7 +43,6 @@ let userStylesData = [];
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', function() {
     localStorage.setItem('userId', 'ALL');
-    alert('Вы успешно вышли из системы');
     exitButton.hidden = true;
     location.reload();
 
@@ -109,13 +107,13 @@ async function createClothBlock(data, list) {
         <img class="object-scale-down h-40 rounded w-40 object-center mb-6" src="" alt="content">
         <h3 class="sizesOne tracking-widest text-purple-500 text-xs font-medium title-font"></h3>
         <h1 class="clothTypeOne text-lg text-gray-900 font-medium title-font"></h4>
-        <h5 class="nameOne text-lg text-gray-900 font-medium title-font"></h5>
+        <h5 class="nameOne text-lg text-2xl text-gray-900 font-medium title-font"></h5>
 
         <div class="flex items-end mb-4">
           <h5 class="priceOne text-lg text-3xl font-bold font-medium text-purple-800 title-font"></h5>
-          <svg id="heartIcon" class="h-8 w-8 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-              <path d="M12,4.595c-1.104-1.006-2.512-1.558-3.996-1.558c-1.578,0-3.072,0.623-4.213,1.758c-2.353,2.363-2.352,6.059,0.002,8.412 l7.332,7.332c0.17,0.299,0.498,0.492,0.875,0.492c0.322,0,0.609-0.163,0.792-0.409l7.415-7.415 c2.354-2.354,2.354-6.049-0.002-8.416c-1.137-1.131-2.631-1.754-4.209-1.754C14.513,3.037,13.104,3.589,12,4.595z M18.791,6.205 c1.563,1.571,1.564,4.025,0.002,5.588L12,18.586l-6.793-6.793C3.645,10.23,3.646,7.776,5.205,6.209 c0.76-0.756,1.754-1.172,2.799-1.172s2.035,0.416,2.789,1.17l0.5,0.5c0.391,0.391,1.023,0.391,1.414,0l0.5-0.5 C14.719,4.698,17.281,4.702,18.791,6.205z" />
-          </svg>
+          <svg class="h-8 w-8 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path id="heartIcon" d="M2 9.1371C2 14 6.01943 16.5914 8.96173 18.9109C10 19.7294 11 20.5 12 20.5C13 20.5 14 19.7294 15.0383 18.9109C17.9806 16.5914 22 14 22 9.1371C22 4.27416 16.4998 0.825464 12 5.50063C7.50016 0.825464 2 4.27416 2 9.1371Z" fill="#4f4f4f"/>
+          </svg>  
         </div>
         
         <div class="colorsOne flex mb-4"></div>
@@ -139,6 +137,8 @@ async function createClothBlock(data, list) {
     if (clothTypeElement && nameElement && sizesElement && imageElement && colorsElement && priceElement) {
       const clothTypeSnapshot = await getDoc(data.clothTypeRef);
       const clothTypeValue = clothTypeSnapshot.data().name;
+      const clothTypeGenderSnapshot = await getDoc(data.clothTypeGenderRef);
+      const clothTypeGenderValue = clothTypeGenderSnapshot.data().name;
       const nameSnapshot = await getDoc(data.nameRef); // Fetch the document snapshot
       const priceSnapshot = await getDoc(data.priceRef);
       const sizeSnapshots = await Promise.all(data.sizeRefs.map((sizeRef) => getDoc(sizeRef)));
@@ -153,7 +153,7 @@ async function createClothBlock(data, list) {
         imageUrl = await getDownloadURL(storageImageRef);
         imageElement.src = imageUrl;
       }
-      clothTypeElement.textContent = clothTypeValue;
+      clothTypeElement.textContent = `${clothTypeValue} (${clothTypeGenderValue[0]})`;
       nameElement.textContent = nameSnapshot.data().name; // Access the data from the snapshot
       priceElement.textContent = `${priceSnapshot.data().price} руб.`;
       sizesElement.textContent = sizeValues;
@@ -323,7 +323,11 @@ async function addToFavourites(clothId) {
   const userId = await getUserId();
   console.log(userId);
   if(userId === 'ALL'){
-    alert('Нельзя добавить одежду в избранное для незарегистрированного пользователя.');
+    Swal.fire({
+      icon: "error",
+      title: "Упс...",
+      text: "Нельзя добавить одежду в избранное для незарегистрированного пользователя!",
+    });
     return;
   }
   const userDoc = doc(userCollection, userId);
@@ -403,7 +407,11 @@ async function removeFromFavourites(clothId){
     const userId = await getUserId();
     console.log(userId);
     if(userId === 'ALL'){
-      alert('Нельзя добавить одежду в корзину для незарегистрированного пользователя. Вы можете зарегистрироваться в системе.');
+      Swal.fire({
+        icon: "error",
+        title: "Упс...",
+        text: "Нельзя добавить одежду в корзину для незарегистрированного пользователя",
+      });
       return;
     }
     let idUser = userId;
@@ -467,12 +475,20 @@ async function addToWardrobe(clothId) {
 
         // Обновляем данные пользователя в базе данных
         updateDoc(userDoc, { idWardrobeClothes: wardrobeClothesIds }).then(() => {
-          alert('Одежда добавлена в гардероб');
+          Swal.fire({
+            icon: "success",
+            title: "Одежда добавлена в гардероб!",
+            showConfirmButton: false,
+            timer: 1500
+          });
         }).catch((error) => {
           console.error('Error updating user data:', error);
         });
       } else {
-        alert('Выбранная одежда уже есть в вашем гардеробе');
+        Swal.fire({
+          icon: "info",
+          title: "Выбранная одежда уже есть в вашем гардеробе",
+        });
       }
     }
   }).catch((error) => {
@@ -497,8 +513,8 @@ async function populateList(data, userStylesData, styleId, index) {
     <div flex items-center justify-center>
     <div class="justify-center" style="display: flex; align-items: center;">
         <h1 id="txtName" class="text-4xl justify-center font-bold text-purple-800 text-center mt-10">${data.name}</h1>
-        <svg id="styleHeartIcon" class="h-8 w-8 mt-10 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-          <path d="M12,4.595c-1.104-1.006-2.512-1.558-3.996-1.558c-1.578,0-3.072,0.623-4.213,1.758c-2.353,2.363-2.352,6.059,0.002,8.412 l7.332,7.332c0.17,0.299,0.498,0.492,0.875,0.492c0.322,0,0.609-0.163,0.792-0.409l7.415-7.415 c2.354-2.354,2.354-6.049-0.002-8.416c-1.137-1.131-2.631-1.754-4.209-1.754C14.513,3.037,13.104,3.589,12,4.595z M18.791,6.205 c1.563,1.571,1.564,4.025,0.002,5.588L12,18.586l-6.793-6.793C3.645,10.23,3.646,7.776,5.205,6.209 c0.76-0.756,1.754-1.172,2.799-1.172s2.035,0.416,2.789,1.17l0.5,0.5c0.391,0.391,1.023,0.391,1.414,0l0.5-0.5 C14.719,4.698,17.281,4.702,18.791,6.205z" />
+        <svg class="h-8 w-8 mt-10 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path id="styleHeartIcon" d="M2 9.1371C2 14 6.01943 16.5914 8.96173 18.9109C10 19.7294 11 20.5 12 20.5C13 20.5 14 19.7294 15.0383 18.9109C17.9806 16.5914 22 14 22 9.1371C22 4.27416 16.4998 0.825464 12 5.50063C7.50016 0.825464 2 4.27416 2 9.1371Z" fill="#4f4f4f"/>
         </svg>
     </div>
       <h1 id="txtDescription" class="text-xl justify-center font-bold text-center mt-4">${data.description}</h1>
@@ -560,7 +576,11 @@ async function addStyleToFavourites(styleId){
   const userId = await getUserId();
   console.log(userId);
   if(userId === 'ALL'){
-    alert('Нельзя добавить стиль в избранное для незарегистрированного пользователя.');
+    Swal.fire({
+      icon: "error",
+      title: "Упс...",
+      text: "Нельзя добавить стиль в избранное для незарегистрированного пользователя",
+    });
     return;
   }
   const userDoc = doc(userCollection, userId);
@@ -665,31 +685,39 @@ async function renderClothes(clothes) {
 }
 //Проверяем комбобоксы и поиск
 async function handleSearchAndFilter() {
-    try {
+  try {
     const searchTerm = searchInput.value.toLowerCase();
     const selectedSizes = Array.from(document.querySelectorAll('#dropdownSizes input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
     const selectedTypes = Array.from(document.querySelectorAll('#dropdownType input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
     const selectedTypesGender = Array.from(document.querySelectorAll('#dropdownGender input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
     const filteredClothesData = [];
 
-    for (const cloth of userClothesData) {
-      const nameSnapshot = await getDoc(cloth.nameRef);
+    const promises = userClothesData.map(async (cloth) => {
+      const [nameSnapshot, clothTypeSnapshot, clothTypeGenderSnapshot] = await Promise.all([
+        getDoc(cloth.nameRef),
+        getDoc(cloth.clothTypeRef),
+        getDoc(cloth.clothTypeGenderRef)
+      ]);
+
       const name = nameSnapshot.data().name.toLowerCase();
-      const clothTypeSnapshot = await getDoc(cloth.clothTypeRef);
       const clothTypeValue = clothTypeSnapshot.data().name.toLowerCase();
-      const clothTypeGenderSnapshot = await getDoc(cloth.clothTypeGenderRef);
       const clothTypeGenderValue = clothTypeGenderSnapshot.data().name.toLowerCase();
       const sizeIds = cloth.sizeRefs.map((sizeRef) => sizeRef.id);
 
-      if ((name.includes(searchTerm) || (clothTypeValue.includes(searchTerm)) || (clothTypeGenderValue.includes(searchTerm))) && selectedSizes.some((size) => sizeIds.includes(size)) 
-      && selectedTypes.includes(cloth.clothTypeRef.id) && selectedTypesGender.includes(cloth.clothTypeGenderRef.id)) {
+      if (
+        (name.includes(searchTerm) || clothTypeValue.includes(searchTerm) || clothTypeGenderValue.includes(searchTerm)) &&
+        selectedSizes.some((size) => sizeIds.includes(size)) &&
+        selectedTypes.includes(cloth.clothTypeRef.id) &&
+        selectedTypesGender.includes(cloth.clothTypeGenderRef.id)
+      ) {
         filteredClothesData.push(cloth);
       }
-    }
+    });
 
+    await Promise.all(promises);
     renderClothes(filteredClothesData);
   } catch (error) {
-    console.error("Ошибка при обработке поиска и фильтрации:", error);
+    console.error("Error handling search and filter:", error);
   }
 }
 

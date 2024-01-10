@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="ru">
   <head>
-    <title>Virtual shop</title>
+    <title>VirtS</title>
     <meta charset="UTF-8"/>
     <!-- Подключение Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="shortcut icon" href="images/icon.svg" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
@@ -66,22 +67,24 @@
     }
   </style>
   </head>
-  <body>
+  <body class="leading-normal tracking-normal">
     <!-- header -->
     <header class="text-gray-600 body-font border border-gray-300 shadow-md">
       <div class="container mx-auto flex flex-wrap p-5 flex-col md:flex-row items-center">
         <a class="flex title-font font-medium items-center text-gray-900 mb-4 md:mb-0" href="index.html"> 
           <img src="images/icon.svg" width="30" height="20" class="w-10 h-10 text-white p-2 bg-indigo-500 rounded-full">
-          <span class="ml-3 text-xl">Virtual shop</span>
+          <span class="ml-3 text-xl">VirtS</span>
         </a>
         <nav class="md:ml-auto md:mr-auto flex flex-wrap items-center text-base justify-center">
           <a class="mr-5 hover:text-gray-900" href="index.html">Главная</a>
           <a class="mr-5 hover:text-gray-900" href="catalog.html">Каталог</a>
           <a class="mr-5 hover:text-gray-900" href="garderob.html">Гардероб</a>
-          <a class="mr-5 ml-12 hover:text-gray-900 flex title-font font-medium items-center mb-4 md:mb-0" href="favourites.html">
-            <span class="">Избранное</span>
-            <img src="images/Favourites.svg" width="30" height="20" class="w-10 h-10 text-white p-2">
-          </a>
+          <section id="favouritesSection" hidden>
+            <a class="mr-5 ml-12 hover:text-gray-900 flex title-font font-medium items-center mb-4 md:mb-0" href="favourites.html">
+              <span class="">Избранное</span>
+              <img src="images/Favourites.svg" width="30" height="20" class="w-10 h-10 text-white p-2">
+            </a>
+          </section>
         </nav>
         <div id="exitButton" class="mr-5 text-red-400 hover:text-red-900" hidden>Выйти</div>
         <button id="authButton" class="inline-flex items-center bg-gray-100 border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 rounded text-base mt-4 md:mt-0">Войти
@@ -165,7 +168,7 @@
     <div class="relative text-center mt-8 mb-8 text-3xl">
       <p class="cart-link">
           Хотите приобрести вещи?
-          <a class="text-purple-600" href="cart.html">Перейти в корзину</a>
+          <a id="toCartButton" class="text-purple-600">Перейти в корзину</a>
       </p>
     </div>
     <h1 class="text-4xl font-bold text-center mt-8">Каталог</h1>
@@ -258,7 +261,7 @@
               <li>
                 <div class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
                   <input checked id="checkbox-itemTShirt" type="checkbox" value="1" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
-                  <label for="checkbox-item-11" class="w-full ms-2 text-sm font-medium text-gray-900 rounded dark:text-gray-300"> Футболка</label>
+                  <label for="checkbox-itemTShirt" class="w-full ms-2 text-sm font-medium text-gray-900 rounded dark:text-gray-300"> Футболка</label>
                 </div>
               </li>
               <li>
@@ -271,6 +274,48 @@
                 <div class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
                   <input checked id="checkbox-itemBlouse" type="checkbox" value="3" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
                   <label for="checkbox-item-13" class="w-full ms-2 text-sm font-medium text-gray-900 rounded dark:text-gray-300"> Кофта</label>
+                </div>
+              </li>
+              <li>
+                <div class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input checked id="checkbox-itemShorts" type="checkbox" value="4" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
+                  <label for="checkbox-item-14" class="w-full ms-2 text-sm font-medium text-gray-900 rounded dark:text-gray-300"> Шорты</label>
+                </div>
+              </li>
+              <li>
+                <div class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input checked id="checkbox-itemMayka" type="checkbox" value="5" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
+                  <label for="checkbox-item-15" class="w-full ms-2 text-sm font-medium text-gray-900 rounded dark:text-gray-300"> Майка</label>
+                </div>
+              </li>
+              <li>
+                <div class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input checked id="checkbox-itemSkirt" type="checkbox" value="6" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
+                  <label for="checkbox-item-16" class="w-full ms-2 text-sm font-medium text-gray-900 rounded dark:text-gray-300"> Юбка</label>
+                </div>
+              </li>
+              <li>
+                <div class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input checked id="checkbox-itemTop" type="checkbox" value="7" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
+                  <label for="checkbox-item-17" class="w-full ms-2 text-sm font-medium text-gray-900 rounded dark:text-gray-300"> Топ</label>
+                </div>
+              </li>
+              <li>
+                <div class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input checked id="checkbox-itemHat" type="checkbox" value="8" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
+                  <label for="checkbox-item-18" class="w-full ms-2 text-sm font-medium text-gray-900 rounded dark:text-gray-300"> Шляпа</label>
+                </div>
+              </li>
+              <li>
+                <div class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input checked id="checkbox-itemShapka" type="checkbox" value="9" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
+                  <label for="checkbox-item-19" class="w-full ms-2 text-sm font-medium text-gray-900 rounded dark:text-gray-300"> Шапка</label>
+                </div>
+              </li>
+              <li>
+                <div class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input checked id="checkbox-itemCap" type="checkbox" value="10" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
+                  <label for="checkbox-item-20" class="w-full ms-2 text-sm font-medium text-gray-900 rounded dark:text-gray-300"> Кепка</label>
                 </div>
               </li>
             </ul>
@@ -305,22 +350,9 @@
       
 
       <!-- Блок с одеждой -->
-      <div class="flex justify-center mt-16 shadow-md">
-        <div class="flex flex-wrap -m-4 flex justify-center mb-4" id="clothesList">
+      <div class="flex justify-center mt-16 shadow-md ">
+        <div class="flex flex-wrap -m-4 flex justify-center mb-4 mr-28 ml-28" id="clothesList">
         </div>
-      </div>
-
-      <div class="flex flex-row m-2 shadow-xl rounded-2xl items-center justify-center"> 
-        <a class="rounded p-1 hover:bg-black font-medium hover:rounded-full m-2 hover:text-white" href="#">
-          <ion-icon name="arrow-back-outline"></ion-icon></a> 
-          <a class="rounded p-1 hover:bg-black font-medium hover:rounded-full m-2 hover:text-white" href="#">1</a> 
-          <a class="rounded p-1 hover:bg-black font-medium hover:rounded-full m-2 hover:text-white" href="#">2</a> 
-          <a class="rounded p-1 hover:bg-black font-medium hover:rounded-full m-2 hover:text-white" href="#">3</a> 
-          <a class="rounded p-1 hover:bg-black font-medium hover:rounded-full m-2 hover:text-white" href="#">...</a> 
-          <a class="rounded p-1 hover:bg-black font-medium hover:rounded-full m-2 hover:text-white" href="#">
-          <ion-icon name="arrow-forward-outline"></ion-icon></a> </div> 
-          <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script> 
-          <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
       </div>
     </section>
 

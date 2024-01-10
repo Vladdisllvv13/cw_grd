@@ -30,7 +30,7 @@ async function getUserId(){
   try{
     const userId = localStorage.getItem('userId');
     if(userId === null){
-      alert('Вы не зарегестрированы, поэтому будет предоставлена вся одежда');
+      
       return 'ALL'
     }
     else return userId;
@@ -62,6 +62,12 @@ let userClothesData = [];
 let userStylesData = [];
 
 const userId = await getUserId()
+if(userId === "ALL"){
+  Swal.fire({
+    icon: "info",
+    title: "Вы не вошли в систему, поэтому будет предоставлена вся одежда",
+  });
+}
 
 
 //Получаем данные об одежде и записываем в clothesData
@@ -110,6 +116,7 @@ async function addFloor(){
     const texture2 = textureLoader.load('/textures/tkan2/fabric_138_roughness-1K.png');
     const texture3 = textureLoader.load('/textures/fabric2/fabric_130_albedo-1K.png');
     const texture4 = textureLoader.load('/textures/fabric1/Fabric_037_basecolor.jpg');
+    const texture5 = textureLoader.load('/textures/fabric2/fabric_130_ambientocclusion-1K.png');
 
 //Материал
 function setMaterial(currentColor, currentMetalness, currentRoughness, currentMap){
@@ -117,6 +124,7 @@ function setMaterial(currentColor, currentMetalness, currentRoughness, currentMa
         color: currentColor,
         metalness: currentMetalness,
         roughness: currentRoughness,
+        map: texture5
     });
 }
 
@@ -162,7 +170,7 @@ function loadMannequin(){
         },
     );
 }
-function loadCloth(modelName, clothType, clothId){
+function loadCloth(modelName, clothType, clothId, firstColor){
   const loader = new GLTFLoader();
   loader.load(
       `./3DModels/clothes/${modelName}.glb`,
@@ -195,6 +203,7 @@ function loadCloth(modelName, clothType, clothId){
             cloth.name = "clothType1";
           }
           scene.add(cloth);
+          setColor(clothType, firstColor);
       },
       (progress) => {
           // console.log('progess');
@@ -240,7 +249,6 @@ const tick = () => {
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', function() {
     localStorage.setItem('userId', 'ALL');
-    alert('Вы успешно вышли из системы');
     exitButton.hidden = true;
     location.reload();
 
@@ -250,6 +258,14 @@ exitButton.addEventListener('click', function() {
 
 async function saveStyle(){
   let styleClothes = [];
+  if(userId === "ALL"){
+    Swal.fire({
+      icon: "error",
+      title: "Упс...",
+      text: "Нельзя создать стиль для незарегистрированного пользователя!",
+    });
+    return;
+  }
   try{
     if(tshirtCounter === 1 || coatCounter === 1 || pantsCounter === 1 || hatCounter === 1){
       if(tshirtId != 0){
@@ -293,28 +309,37 @@ async function saveStyle(){
         const selectedName = result.value.selectedName;
         const selectedDescription = result.value.selectedDescription;
 
-        if(isMale) gender = 'Мужской'
-        else if(isFemale) gender = 'Женский'
-  
-        const newStyle = {
-          name: selectedName,
-          description: selectedDescription,
-          idClothes: styleClothes,
-          idUser: userId,
-          styleGender: gender
-        };
-  
-        const stylesCollection = collection(db, 'styles');
-        await addDoc(stylesCollection, newStyle);
-        getStyles();
-        Swal.fire({
-          icon: "success",
-          title: "Информация сохранена!",
-          showConfirmButton: false,
-          timer: 1500
-        });
-        setTimeout(function() {
-        }, 2000);
+        if(selectedName.trim() === '' || selectedDescription.trim() === ''){
+          Swal.fire({
+            icon: "error",
+            title: "Упс...",
+            text: "Вы не заполнили обязательные поля!",
+          });
+        }
+        else{
+          if(isMale) gender = 'Мужской'
+          else if(isFemale) gender = 'Женский'
+    
+          const newStyle = {
+            name: selectedName,
+            description: selectedDescription,
+            idClothes: styleClothes,
+            idUser: userId,
+            styleGender: gender
+          };
+    
+          const stylesCollection = collection(db, 'styles');
+          await addDoc(stylesCollection, newStyle);
+          getStyles();
+          Swal.fire({
+            icon: "success",
+            title: "Информация сохранена!",
+            showConfirmButton: false,
+            timer: 1500
+          });
+          setTimeout(function() {
+          }, 2000);
+        }
       }
     });
   }
@@ -331,14 +356,13 @@ saveStyleButton.addEventListener('click', function() {
 
 
 
-
+const favouritesSection = document.getElementById('favouritesSection');
 // Получаем данные о пользователе
 const userCollection = collection(db, 'users');
 
-console.log(userId);
-
 if(userId !== 'ALL'){
   exitButton.hidden = false;
+  favouritesSection.hidden = false;
 }
 
 const userSnapshot = await getDoc(doc(userCollection, `${userId}`)); // Замените '1' на идентификатор пользователя, для которого вы хотите отобразить одежду
@@ -370,8 +394,8 @@ async function createClothBlock(data, list) {
         <h1 class="headingOne text-lg text-gray-900 font-medium title-font"></h4>
         <div class="flex items-end mb-4">
           <h5 class="headingTwo text-lg text-gray-900 font-medium title-font"></h5>
-          <svg id="heartIcon" class="h-8 w-8 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-              <path d="M12,4.595c-1.104-1.006-2.512-1.558-3.996-1.558c-1.578,0-3.072,0.623-4.213,1.758c-2.353,2.363-2.352,6.059,0.002,8.412 l7.332,7.332c0.17,0.299,0.498,0.492,0.875,0.492c0.322,0,0.609-0.163,0.792-0.409l7.415-7.415 c2.354-2.354,2.354-6.049-0.002-8.416c-1.137-1.131-2.631-1.754-4.209-1.754C14.513,3.037,13.104,3.589,12,4.595z M18.791,6.205 c1.563,1.571,1.564,4.025,0.002,5.588L12,18.586l-6.793-6.793C3.645,10.23,3.646,7.776,5.205,6.209 c0.76-0.756,1.754-1.172,2.799-1.172s2.035,0.416,2.789,1.17l0.5,0.5c0.391,0.391,1.023,0.391,1.414,0l0.5-0.5 C14.719,4.698,17.281,4.702,18.791,6.205z" />
+          <svg class="h-8 w-8 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path id="heartIcon" d="M2 9.1371C2 14 6.01943 16.5914 8.96173 18.9109C10 19.7294 11 20.5 12 20.5C13 20.5 14 19.7294 15.0383 18.9109C17.9806 16.5914 22 14 22 9.1371C22 4.27416 16.4998 0.825464 12 5.50063C7.50016 0.825464 2 4.27416 2 9.1371Z" fill="#4f4f4f"/>
           </svg>
         </div>
         <div class="colorsOne flex mb-4"></div>
@@ -481,7 +505,11 @@ async function addToFavourites(clothId) {
   const userId = await getUserId();
   console.log(userId);
   if(userId === 'ALL'){
-    alert('Нельзя добавить одежду в избранное для незарегистрированного пользователя.');
+    Swal.fire({
+      icon: "error",
+      title: "Упс...",
+      text: "Нельзя добавить одежду в избранное для незарегистрированного пользователя",
+    });
     return;
   }
   const userDoc = doc(userCollection, userId);
@@ -611,7 +639,7 @@ async function removeFromScene(clothType){
       nameElement = block.querySelector('.nameOne');
       const removeButton = block.querySelector('#removeButton');
       colorsContainer = block.querySelector('.colorsContainer');
-      imagePath = "images/jacket.png";
+      imagePath = "images/shapka.png";
       removeButton.hidden = true;
       if (colorsContainer) {
         colorsContainer.remove(); // Удаление контейнера с кнопками-кружочками цветов
@@ -641,7 +669,7 @@ async function removeFromScene(clothType){
       nameElement = block.querySelector('.nameOne');
       const removeButton = block.querySelector('#removeButton');
       colorsContainer = block.querySelector('.colorsContainer');
-      imagePath = "images/coat.png";
+      imagePath = "images/hudi.png";
       removeButton.hidden = true;
       if (colorsContainer) {
         colorsContainer.remove(); // Удаление контейнера с кнопками-кружочками цветов
@@ -656,7 +684,7 @@ async function removeFromScene(clothType){
       nameElement = block.querySelector('.nameOne');
       const removeButton = block.querySelector('#removeButton');
       colorsContainer = block.querySelector('.colorsContainer');
-      imagePath = "images/pants.png";
+      imagePath = "images/shtani.png";
       removeButton.hidden = true;
       if (colorsContainer) {
         colorsContainer.remove(); // Удаление контейнера с кнопками-кружочками цветов
@@ -758,17 +786,22 @@ async function addToScene(data) {
     colorsContainer.className = 'colorsContainer mt-4';
     block.appendChild(colorsContainer);
 
+    let firstColor;
+    let isFirst = true;
+
     colorsValues.split(',').forEach((color) => {
       const colorButton = document.createElement('button');
       colorButton.className = 'colorButton shadow hover:shadow-lg';
       colorButton.style.backgroundColor = color.trim();
       colorsContainer.appendChild(colorButton);
 
+      if(isFirst) firstColor = color.trim();
+
       colorButton.addEventListener('click', () => {
         setColor(clothTypeValue, color.trim());
         console.log(color);
       });
-      
+      isFirst = false;
     });
 
     const nameSnapshot = await getDoc(data.nameRef);
@@ -789,9 +822,8 @@ async function addToScene(data) {
       const modelSnapshot = await getDoc(data.modelRef);
       const modelName = modelSnapshot.data().model;
       console.log(modelName);
-      loadCloth(modelName, clothTypeValue, data.nameRef.id);
-
-      
+      loadCloth(modelName, clothTypeValue, data.nameRef.id, firstColor);
+      console.log(firstColor);
     }
   } catch (error) {
     console.error("Ошибка при добавлении одежды:", error);
@@ -809,25 +841,31 @@ async function renderClothes(clothes) {
 }
 //Проверяем комбобоксы и поиск
 async function handleSearchAndFilter() {
-    try {
-    let selectedTypesGender = [];
-    const searchTerm = searchInput.value.toLowerCase();
+  try {
     const selectedSizes = Array.from(document.querySelectorAll('#dropdownSizes input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
     const selectedTypes = Array.from(document.querySelectorAll('#dropdownType input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
-    if(isMale) selectedTypesGender = ['1','3'];
-    else if (isFemale) selectedTypesGender = ['2','3'];
+    const searchTerm = searchInput.value.toLowerCase();
+    const selectedTypesGender = isMale ? ['1'] : isFemale ? ['2'] : [];
 
     const filteredClothesData = [];
 
-    for (const cloth of userClothesData) {
-      const nameSnapshot = await getDoc(cloth.nameRef);
+    const nameSnapshots = await Promise.all(userClothesData.map((cloth) => getDoc(cloth.nameRef)));
+    const clothTypeSnapshots = await Promise.all(userClothesData.map((cloth) => getDoc(cloth.clothTypeRef)));
+
+    for (let i = 0; i < userClothesData.length; i++) {
+      const cloth = userClothesData[i];
+      const nameSnapshot = nameSnapshots[i];
       const name = nameSnapshot.data().name.toLowerCase();
-      const clothTypeSnapshot = await getDoc(cloth.clothTypeRef);
+      const clothTypeSnapshot = clothTypeSnapshots[i];
       const clothTypeValue = clothTypeSnapshot.data().name.toLowerCase();
       const sizeIds = cloth.sizeRefs.map((sizeRef) => sizeRef.id);
 
-      if ((name.includes(searchTerm) || (clothTypeValue.includes(searchTerm))) && selectedSizes.some((size) => sizeIds.includes(size)) 
-      && selectedTypes.includes(cloth.clothTypeRef.id) && selectedTypesGender.includes(cloth.clothTypeGenderRef.id)) {
+      if (
+        (name.includes(searchTerm) || clothTypeValue.includes(searchTerm)) &&
+        selectedSizes.some((size) => sizeIds.includes(size)) &&
+        selectedTypes.includes(cloth.clothTypeRef.id) &&
+        selectedTypesGender.includes(cloth.clothTypeGenderRef.id)
+      ) {
         filteredClothesData.push(cloth);
       }
     }
@@ -843,7 +881,11 @@ async function addStyleToFavourites(styleId){
   const userId = await getUserId();
   console.log(userId);
   if(userId === 'ALL'){
-    alert('Нельзя добавить стиль в избранное для незарегистрированного пользователя.');
+    Swal.fire({
+      icon: "error",
+      title: "Упс...",
+      text: "Нельзя добавить стиль в избранное для незарегистрированного пользователя",
+    });
     return;
   }
   const userDoc = doc(userCollection, userId);
@@ -983,8 +1025,8 @@ async function populateList(data, userStylesData, styleId, index) {
     <div flex items-center justify-center>
     <div class="justify-center" style="display: flex; align-items: center;">
         <h1 id="txtName" class="text-4xl justify-center font-bold text-purple-800 text-center mt-10">${data.name}</h1>
-        <svg id="styleHeartIcon" class="h-8 w-8 mt-10 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-          <path d="M12,4.595c-1.104-1.006-2.512-1.558-3.996-1.558c-1.578,0-3.072,0.623-4.213,1.758c-2.353,2.363-2.352,6.059,0.002,8.412 l7.332,7.332c0.17,0.299,0.498,0.492,0.875,0.492c0.322,0,0.609-0.163,0.792-0.409l7.415-7.415 c2.354-2.354,2.354-6.049-0.002-8.416c-1.137-1.131-2.631-1.754-4.209-1.754C14.513,3.037,13.104,3.589,12,4.595z M18.791,6.205 c1.563,1.571,1.564,4.025,0.002,5.588L12,18.586l-6.793-6.793C3.645,10.23,3.646,7.776,5.205,6.209 c0.76-0.756,1.754-1.172,2.799-1.172s2.035,0.416,2.789,1.17l0.5,0.5c0.391,0.391,1.023,0.391,1.414,0l0.5-0.5 C14.719,4.698,17.281,4.702,18.791,6.205z" />
+        <svg class="h-8 w-8 mt-10 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path id="styleHeartIcon" d="M2 9.1371C2 14 6.01943 16.5914 8.96173 18.9109C10 19.7294 11 20.5 12 20.5C13 20.5 14 19.7294 15.0383 18.9109C17.9806 16.5914 22 14 22 9.1371C22 4.27416 16.4998 0.825464 12 5.50063C7.50016 0.825464 2 4.27416 2 9.1371Z" fill="#4f4f4f"/>
         </svg>
     </div>
       <h1 id="txtDescription" class="text-xl justify-center font-bold text-center mt-4">${data.description}</h1>
@@ -1291,7 +1333,7 @@ async function createScene(){
 }
 async function clearUiBlocks(){
   const blocks = ['HatBlock', 'TshirtBlock', 'CoatBlock', 'PantsBlock'];
-  const blocksImg = ['jacket', 'tshirt', 'coat', 'pants'];
+  const blocksImg = ['shapka', 'futbolka', 'hudi', 'shtani'];
 
   let i = 0;
   for(const blockElement of blocks){

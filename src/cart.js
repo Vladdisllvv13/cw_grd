@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, where, query, deleteDoc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, where, query, deleteDoc, addDoc } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 
 
@@ -9,7 +9,6 @@ async function getUserId(){
   try{
     const userId = localStorage.getItem('userId');
     if(userId === null){
-      alert('Вы не зарегестрированы, поэтому будет предоставлена вся одежда');
       return 'ALL'
     }
     else return userId;
@@ -20,7 +19,7 @@ async function getUserId(){
 }
 
 let totalSum = 0;
-
+let itemsCount = 0;
 
 
 const firebaseConfig = {
@@ -61,6 +60,15 @@ async function showAlert(title){
         }
       }); 
 }
+const emptyCartSection = document.getElementById('emptyCartSection');
+const tableSection = document.getElementById('tableSection');
+
+async function showEmptyCartSection(){
+  
+
+  tableSection.hidden = true;
+  emptyCartSection.hidden = false;
+}
 
 async function getCart(){
   const tableBody = document.querySelector('#clothTable tbody');
@@ -70,13 +78,18 @@ async function getCart(){
   const shoppingCartRef = collection(db, 'shoppingCart');
   // Запрос данных из коллекции shoppingCart для конкретного пользователя
   const userCartItemsQuery = query(shoppingCartRef, where('idUser', '==', userId));
-
+  const querySnapshots = await getDocs(userCartItemsQuery);
+  if(querySnapshots.empty){
+    showEmptyCartSection();
+    return;
+  } 
+  tableSection.hidden = false;
   // Получение данных из запроса
   getDocs(userCartItemsQuery).then((querySnapshot) => {
     querySnapshot.forEach((doc) => {
       // Доступ к данным каждого документа и вывод информации о каждом элементе одежды
       const data = doc.data();
-      
+      itemsCount += 1;
       populateTable(data, doc.id)
     });
   });
@@ -164,41 +177,89 @@ async function deleteFromCart(itemId){
     await deleteDoc(itemDocRef);
     console.log('Документ успешно удален из корзины');
     totalSum = 0;
+    itemsCount = 0;
+    const totalSumText = document.getElementById('totalSum');
+    totalSumText.textContent = `₽ ${totalSum}`;
     getCart();
-    showAlert("Успешно удалено!");
   } catch (error) {
     console.log('Ошибка при удалении документа:', error);
     showAlert("Не удалось удалить товар из корзины!");
   }
 }
 
+async function writeItemToPurchase(data, itemId){
+  try{
+
+    const userId = await getUserId();
+    let idUser = userId;
+    let color = data.idColor;
+    let size = data.idSize;
+    let idCloth = data.idCloth;
 
 
+    const newPurchase = {
+      size,
+      color,
+      idCloth,
+      idUser,
+    };
+    totalSum = 0;
+    itemsCount = 0;
+    const purchaseCollection = collection(db, 'purchase');
+    await addDoc(purchaseCollection, newPurchase);
+    deleteFromCart(itemId);
+  }catch (error) {
+    showAlert("Не удалось добавить товар!");
+  }
+}
+
+async function checkoutPurchase(){
+  try{
+    // Запрос данных из коллекции shoppingCart для конкретного пользователя
+    const shoppingCartRef = collection(db, 'shoppingCart');
+    // Запрос данных из коллекции shoppingCart для конкретного пользователя
+    const userCartItemsQuery = query(shoppingCartRef, where('idUser', '==', userId));
+
+    // Получение данных из запроса
+    getDocs(userCartItemsQuery).then((querySnapshot) => {
+      querySnapshot.forEach((doc) => {
+        // Доступ к данным каждого документа и вывод информации о каждом элементе одежды
+        const data = doc.data();
+        writeItemToPurchase(data, doc.id)
+      });
+    });
+    showAlert("Производится оплата")
+  }catch (error) {
+    console.log('Ошибка при оплате:', error);
+    showAlert("Не удалось оплатить покупку!");
+  }
+}
 
 
 
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', function() {
     localStorage.setItem('userId', 'ALL');
-    alert('Вы успешно вышли из системы');
+    
     exitButton.hidden = true;
-    location.reload();
+    window.location.href = "catalog.html";
 
 });
+const favouritesSection = document.getElementById('favouritesSection');
 if(userId !== 'ALL'){
   exitButton.hidden = false;
+  favouritesSection.hidden = false;
 }
 
-// //Рендерим все найденное
-// async function renderCard(clothes) {
-//     clothes.forEach((data) => {
-//         populateTable(data);
-//     });
-//   }
 
 const toCatalogButton = document.getElementById('toCatalogButton');
 toCatalogButton.addEventListener('click', function() {
     window.location = 'catalog.html';
+});
+
+const checkoutButton = document.getElementById('checkoutButton');
+checkoutButton.addEventListener('click', function() {
+    if(itemsCount != 0) checkoutPurchase()
 });
 
 async function main(){

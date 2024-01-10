@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="ru">
   <head>
-    <title>Virtual shop</title>
+    <title>VirtS</title>
     <meta charset="UTF-8"/>
     <!-- Подключение Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="shortcut icon" href="images/icon.svg" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
@@ -13,23 +14,25 @@
       }
     </style>
   </head>
-  <body>
+  <body class="leading-normal tracking-normal">
 
     <!-- Header -->
     <header class="text-gray-600 body-font border border-gray-300 shadow-md">
       <div class="container mx-auto flex flex-wrap p-5 flex-col md:flex-row items-center ">
         <a class="flex title-font font-medium items-center text-gray-900 mb-4 md:mb-0" href="index.html">
           <img src="images/icon.svg" width="30" height="20" class="w-10 h-10 text-white p-2 bg-indigo-500 rounded-full">
-          <span class="ml-3 text-xl">Virtual shop</span>
+          <span class="ml-3 text-xl">VirtS</span>
         </a>
         <nav class="md:ml-auto md:mr-auto flex flex-wrap items-center text-base justify-center">
           <a class="mr-5 hover:text-gray-900" href="index.html">Главная</a>
           <a class="mr-5 hover:text-gray-900" href="catalog.html">Каталог</a>
           <a class="mr-5 hover:text-gray-900" href="garderob.html">Гардероб</a>
-          <a class="mr-5 ml-12 hover:text-gray-900 flex title-font font-medium items-center mb-4 md:mb-0" href="favourites.html">
-            <span class="">Избранное</span>
-            <img src="images/Favourites.svg" width="30" height="20" class="w-10 h-10 text-white p-2">
-          </a>
+          <section id="favouritesSection" hidden>
+            <a class="mr-5 ml-12 hover:text-gray-900 flex title-font font-medium items-center mb-4 md:mb-0" href="favourites.html">
+              <span class="">Избранное</span>
+              <img src="images/Favourites.svg" width="30" height="20" class="w-10 h-10 text-white p-2">
+            </a>
+          </section>
         </nav>
         <div id="exitButton" class="mr-5 text-red-400 hover:text-red-900" hidden>Выйти</div>
         <button id="authButton" class="inline-flex items-center bg-gray-100 border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 rounded text-base mt-4 md:mt-0">Войти
@@ -40,7 +43,11 @@
       </div>
     </header>
 
-    <h1 id="txtTitle" class="text-4xl font-bold text-center mt-10">Гардероб</h1>
+    <div class="flex justify-center items-center mt-10">
+      <h1 id="txtTitle" class="text-4xl font-bold text-center">Гардероб</h1>
+      
+    </div>
+    
     <div class="w-full mt-4 mb-8">
       <div class="h-1 mx-auto gradient w-72 opacity-25 my-0 py-0 rounded-t"></div>
     </div>
@@ -63,28 +70,28 @@
     </div>
 
     <!-- Блоки добавленной одежды -->
-    <div class="container mx-auto mt-5 flex items-start">
+    <div class="container mx-auto mt-5 flex justify-center items-center">
 
       <div id="HatBlock" class="w-1/4 mr-4 shadow hover:shadow-lg bg-gray-100 p-6 rounded-lg border border-gray-950">
-        <img class="imageContainer720x400 object-scale-down h-20 rounded w-20 object-center mb-6" src="images/jacket.png" alt="content">
+        <img class="imageContainer720x400 object-scale-down h-20 rounded w-20 object-center mb-6" src="images/shapka.png" alt="content">
         <h3 class="nameOne tracking-widest text-purple-500 text-2xl font-medium title-font"></h3>
         <button class="mt-2 bg-transparent hover:bg-purple-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-purple-500 hover:border-transparent rounded" id="removeButton" hidden>Снять</button>
       </div>
 
       <div id="TshirtBlock" class="w-1/4 mr-4 shadow hover:shadow-lg bg-gray-100 p-6 rounded-lg border border-gray-950">
-          <img class="imageContainer720x400 object-scale-down h-20 rounded w-20 object-center mb-6" src="images/tshirt.png" alt="content">
+          <img class="imageContainer720x400 object-scale-down h-20 rounded w-20 object-center mb-6" src="images/futbolka.png" alt="content">
           <h3 class="nameOne tracking-widest text-purple-500 text-2xl font-medium title-font"></h3>
           <button class="mt-2 bg-transparent hover:bg-purple-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-purple-500 hover:border-transparent rounded" id="removeButton" hidden>Снять</button>
       </div>
 
       <div id="CoatBlock" class="w-1/4 mr-4 shadow hover:shadow-lg bg-gray-100 p-6 rounded-lg border border-gray-950">
-          <img class="imageContainer720x400 object-scale-down h-20 rounded w-20 object-center mb-6" src="images/coat.png" alt="content">
+          <img class="imageContainer720x400 object-scale-down h-20 rounded w-20 object-center mb-6" src="images/hudi.png" alt="content">
           <h3 class="nameOne tracking-widest text-purple-500 text-2xl font-medium title-font"></h3>
           <button class="mt-2 bg-transparent hover:bg-purple-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-purple-500 hover:border-transparent rounded" id="removeButton" hidden>Снять</button>
       </div>
 
       <div id="PantsBlock" class="w-1/4 mr-4 shadow hover:shadow-lg bg-gray-100 p-6 rounded-lg border border-gray-950">
-          <img class="imageContainer720x400 object-scale-down h-20 rounded w-20 object-center mb-6" src="images/pants.png" alt="content">
+          <img class="imageContainer720x400 object-scale-down h-20 rounded w-20 object-center mb-6" src="images/shtani.png" alt="content">
           <h3 class="nameOne tracking-widest text-purple-500 text-2xl font-medium title-font"></h3>
           <button class="mt-2 bg-transparent hover:bg-purple-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-purple-500 hover:border-transparent rounded" id="removeButton" hidden>Снять</button>
       </div>

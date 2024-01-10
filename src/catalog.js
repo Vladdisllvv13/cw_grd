@@ -78,15 +78,14 @@ async function createClothBlock(data, list) {
         <img class="object-scale-down h-40 rounded w-40 object-center mb-6" src="" alt="content">
         <h3 class="sizesOne tracking-widest text-purple-500 text-xs font-medium title-font"></h3>
         <h1 class="clothTypeOne text-lg text-gray-900 font-medium title-font"></h4>
-        <h5 class="nameOne text-lg text-gray-900 font-medium title-font"></h5>
+        <h5 class="nameOne text-lg text-2xl text-gray-900 font-medium title-font"></h5>
 
         <div class="flex items-end mb-4">
           <h5 class="priceOne text-lg text-3xl font-bold font-medium text-purple-800 title-font"></h5>
-          <svg id="heartIcon" class="h-8 w-8 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-              <path d="M12,4.595c-1.104-1.006-2.512-1.558-3.996-1.558c-1.578,0-3.072,0.623-4.213,1.758c-2.353,2.363-2.352,6.059,0.002,8.412 l7.332,7.332c0.17,0.299,0.498,0.492,0.875,0.492c0.322,0,0.609-0.163,0.792-0.409l7.415-7.415 c2.354-2.354,2.354-6.049-0.002-8.416c-1.137-1.131-2.631-1.754-4.209-1.754C14.513,3.037,13.104,3.589,12,4.595z M18.791,6.205 c1.563,1.571,1.564,4.025,0.002,5.588L12,18.586l-6.793-6.793C3.645,10.23,3.646,7.776,5.205,6.209 c0.76-0.756,1.754-1.172,2.799-1.172s2.035,0.416,2.789,1.17l0.5,0.5c0.391,0.391,1.023,0.391,1.414,0l0.5-0.5 C14.719,4.698,17.281,4.702,18.791,6.205z" />
-          </svg>
-        </div>
-        
+          <svg class="h-8 w-8 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path id="heartIcon" d="M2 9.1371C2 14 6.01943 16.5914 8.96173 18.9109C10 19.7294 11 20.5 12 20.5C13 20.5 14 19.7294 15.0383 18.9109C17.9806 16.5914 22 14 22 9.1371C22 4.27416 16.4998 0.825464 12 5.50063C7.50016 0.825464 2 4.27416 2 9.1371Z" fill="#4f4f4f"/>
+          </svg>        
+          </div>
         <div class="colorsOne flex mb-4"></div>
         <div class="flex items-stretch">
           <button id="moreButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">
@@ -108,6 +107,8 @@ async function createClothBlock(data, list) {
     if (clothTypeElement && nameElement && sizesElement && imageElement && colorsElement && priceElement) {
       const clothTypeSnapshot = await getDoc(data.clothTypeRef);
       const clothTypeValue = clothTypeSnapshot.data().name;
+      const clothTypeGenderSnapshot = await getDoc(data.clothTypeGenderRef);
+      const clothTypeGenderValue = clothTypeGenderSnapshot.data().name;
       const nameSnapshot = await getDoc(data.nameRef); // Fetch the document snapshot
       const priceSnapshot = await getDoc(data.priceRef);
       const sizeSnapshots = await Promise.all(data.sizeRefs.map((sizeRef) => getDoc(sizeRef)));
@@ -122,7 +123,7 @@ async function createClothBlock(data, list) {
         imageUrl = await getDownloadURL(storageImageRef);
         imageElement.src = imageUrl;
       }
-      clothTypeElement.textContent = clothTypeValue;
+      clothTypeElement.textContent = `${clothTypeValue} (${clothTypeGenderValue[0]})`;
       nameElement.textContent = nameSnapshot.data().name; // Access the data from the snapshot
       priceElement.textContent = `${priceSnapshot.data().price} руб.`;
       sizesElement.textContent = sizeValues;
@@ -187,9 +188,9 @@ async function createClothBlock(data, list) {
               </div>
               <div class="clothTypeRef flex-none w-full mt-2 text-sm font-medium text-gray-500 dark:text-gray-300">
               </div>
+              <div class="sizesRadioGroup flex items-baseline mt-4 mb-6 text-gray-700 dark:text-gray-300"></div>
             </div>
-            <div class="sizesRadioGroup flex items-baseline mt-4 mb-6 text-gray-700 dark:text-gray-300"></div>
-            <div class="clothColors flex items-baseline mt-4 mb-6 text-gray-700 dark:text-gray-300"></div>
+            
             <div class="flex mb-4 text-sm font-medium">
               <button id="addToCartButton" type="button" class="py-2 px-4  bg-purple-600 hover:bg-purple-700 focus:ring-purple-500 focus:ring-offset-purple-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-lg ">
                 В корзину
@@ -250,9 +251,17 @@ async function createClothBlock(data, list) {
 
         const addToCartButton = clothesBlock.querySelector('#addToCartButton');
         addToCartButton.addEventListener('click', () => {
-          const selectedSize = document.querySelector('input[name="size"]:checked').value;
-          const selectedColor = document.querySelector('input[name="color"]:checked').value;
-          addToCart(data, selectedSize, selectedColor);
+          try{
+            const selectedSize = document.querySelector('input[name="size"]:checked').value;
+            const selectedColor = document.querySelector('input[name="color"]:checked').value;
+            addToCart(data, selectedSize, selectedColor);
+          }
+          catch (error) {
+            Swal.fire({
+              icon: "info",
+              title: "Вы не выбрали цвет или размер одежды",
+            });
+          }
         });
 
         // Close the window when clicking outside of it
@@ -292,7 +301,11 @@ async function addToFavourites(clothId) {
   const userId = await getUserId();
   console.log(userId);
   if(userId === 'ALL'){
-    alert('Нельзя добавить одежду в избранное для незарегистрированного пользователя.');
+    Swal.fire({
+      icon: "error",
+      title: "Упс...",
+      text: "Нельзя добавить одежду в избранное для незарегистрированного пользователя.",
+    });
     return;
   }
   const userDoc = doc(userCollection, userId);
@@ -371,7 +384,11 @@ async function addToCart(data, size, color){
   const userId = await getUserId();
   console.log(userId);
   if(userId === 'ALL'){
-    alert('Нельзя добавить одежду в корзину для незарегистрированного пользователя. Вы можете зарегистрироваться в системе.');
+    Swal.fire({
+      icon: "error",
+      title: "Упс...",
+      text: "Нельзя добавить одежду в корзину для незарегистрированного пользователя",
+    });
     return;
   }
   let idUser = userId;
@@ -415,7 +432,11 @@ async function addToCart(data, size, color){
 async function addStyleToWardrobe(data){
 
   if(userId === 'ALL'){
-    alert('Нельзя добавить стиль в гардероб для незарегистрированного пользователя. Вы можете зарегистрироваться в системе.');
+    Swal.fire({
+      icon: "error",
+      title: "Упс...",
+      text: "Нельзя добавить стиль в гардероб для незарегистрированного пользователя",
+    });
     return;
   }
 
@@ -500,80 +521,6 @@ async function populateList(data, userStylesData, styleId, index) {
   });
 }
 
-async function addStyleToFavourites(styleId){
-  const userCollection = collection(db, 'users');
-  const userId = await getUserId();
-  console.log(userId);
-  if(userId === 'ALL'){
-    alert('Нельзя добавить стиль в избранное для незарегистрированного пользователя.');
-    return;
-  }
-  const userDoc = doc(userCollection, userId);
-
-  // Получаем текущие данные пользователя
-  getDoc(userDoc).then((userDocSnapshot) => {
-    if (userDocSnapshot.exists()) {
-      const userData = userDocSnapshot.data();
-      let favouritesStylеsIds = userData.idFavouriteStyles || [];
-
-
-      // Проверяем, содержит ли массив уже выбранный идентификатор одежды
-      if (!favouritesStylеsIds.includes(styleId)) {
-        // Добавляем идентификатор одежды к массиву
-        favouritesStylеsIds.push(styleId);
-
-        // Обновляем данные пользователя в базе данных
-        updateDoc(userDoc, { idFavouriteStyles: favouritesStylеsIds }).then(() => {
-          Swal.fire({
-            icon: "success",
-            title: "Стиль добавлен в избранное!",
-            showConfirmButton: false,
-            timer: 1500
-          });
-          setTimeout(function() {
-          }, 2000);
-        }).catch((error) => {
-          console.error('Error updating user data:', error);
-        });
-      }
-    }
-  }).catch((error) => {
-    console.error('Error fetching user data:', error);
-  });
-}
-async function removeStyleFromFavourites(styleId){
-  try {
-    const userCollection = collection(db, 'users');
-    const userDoc = doc(userCollection, userId);
-
-    // Retrieve the user document
-    const userDocSnapshot = await getDoc(userDoc);
-    if (userDocSnapshot.exists()) {
-      const userData = userDocSnapshot.data();
-      let favouritesStylesIds = userData.idFavouriteStyles || [];
-
-      favouritesStylesIds = favouritesStylesIds.filter((id) => id !== styleId);
-
-      // Update the user document with the modified wardrobeClothesIds array
-      await updateDoc(userDoc, { idFavouriteStyles: favouritesStylesIds });
-
-      // Optional: You can also update the UI to reflect the deletion
-      // For example, remove the deleted cloth from the DOM
-
-      Swal.fire({
-        icon: "success",
-        title: "Стиль удален из избранного!",
-        showConfirmButton: false,
-        timer: 1500
-      });
-      setTimeout(function() {
-      }, 2000);
-    }
-  } catch (error) {
-    console.error('Error deleting style:', error);
-  }
-}
-
 async function getStyles(){
   let i = 0;
   const stylesBody = document.getElementById('garderobStylesList');
@@ -619,21 +566,29 @@ async function handleSearchAndFilter() {
     const selectedTypesGender = Array.from(document.querySelectorAll('#dropdownGender input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
     const filteredClothesData = [];
 
-    for (const cloth of clothesData) {
-      const nameSnapshot = await getDoc(cloth.nameRef);
+    const promises = clothesData.map(async (cloth) => {
+      const [nameSnapshot, clothTypeSnapshot, clothTypeGenderSnapshot] = await Promise.all([
+        getDoc(cloth.nameRef),
+        getDoc(cloth.clothTypeRef),
+        getDoc(cloth.clothTypeGenderRef)
+      ]);
+
       const name = nameSnapshot.data().name.toLowerCase();
-      const clothTypeSnapshot = await getDoc(cloth.clothTypeRef);
       const clothTypeValue = clothTypeSnapshot.data().name.toLowerCase();
-      const clothTypeGenderSnapshot = await getDoc(cloth.clothTypeGenderRef);
       const clothTypeGenderValue = clothTypeGenderSnapshot.data().name.toLowerCase();
       const sizeIds = cloth.sizeRefs.map((sizeRef) => sizeRef.id);
 
-      if ((name.includes(searchTerm) || (clothTypeValue.includes(searchTerm)) || (clothTypeGenderValue.includes(searchTerm))) && selectedSizes.some((size) => sizeIds.includes(size)) 
-      && selectedTypes.includes(cloth.clothTypeRef.id) && selectedTypesGender.includes(cloth.clothTypeGenderRef.id)) {
+      if (
+        (name.includes(searchTerm) || clothTypeValue.includes(searchTerm) || clothTypeGenderValue.includes(searchTerm)) &&
+        selectedSizes.some((size) => sizeIds.includes(size)) &&
+        selectedTypes.includes(cloth.clothTypeRef.id) &&
+        selectedTypesGender.includes(cloth.clothTypeGenderRef.id)
+      ) {
         filteredClothesData.push(cloth);
       }
-    }
+    });
 
+    await Promise.all(promises);
     renderClothes(filteredClothesData);
   } catch (error) {
     console.error("Error handling search and filter:", error);
@@ -646,7 +601,11 @@ async function addToWardrobe(clothId) {
   const userId = await getUserId();
   console.log(userId);
   if(userId === 'ALL'){
-    alert('Нельзя добавить одежду для незарегистрированного пользователя. Вы можете перейти в гардероб где будет доступна вся одежда, либо зарегистрироваться в системе.');
+    Swal.fire({
+      icon: "error",
+      title: "Упс...",
+      text: "Нельзя добавить одежду в гардероб для незарегистрированного пользователя!",
+    });
     return;
   }
   const userDoc = doc(userCollection, userId);
@@ -667,12 +626,22 @@ async function addToWardrobe(clothId) {
 
         // Обновляем данные пользователя в базе данных
         updateDoc(userDoc, { idWardrobeClothes: wardrobeClothesIds }).then(() => {
-          alert('Одежда добавлена в гардероб');
+          Swal.fire({
+            icon: "success",
+            title: "Одежда добавлена в гардероб",
+            showConfirmButton: false,
+            timer: 1500
+          });
+          setTimeout(function() {
+          }, 2000);
         }).catch((error) => {
           console.error('Error updating user data:', error);
         });
       } else {
-        alert('Выбранная одежда уже есть в вашем гардеробе');
+        Swal.fire({
+          icon: "info",
+          title: "Выбранная одежда уже есть в вашем гардеробе",
+        });
       }
     }
   }).catch((error) => {
@@ -791,16 +760,34 @@ authButton.addEventListener('click', function() {
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', function() {
     localStorage.setItem('userId', 'ALL');
-    alert('Вы успешно вышли из системы');
     exitButton.hidden = true;
     location.reload();
 });
 
 
-
+const favouritesSection = document.getElementById('favouritesSection');
 if(userId !== 'ALL'){
   exitButton.hidden = false;
+  favouritesSection.hidden = false;
 }
+
+const toCartButton = document.getElementById('toCartButton');
+toCartButton.addEventListener('click', function() {
+  if(userId !== 'ALL') window.location.href = "cart.html"
+  else{
+    Swal.fire({
+      title: "Вы не вошли в систему. Перейти на страницу аутентификации?",
+      showCancelButton: true,
+      confirmButtonText: "Перейти",
+      cancelButtonText: "Отмена",
+    }).then((result) => {
+      /* Read more about isConfirmed, isDenied below */
+      if (result.isConfirmed) {
+        window.location.href = "auth.html"
+      }
+    });
+  }
+});
 
 
 async function main(){

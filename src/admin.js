@@ -81,7 +81,7 @@ async function createClothBlock(data) {
         <img class="object-scale-down h-40 rounded w-40 object-center mb-6" src="" alt="content">
         <h3 class="sizesOne tracking-widest text-purple-500 text-xs font-medium title-font"></h3>
         <h1 class="clothTypeOne text-lg text-gray-900 font-medium title-font"></h4>
-        <h5 class="nameOne text-lg text-gray-900 font-medium title-font"></h5>
+        <h5 class="nameOne text-lg text-2xl text-gray-900 font-medium title-font"></h5>
 
         <div class="flex items-end mb-4">
           <h5 class="priceOne text-lg text-3xl font-bold font-medium text-purple-800 title-font"></h5>
@@ -108,6 +108,8 @@ async function createClothBlock(data) {
     if (clothTypeElement && nameElement && sizesElement && imageElement && colorsElement && priceElement) {
       const clothTypeSnapshot = await getDoc(data.clothTypeRef);
       const clothTypeValue = clothTypeSnapshot.data().name;
+      const clothTypeGenderSnapshot = await getDoc(data.clothTypeGenderRef);
+      const clothTypeGenderValue = clothTypeGenderSnapshot.data().name;
       const nameSnapshot = await getDoc(data.nameRef); // Fetch the document snapshot
       const priceSnapshot = await getDoc(data.priceRef);
       const sizeSnapshots = await Promise.all(data.sizeRefs.map((sizeRef) => getDoc(sizeRef)));
@@ -122,7 +124,7 @@ async function createClothBlock(data) {
         const imageUrl = await getDownloadURL(storageImageRef);
         imageElement.src = imageUrl;
       }
-      clothTypeElement.textContent = clothTypeValue;
+      clothTypeElement.textContent = `${clothTypeValue} (${clothTypeGenderValue[0]})`;
       nameElement.textContent = nameSnapshot.data().name; // Access the data from the snapshot
       priceElement.textContent = `${priceSnapshot.data().price} руб.`;
       sizesElement.textContent = sizeValues;
@@ -169,21 +171,29 @@ async function handleSearchAndFilter() {
     const selectedTypesGender = Array.from(document.querySelectorAll('#dropdownGender input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
     const filteredClothesData = [];
 
-    for (const cloth of clothesData) {
-      const nameSnapshot = await getDoc(cloth.nameRef);
+    const promises = clothesData.map(async (cloth) => {
+      const [nameSnapshot, clothTypeSnapshot, clothTypeGenderSnapshot] = await Promise.all([
+        getDoc(cloth.nameRef),
+        getDoc(cloth.clothTypeRef),
+        getDoc(cloth.clothTypeGenderRef)
+      ]);
+
       const name = nameSnapshot.data().name.toLowerCase();
-      const clothTypeSnapshot = await getDoc(cloth.clothTypeRef);
       const clothTypeValue = clothTypeSnapshot.data().name.toLowerCase();
-      const clothTypeGenderSnapshot = await getDoc(cloth.clothTypeGenderRef);
       const clothTypeGenderValue = clothTypeGenderSnapshot.data().name.toLowerCase();
       const sizeIds = cloth.sizeRefs.map((sizeRef) => sizeRef.id);
 
-      if ((name.includes(searchTerm) || (clothTypeValue.includes(searchTerm)) || (clothTypeGenderValue.includes(searchTerm))) && selectedSizes.some((size) => sizeIds.includes(size)) 
-      && selectedTypes.includes(cloth.clothTypeRef.id) && selectedTypesGender.includes(cloth.clothTypeGenderRef.id)) {
+      if (
+        (name.includes(searchTerm) || clothTypeValue.includes(searchTerm) || clothTypeGenderValue.includes(searchTerm)) &&
+        selectedSizes.some((size) => sizeIds.includes(size)) &&
+        selectedTypes.includes(cloth.clothTypeRef.id) &&
+        selectedTypesGender.includes(cloth.clothTypeGenderRef.id)
+      ) {
         filteredClothesData.push(cloth);
       }
-    }
+    });
 
+    await Promise.all(promises);
     renderClothes(filteredClothesData);
   } catch (error) {
     console.error("Error handling search and filter:", error);
@@ -231,6 +241,7 @@ async function deleteCloth(clothId) {
             text: "Одежда была удалена из каталога и из гардероба каждого пользователя.",
             icon: "success"
           });
+          location.reload();
         } catch (error) {
           console.error("Ошибка при удалении одежды:", error);
           Swal.fire({
@@ -303,7 +314,7 @@ async function changeCloth(data) {
     </select>
     <div>Цена</div>
     <form oninput="result.value = slider.value">
-      <input type="range" id="slider" class="swal2-input" min="100" max="100000" step="10" value="${priceSnapshot.data().price}"> <br />
+      <input type="range" id="slider" class="swal2-input" min="100" max="10000" step="10" value="${priceSnapshot.data().price}"> <br />
       Цена товара <output name="result" for="slider">${priceSnapshot.data().price}</output> руб.
     </form>
     <div>Размеры</div>
@@ -420,39 +431,50 @@ async function changeCloth(data) {
     if (result.isConfirmed) {
       const selectedSizeIds = result.value.selectedSizes;
       const selectedColorIds = result.value.selectedColors;
+      const name = document.getElementById('Name').value;
+      const price = parseInt(document.getElementById('slider').value);
+      const image = document.getElementById('Image').value;
+      const model = document.getElementById('Model').value;
+
+      if(name.trim() === '' || image.trim() === '' || model.trim() === '' || selectedSizeIds.length === 0 || selectedColorIds.length === 0){
+        Swal.fire({
+          icon: "error",
+          title: "Упс...",
+          text: "Вы не заполнили обязательные поля!",
+        });
+      }
+      else{
+        const nameRef = doc(db, 'clothes', data.nameRef.id);
+        const priceRef = doc(db, 'clothes', data.priceRef.id);
+        const imageRef = doc(db, 'clothes', data.imageRef.id);
+        const modelRef = doc(db, 'clothes', data.modelRef.id);
+
+        // Обновление данных в Firestore
+        updateDoc(nameRef, { name: name });
+        updateDoc(priceRef, { price: price });
+        updateDoc(imageRef, { image: image });
+        updateDoc(modelRef, { model: model });
+
+        // Get the selected cloth type ID from the <select> element
+        const selectedClothType = document.getElementById('clothType-select').value;
+        // Get the selected cloth type ID from the <select> element
+        const selectedClothTypeGender = document.getElementById('clothTypeGender-select').value;
 
 
+        // Update the document in the "clothes" collection with the selected color and size IDs
+        const docRef = doc(db, 'clothes', idCloth);
+        updateDoc(docRef, { idColors: selectedColorIds, idSizes: selectedSizeIds, idClothType: selectedClothType, idClothTypeGender: selectedClothTypeGender });
 
-      const nameRef = doc(db, 'clothes', data.nameRef.id);
-      const priceRef = doc(db, 'clothes', data.priceRef.id);
-      const imageRef = doc(db, 'clothes', data.imageRef.id);
-      const modelRef = doc(db, 'clothes', data.modelRef.id);
-      const clothTypeRef = doc(db, 'clothes', data.clothTypeRef.id);
-
-      // Обновление данных в Firestore
-      updateDoc(nameRef, { name: document.getElementById('Name').value });
-      updateDoc(priceRef, { price: parseInt(document.getElementById('slider').value) });
-      updateDoc(imageRef, { image: document.getElementById('Image').value });
-      updateDoc(modelRef, { model: document.getElementById('Model').value });
-
-      // Get the selected cloth type ID from the <select> element
-      const selectedClothType = document.getElementById('clothType-select').value;
-      // Get the selected cloth type ID from the <select> element
-      const selectedClothTypeGender = document.getElementById('clothTypeGender-select').value;
-
-
-      // Update the document in the "clothes" collection with the selected color and size IDs
-      const docRef = doc(db, 'clothes', idCloth);
-      updateDoc(docRef, { idColors: selectedColorIds, idSizes: selectedSizeIds, idClothType: selectedClothType, idClothTypeGender: selectedClothTypeGender });
-
-      Swal.fire({
-        icon: "success",
-        title: "Информация сохранена!",
-        showConfirmButton: false,
-        timer: 1500
-      });
-      setTimeout(function() {
-      }, 2000);
+        Swal.fire({
+          icon: "success",
+          title: "Информация сохранена!",
+          showConfirmButton: false,
+          timer: 1500
+        });
+        setTimeout(function() {
+        }, 2000);
+        location.reload();
+      }
     }
   });
 }
@@ -621,20 +643,7 @@ async function addCloth() {
     }
   }).then(async (result) => {
     if (result.isConfirmed) {
-      // Получите последний документ в коллекции "clothes"
-      const lastClothQuery = query(collection(db, 'clothes'), orderBy('__name__', 'desc'), limit(1));
-      const lastClothSnapshot = await getDocs(lastClothQuery);
-      const lastClothId = lastClothSnapshot.docs[0].id;
-
-      // Преобразуйте идентификатор в целое число
-      const lastClothIdNumber = parseInt(lastClothId);
-
-      // Вычислите новый идентификатор
-      const newClothIdNumber = lastClothIdNumber + 1;
-
-      // Присвойте новый идентификатор новому документу
-      const newClothId = newClothIdNumber.toString();
-
+      
       const selectedType = result.value.idClothType;
       const selectedTypeGender = result.value.idClothTypeGender;
       const selectedSizeIds = result.value.selectedSizes;
@@ -644,33 +653,49 @@ async function addCloth() {
       const selectedName = result.value.selectedName;
       const selectedPrice = result.value.selectedPrice;
 
+      if(selectedName.trim() === '' || selectedImage.trim() === '' || selectedModel.trim() === '' || selectedSizeIds.length === 0 || selectedColorIds.length === 0){
+        Swal.fire({
+          icon: "error",
+          title: "Упс...",
+          text: "Вы не заполнили обязательные поля!",
+        });
+      }
+      else{
+        const querySnapshot = await getDocs(collection(db, 'clothes'));
+        const documents = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const sortedDocuments = documents.sort((a, b) => a.id - b.id);
+        const lastDocument = sortedDocuments[sortedDocuments.length - 1];
+        
+        console.log('ID последнего документа:', lastDocument.id);
+        const newDocId = parseInt(lastDocument.id) + 1;
 
-      
-      console.log('New Cloth ID:', newClothId);
+        // Присвойте новый идентификатор новому документу
+        const newClothId = newDocId.toString();
 
-      const newClothData = {
-        idClothType: selectedType,
-        idClothTypeGender: selectedTypeGender,
-        idColors: selectedColorIds,
-        idSizes: selectedSizeIds,
-        image: selectedImage,
-        model: selectedModel,
-        name: selectedName,
-        price: selectedPrice
-      };
+        const newClothData = {
+          idClothType: selectedType,
+          idClothTypeGender: selectedTypeGender,
+          idColors: selectedColorIds,
+          idSizes: selectedSizeIds,
+          image: selectedImage,
+          model: selectedModel,
+          name: selectedName,
+          price: selectedPrice
+        };
 
-      // Добавьте новый документ в коллекцию "clothes" с новым идентификатором
-      const newClothDocRef = await setDoc(doc(db, 'clothes', newClothId), newClothData);
+        // Добавьте новый документ в коллекцию "clothes" с новым идентификатором
+        await setDoc(doc(db, 'clothes', newClothId), newClothData);
 
-
-      Swal.fire({
-        icon: "success",
-        title: "Информация сохранена!",
-        showConfirmButton: false,
-        timer: 1500
-      });
-      setTimeout(function() {
-      }, 2000);
+        Swal.fire({
+          icon: "success",
+          title: "Информация сохранена!",
+          showConfirmButton: false,
+          timer: 1500
+        });
+        setTimeout(function() {
+        }, 2000);
+        }
+        location.reload();
     }
   });
 }
@@ -725,7 +750,7 @@ authButton.addEventListener('click', function() {
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', function() {
     localStorage.setItem('userId', 'ALL');
-    alert('Вы успешно вышли из системы');
+    
     exitButton.hidden = true;
     location.reload();
 });

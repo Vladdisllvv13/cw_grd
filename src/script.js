@@ -38,10 +38,12 @@ authButton.addEventListener('click', function() {
   window.location.href = 'auth.html';
 });
 
+const favouritesSection = document.getElementById('favouritesSection');
+
+
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', async function() {
   localStorage.setItem('userId', 'ALL');
-  alert('Вы успешно вышли из системы');
   exitButton.style.display = 'none';
   location.reload();
 });
@@ -50,8 +52,10 @@ async function main() {
   const userId = await getUserId();
   if (userId !== 'ALL') {
     exitButton.style.display = 'inline-flex';
+    favouritesSection.hidden = false;
   } else {
     exitButton.style.display = 'none';
+    favouritesSection.hidden = true;
   }
 }
 
