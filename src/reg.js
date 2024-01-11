@@ -18,6 +18,30 @@ const db = getFirestore(firebaseApp);
 const registerButton = document.getElementById('registerButton');
 registerButton.addEventListener('click', registerUser);
 
+function validateEmail(email) {
+  var pattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return pattern.test(String(email).toLowerCase());
+}
+
+function validatePassword(password) {
+  var pattern = /^(?=.*\d)(?=.*[a-zA-Z]).{6,20}$/;
+  return pattern.test(password);
+}
+
+function validateFio(input) {
+  var pattern = /^[а-яА-ЯёЁa-zA-Z]+$/;
+  return pattern.test(input);
+}
+
+function showAlert(text){
+  Swal.fire({
+    icon: "error",
+    title: "Упс...",
+    text: text,
+  });
+  return;
+}
+
 async function registerUser() {
     // Retrieve the values from the input fields
     const surname = document.getElementById('surname').value;
@@ -26,7 +50,19 @@ async function registerUser() {
     const email = document.getElementById('email').value;
     const gender = document.getElementById('gender').value;
     const password = document.getElementById('password').value;
-  
+    const passwordCopy = document.getElementById('passwordCopy').value;
+
+    if(name.trim() === '' || surname.trim() === '' || middlename.trim() === '' || email.trim() === '' || password.trim() === ''){ showAlert("Вы не заполнили обязательные поля!"); return;}
+    if(surname.length < 2){ showAlert("Ваша Фамилия слишком короткая"); return;}
+    if(name.length < 2){ showAlert("Ваше Имя слишком короткое"); return;}
+    if(middlename.length < 4){ showAlert("Ваше Отчество слишком короткое"); return;}
+    if(!validateFio(surname)){ showAlert("Неверно введена Фамилия"); return;}
+    if(!validateFio(name)){ showAlert("Неверно введено Имя"); return;}
+    if(!validateFio(middlename)){ showAlert("Неверно введено Отчество"); return;}
+    if(!validateEmail(email)){ showAlert("Неправильно введен адрес электронной почты!"); return;}
+    if(!validatePassword(password)) { showAlert("Неверный формат пароля!"); return;}
+    if(password.length < 7 && passwordCopy.length < 7){ showAlert("Пароль слишком короткий"); return;}
+    if(password !== passwordCopy){ showAlert("Пароли не совпадают!"); return;}
     // Create a new user object
     const newUser = {
       surname,

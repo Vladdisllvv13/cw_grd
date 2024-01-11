@@ -362,11 +362,14 @@ if(userId !== 'ALL'){
 
 const userSnapshot = await getDoc(doc(userCollection, `${userId}`)); // Замените '1' на идентификатор пользователя, для которого вы хотите отобразить одежду
 const userData = userSnapshot.data();
-const userGender = userData.gender;
-if(userGender === "Женский"){
-  isMale = false;
-  isFemale = true;
-}
+try{
+  const userGender = userData.gender;
+  if(userGender === "Женский"){
+    isMale = false;
+    isFemale = true;
+  }
+} catch(error){};
+
 
 // Преобразуем идентификаторы в строковый формат
 const userWardrobeClothesIds = userData.idWardrobeClothes.map(String);
