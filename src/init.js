@@ -5,22 +5,26 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 const init = () => {
 	const sizes = {
-		width: window.innerWidth / 2,
-		height: window.innerHeight / 2,
+		width: window.innerWidth / 1.8,
+		height: window.innerHeight / 1.8,
 	};
 
 	const scene = new THREE.Scene();
-	scene.background = new THREE.Color( 0xffffff );
+	scene.background = new THREE.Color( '#393d3f' );
 	const canvas = document.querySelector('.canvas');
 	
 	const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height);
-	camera.position.set(0,24,18);
-	camera.lookAt(new THREE.Vector3(0,40,10));
+	camera.position.set(0,18,15);
+	camera.lookAt(new THREE.Vector3(0,10,0));
 	scene.add(camera);
 
 	const controls = new OrbitControls(camera, canvas);
 	controls.enableDamping = true;
 	controls.dampingFactor = 0.05;
+	controls.maxPolarAngle = Math.PI / 2.1;
+	controls.minPolarAngle = Math.PI / -1.2;
+	controls.minDistance = 8;
+	controls.maxDistance = 30;
 	
 	// const stats = new Stats();
 	// stats.showPanel(0);

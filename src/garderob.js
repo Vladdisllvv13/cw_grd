@@ -9,6 +9,8 @@ import './garderob.css';
 
 const { sizes, camera, scene, canvas, controls, renderer, stats, gui } = init();
 
+
+
 let tshirtCounter = 0;
 let coatCounter = 0;
 let pantsCounter = 0;
@@ -98,7 +100,7 @@ async function addFloor(){
     const floor = new THREE.Mesh(
         new THREE.BoxGeometry(60,60,2),
         new THREE.MeshStandardMaterial({
-            color: '#444444',
+            color: '#393d3f',
             metalness: 0,
             roughness: 0.5,
         }),
@@ -107,6 +109,21 @@ async function addFloor(){
     floor.receiveShadow = true;
     floor.rotation.x = -Math.PI * 0.5;
     scene.add(floor);
+}
+
+//Свет
+async function addLights(){
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.61);
+  hemiLight.position.set(0, 50, 0);
+  scene.add(hemiLight);
+
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.54);
+  dirLight.position.set(100, 100, 100);
+  dirLight.target.position.set(25, 20, 0);
+  dirLight.castShadow = true;
+  dirLight.shadow.bias = -0.01;
+  dirLight.shadow.mapSize = new THREE.Vector2(2048, 2048);
+  scene.add(dirLight);
 }
 
 //Текстуры
@@ -119,24 +136,11 @@ function setMaterial(currentColor, currentMetalness, currentRoughness, currentMa
         color: currentColor,
         metalness: currentMetalness,
         roughness: currentRoughness,
-        map: texture
+        //map: texture
     });
 }
 
-//Свет
-async function addLights(){
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.61);
-    hemiLight.position.set(0, 50, 0);
-    scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.54);
-    dirLight.position.set(100, 100, 100);
-    dirLight.target.position.set(75, 20, 0);
-    dirLight.castShadow = true;
-    dirLight.shadow.bias = -0.01;
-    dirLight.shadow.mapSize = new THREE.Vector2(2048, 2048);
-    scene.add(dirLight);
-}
 
 //Загрузка модели
 function loadMannequin(){
@@ -152,6 +156,7 @@ function loadMannequin(){
             console.log('success');
             console.log(gltf);
             const mannequin = gltf.scene.children[0];
+            mannequin.material = setMaterial("#F2DCC7", 0, 0.4);
             scene.add(mannequin);
             mannequin.name = 'mannequin';
         },
@@ -213,12 +218,10 @@ function loadCloth(modelName, clothType, clothId, firstColor){
 
 function setColor(clothType, color){
   let clothObject;
-  console.log(clothType);
   if (clothType == "Шапка" || clothType == "Кепка" || clothType == "Шляпа") clothObject = scene.getObjectByName("clothType1");
   else if (clothType == "Футболка" || clothType == "Топ" || clothType == "Майка") clothObject = scene.getObjectByName("clothType2");
   else if (clothType == "Кофта") clothObject = scene.getObjectByName("clothType3");
   else if (clothType == "Брюки" || clothType == "Шорты" || clothType == "Юбка") clothObject = scene.getObjectByName("clothType4");
-  console.log(clothObject);
   clothObject.material = setMaterial(color, 0, 0.4);
 }
 
@@ -229,8 +232,7 @@ const tick = () => {
     controls.update();
     const delta = clock.getDelta();
 
-
-
+    
     TWEEN.update();
     renderer.render(scene, camera);
     //stats.end();
@@ -276,7 +278,6 @@ async function saveStyle(){
         styleClothes.push(parseInt(hatId));
       }
     }
-    console.log(styleClothes);
   
     let styleHtml = `
       <div>Наименование</div>
@@ -375,7 +376,6 @@ try{
 const userWardrobeClothesIds = userData.idWardrobeClothes.map(String);
 // Фильтруем данные об одежде по идентификаторам из коллекции clothes
 userClothesData = clothesData.filter((cloth) => userWardrobeClothesIds.includes(cloth.nameRef.id));
-console.log(userClothesData);
 
 //Создаем ClothData
 async function createClothBlock(data, list) {
@@ -458,7 +458,6 @@ async function createClothBlock(data, list) {
             isFavourite = true;
             const heartIcon = clothesBlock.querySelector('#heartIcon');
             heartIcon.classList.add('filled-heart');
-            console.log(`${data.nameRef.id} в избранном`);
           }
         }})
       }
@@ -501,7 +500,6 @@ async function createClothBlock(data, list) {
 async function addToFavourites(clothId) {
   const userCollection = collection(db, 'users');
   const userId = await getUserId();
-  console.log(userId);
   if(userId === 'ALL'){
     Swal.fire({
       icon: "error",
@@ -559,7 +557,6 @@ async function removeFromFavourites(clothId){
 
       // Remove the selected cloth's ID from the wardrobeClothesIds array
       const clothIdNumber = parseInt(clothId, 10);
-      console.log(clothIdNumber);
       favouritesClothesIds = favouritesClothesIds.filter((id) => id !== clothIdNumber);
 
       // Update the user document with the modified wardrobeClothesIds array
@@ -594,7 +591,6 @@ async function deleteCloth(clothId){
 
       // Remove the selected cloth's ID from the wardrobeClothesIds array
       const clothIdNumber = parseInt(clothId, 10);
-      console.log(clothIdNumber);
       wardrobeClothesIds = wardrobeClothesIds.filter((id) => id !== clothIdNumber);
 
       // Update the user document with the modified wardrobeClothesIds array
@@ -627,7 +623,6 @@ async function removeFromScene(clothType){
     let imagePath = null;
     let colorsContainer = null;
 
-    console.log(clothType);
     let clothObject;
     
 
@@ -698,7 +693,6 @@ async function removeFromScene(clothType){
 
     if(tshirtCounter === 0 && coatCounter === 0 && pantsCounter === 0 && hatCounter === 0){
       saveStyleContainer.style.display = 'none';
-      console.log('я спрятан');
     }
     
     
@@ -797,7 +791,6 @@ async function addToScene(data) {
 
       colorButton.addEventListener('click', () => {
         setColor(clothTypeValue, color.trim());
-        console.log(color);
       });
       isFirst = false;
     });
@@ -819,9 +812,7 @@ async function addToScene(data) {
 
       const modelSnapshot = await getDoc(data.modelRef);
       const modelName = modelSnapshot.data().model;
-      console.log(modelName);
       loadCloth(modelName, clothTypeValue, data.nameRef.id, firstColor);
-      console.log(firstColor);
     }
   } catch (error) {
     console.error("Ошибка при добавлении одежды:", error);
@@ -877,7 +868,6 @@ async function handleSearchAndFilter() {
 async function addStyleToFavourites(styleId){
   const userCollection = collection(db, 'users');
   const userId = await getUserId();
-  console.log(userId);
   if(userId === 'ALL'){
     Swal.fire({
       icon: "error",
@@ -900,8 +890,6 @@ async function addStyleToFavourites(styleId){
         // Добавляем идентификатор одежды к массиву
         favouritesStylеsIds.push(styleId);
 
-        console.log(favouritesStylеsIds);
-        console.log(styleId);
         // Обновляем данные пользователя в базе данных
         updateDoc(userDoc, { idFavouriteStyles: favouritesStylеsIds }).then(() => {
           Swal.fire({
@@ -1065,15 +1053,11 @@ async function populateList(data, userStylesData, styleId, index) {
         const userData = userDocSnapshot.data();
         let favouritesStylesIds = userData.idFavouriteStyles || [];
 
-        // Преобразуем идентификатор стиля в числовой формат
-        console.log(styleId);
-
         // Проверяем, содержит ли массив уже выбранный идентификатор стиля
         if (favouritesStylesIds.includes(styleId)) {
           isFavourite = true;
           const heartIcon = stylesBlock.querySelector('#styleHeartIcon');
           heartIcon.classList.add('filled-heart');
-          console.log(`${styleId} в избранном`);
         }
       }})
   }
@@ -1203,8 +1187,8 @@ typeDropdownButton.addEventListener('click', function() {
 
 //Изменение размеров окна
 window.addEventListener('resize', () => {
-  sizes.width = window.innerWidth / 2;
-  sizes.height = window.innerHeight / 2;
+  sizes.width = window.innerWidth / 1.8;
+  sizes.height = window.innerHeight / 1.8;
 
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();

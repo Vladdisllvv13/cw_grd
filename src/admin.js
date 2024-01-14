@@ -237,11 +237,15 @@ async function deleteCloth(clothId) {
           });
   
           Swal.fire({
+            icon: "success",
             title: "Удалено!",
-            text: "Одежда была удалена из каталога и из гардероба каждого пользователя.",
-            icon: "success"
+            text: "Одежда была удалена из каталога.",
+            showConfirmButton: false,
+            timer: 1500
           });
-          location.reload();
+          setTimeout(function() {
+            location.reload();
+          }, 2000);
         } catch (error) {
           console.error("Ошибка при удалении одежды:", error);
           Swal.fire({
@@ -472,8 +476,9 @@ async function changeCloth(data) {
           timer: 1500
         });
         setTimeout(function() {
+          location.reload();
         }, 2000);
-        location.reload();
+        
       }
     }
   });
@@ -693,9 +698,9 @@ async function addCloth() {
           timer: 1500
         });
         setTimeout(function() {
+          location.reload();
         }, 2000);
         }
-        location.reload();
     }
   });
 }
