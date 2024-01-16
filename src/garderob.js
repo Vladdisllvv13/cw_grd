@@ -10,7 +10,6 @@ import './garderob.css';
 const { sizes, camera, scene, canvas, controls, renderer, stats, gui } = init();
 
 
-
 let tshirtCounter = 0;
 let coatCounter = 0;
 let pantsCounter = 0;
@@ -787,7 +786,7 @@ async function addToScene(data) {
       colorButton.style.backgroundColor = color.trim();
       colorsContainer.appendChild(colorButton);
 
-      if(isFirst) firstColor = color.trim();
+      if(isFirst) {firstColor = color.trim();} 
 
       colorButton.addEventListener('click', () => {
         setColor(clothTypeValue, color.trim());
@@ -1339,7 +1338,12 @@ async function clearUiBlocks(){
   hatCounter = 0;
 }
 
-
+const returnCameraButton = document.getElementById('returnCameraButton');
+returnCameraButton.addEventListener('click', function() {
+  camera.position.set(0,18,15);
+	camera.lookAt(new THREE.Vector3(0,10,0));
+  controls.target = new THREE.Vector3(0,10,0);
+});
 
 async function main(){
     await addFloor();

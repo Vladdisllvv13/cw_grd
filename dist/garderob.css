@@ -6,11 +6,11 @@
     border: 1px solid black;
 }
 .colorButton {
-    width: 20px;
-    height: 20px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     margin-right: 5px;
-    border: 1px solid black;
+    border: 1px solid rgb(255, 255, 255);
 }
 .active {
     background-color: rgb(29, 27, 29);

@@ -25,6 +25,8 @@ const init = () => {
 	controls.minPolarAngle = Math.PI / -1.2;
 	controls.minDistance = 8;
 	controls.maxDistance = 30;
+	controls.target = new THREE.Vector3(0,10,0);
+
 	
 	// const stats = new Stats();
 	// stats.showPanel(0);
