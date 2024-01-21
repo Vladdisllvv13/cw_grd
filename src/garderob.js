@@ -123,6 +123,14 @@ async function addLights(){
   dirLight.shadow.bias = -0.01;
   dirLight.shadow.mapSize = new THREE.Vector2(2048, 2048);
   scene.add(dirLight);
+
+  const dirLightBack = new THREE.DirectionalLight(0xffffff, 0.25);
+  dirLightBack.position.set(10, 100, -80);
+  dirLightBack.target.position.set(0, 20, 0);
+  dirLightBack.castShadow = true;
+  dirLightBack.shadow.bias = -0.01;
+  dirLightBack.shadow.mapSize = new THREE.Vector2(2048, 2048);
+  scene.add(dirLightBack);
 }
 
 //Текстуры
