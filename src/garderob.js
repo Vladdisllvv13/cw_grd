@@ -667,7 +667,7 @@ async function removeFromScene(clothType){
       nameElement = block.querySelector('.nameOne');
       const removeButton = block.querySelector('#removeButton');
       colorsContainer = block.querySelector('.colorsContainer');
-      imagePath = "images/tshirt.png";
+      imagePath = "images/futbolka.png";
       removeButton.hidden = true;
       if (colorsContainer) {
         colorsContainer.remove(); // Удаление контейнера с кнопками-кружочками цветов
