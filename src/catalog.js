@@ -695,27 +695,11 @@ stylesButton.addEventListener('click', function() {
 });
 
 
-const GracechapelSearch = document.getElementById('GracechapelSearch');
-const ComptonStyleSearch = document.getElementById('ComptonStyleSearch');
-const VTYngSearch = document.getElementById('VTYngSearch');
+
 
 const searchInput = document.getElementById('search');
 searchInput.addEventListener('input', handleSearchAndFilter);
 
-GracechapelSearch.addEventListener('click', function(event) {
-  event.preventDefault(); // чтобы предотвратить переход по ссылке
-  searchInput.value = 'Gracechapel';
-});
-
-ComptonStyleSearch.addEventListener('click', function(event) {
-  event.preventDefault(); // чтобы предотвратить переход по ссылке
-  searchInput.value = 'Compton Style';
-});
-
-VTYngSearch.addEventListener('click', function(event) {
-  event.preventDefault(); // чтобы предотвратить переход по ссылке
-  searchInput.value = 'VT Yng';
-});
 
 const sizeCheckboxes = document.querySelectorAll('#dropdownSizes input[type="checkbox"]');
 sizeCheckboxes.forEach((checkbox) => {

@@ -113,12 +113,12 @@ async function addFloor(){
 //Свет
 async function addLights(){
   const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.61);
-  hemiLight.position.set(0, 50, 0);
+  hemiLight.position.set(0, 20, 0);
   scene.add(hemiLight);
 
   const dirLight = new THREE.DirectionalLight(0xffffff, 0.54);
-  dirLight.position.set(100, 100, 100);
-  dirLight.target.position.set(25, 20, 0);
+  dirLight.position.set(0, 100, 80);
+  dirLight.target.position.set(0, 20, 0);
   dirLight.castShadow = true;
   dirLight.shadow.bias = -0.01;
   dirLight.shadow.mapSize = new THREE.Vector2(2048, 2048);
@@ -580,34 +580,55 @@ async function removeFromFavourites(clothId){
 
 async function deleteCloth(clothId){
   try {
-    const userDoc = doc(userCollection, userId);
+    Swal.fire({
+      title: "Вы уверены, что хотите удалить одежду из гардероба?",
+      text: "Чтобы вернуть ее, вам придется заново добавить ее в каталоге",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      cancelButtonText: "Отмена",
+      confirmButtonText: "Да, удалить!"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const userDoc = doc(userCollection, userId);
 
-    // Retrieve the user document
-    const userDocSnapshot = await getDoc(userDoc);
-    if (userDocSnapshot.exists()) {
-      const userData = userDocSnapshot.data();
-      let wardrobeClothesIds = userData.idWardrobeClothes || [];
+          // Retrieve the user document
+          const userDocSnapshot = await getDoc(userDoc);
+          if (userDocSnapshot.exists()) {
+            const userData = userDocSnapshot.data();
+            let wardrobeClothesIds = userData.idWardrobeClothes || [];
 
-      // Remove the selected cloth's ID from the wardrobeClothesIds array
-      const clothIdNumber = parseInt(clothId, 10);
-      wardrobeClothesIds = wardrobeClothesIds.filter((id) => id !== clothIdNumber);
+            // Remove the selected cloth's ID from the wardrobeClothesIds array
+            const clothIdNumber = parseInt(clothId, 10);
+            wardrobeClothesIds = wardrobeClothesIds.filter((id) => id !== clothIdNumber);
 
-      // Update the user document with the modified wardrobeClothesIds array
-      await updateDoc(userDoc, { idWardrobeClothes: wardrobeClothesIds });
-
-      // Optional: You can also update the UI to reflect the deletion
-      // For example, remove the deleted cloth from the DOM
-
-      Swal.fire({
-        icon: "success",
-        title: "Одежда удалена из гардероба!",
-        showConfirmButton: false,
-        timer: 1500
-      });
-      setTimeout(function() {
-        location.reload();
-      }, 2000);
-    }
+            // Update the user document with the modified wardrobeClothesIds array
+            await updateDoc(userDoc, { idWardrobeClothes: wardrobeClothesIds });
+          }
+  
+          Swal.fire({
+            icon: "success",
+            title: "Удалено!",
+            text: "Одежда была удалена из гардероба.",
+            showConfirmButton: false,
+            timer: 1500
+          });
+          setTimeout(function() {
+            location.reload();
+          }, 2000);
+        } catch (error) {
+          console.error("Ошибка при удалении одежды:", error);
+          Swal.fire({
+            title: "Ошибка!",
+            text: "Произошла ошибка при удалении одежды.",
+            icon: "error"
+          });
+        }
+      }
+    });
+    
   } catch (error) {
     console.error('Error deleting cloth:', error);
   }
