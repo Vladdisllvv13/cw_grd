@@ -75,7 +75,7 @@ async function createClothBlock(data) {
   try {
     const clothesList = document.getElementById('clothesList');
     const clothesBlock = document.createElement('div');
-    clothesBlock.className = "xl:w-1/4 md:w-1/2 p-4 flex justify-center";
+    clothesBlock.className = "xl:w-1/6 md:w-1/3 p-6 flex justify-center ml-8 mr-8";
     clothesBlock.innerHTML = `
       <div class="imageContainerClothesOne720x400 bg-gray-100 p-6 rounded-lg border border-gray-950 shadow hover:shadow-lg">
         <img class="object-scale-down h-40 rounded w-40 object-center mb-6" src="" alt="content">

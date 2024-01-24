@@ -333,6 +333,16 @@ async function saveStyle(){
     
           const stylesCollection = collection(db, 'styles');
           await addDoc(stylesCollection, newStyle);
+          if(userId === "1"){
+            const newStyleForAll = {
+              name: selectedName,
+              description: selectedDescription,
+              idClothes: styleClothes,
+              idUser: "ALL",
+              styleGender: gender
+            };
+            await addDoc(stylesCollection, newStyleForAll);
+          }
           getStyles();
           Swal.fire({
             icon: "success",
