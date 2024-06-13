@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FabulousFinds Admin</title>
+    <!-- Подключение Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="shortcut icon" href="../images/icon.svg" type="image/x-icon">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/keen-slider@6.8.6/keen-slider.min.css" rel="stylesheet" />
+
+    <!-- Tailwind -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        .bg-sidebar { background: #41155a; }
+        .cta-btn { color: #621d8a; }
+        .upgrade-btn { background: #5d1d83; }
+        .upgrade-btn:hover { background: #6c2097; }
+        .active-nav-link { background: #5c1b81; }
+        .nav-item:hover { background: #6b2096; }
+        .account-link:hover { background: #6b2096; }
+    </style>
+    <style>
+      @font-face {
+        font-family: 'Oswald';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(./fonts/Oswald-Bold.ttf) format('truetype'),
+      }
+    </style>
+        <style>
+          /* Стили для ползунка прокрутки */
+       .element::-webkit-scrollbar {
+         width: 12px; /* Ширина ползунка */
+       }
+   
+       .element::-webkit-scrollbar-thumb {
+         background-color: #8A2BE2; /* Фиолетовый цвет ползунка */
+         border-radius: 8px; /* Скругление углов ползунка */
+       }
+   
+       .element::-webkit-scrollbar-track {
+         background-color: rgb(19, 18, 18); /* Цвет фона ползунка */
+       }
+   
+       .menu-nav:hover .burger path{
+         fill: #8a2be2;
+       }
+       .menu-nav:hover .menu-text{
+         color: #8a2be2;
+       }
+       .menu-nav:hover .cartCounterText{
+         color: #8a2be2;
+       }
+   
+       .icon:hover path{
+         fill: #8a2be2;
+       }
+       </style>
+   
+       <style>
+         .menuButton:hover {
+           color: #8a2be2;
+         }
+         .menuCartButton:hover .cartText{
+           color: #8a2be2;
+         }
+       </style>
+</head>
+<body class="element leading-normal tracking-normal text-gray-900 dark:text-white flex bg-gray-50 dark:bg-gray-900" style="font-family: 'Oswald', sans-serif;">
+
+  <aside class="relative bg-sidebar h-screen w-64 hidden sm:block shadow-xl">
+    <div class="p-6">
+        <a href="admin.html" class="text-white text-3xl font-semibold hover:text-gray-300">Администратор</a>
+    </div>
+    <nav class="text-white text-base font-semibold pt-3">
+        <a href="admin.html" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+            <i class="fas fa-tachometer-alt mr-3"></i>
+            Главная
+        </a>
+        <a href="admin_clothes.html" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+            <i class="fas fa-sticky-note mr-3"></i>
+            Товары
+        </a>
+        <a href="admin_styles.html" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+            <i class="fas fa-table mr-3"></i>
+            Стили
+        </a>
+        <a href="admin_users.html" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+            <i class="fas fa-user mr-3"></i>
+            Пользователи
+        </a>
+        <a href="admin_orders.html" class="flex items-center active-nav-link text-white py-4 pl-6 nav-item">
+            <i class="fas fa-tablet-alt mr-3"></i>
+            Заказы
+        </a>
+    </nav>
+    <a href="#" class="absolute rounded-t-lg w-full upgrade-btn bottom-0 active-nav-link text-white flex items-center justify-center py-4">
+        <i class="fas fa-arrow-circle-up mr-3"></i>
+        Скачать руководство
+    </a>
+  </aside>
+
+    <div class="w-full flex flex-col h-screen overflow-y-hidden">
+      <!-- header -->
+      <header class=" bg-neutral-900 dark:bg-neutral-900">
+        <div id="1488" class="w-full flex flex-wrap m-0 flex-row md:flex-row items-center justify-between">
+
+          <div id="2" class="justify-center object-center flex-wrap p-4 items-center cursor-pointer hover:scale-105 w-40" onclick="goToMain()">
+            <img class=" h-full" src="../images/icon-logo-white.svg">
+          </div>
+
+          <section id="desktopMenu" class="hidden lg:block ">
+            <nav id="menu" class="menu">
+              <ul class="flex flex-wrap items-center justify-center p-5 mr-4">
+
+                <li>
+                  <button data-popover-target="popover-bottom-catalog" data-popover-placement="bottom" id="catalogButton" class="mr-5 cursor-pointer" onclick="goToCatalog()">
+                    <svg class="icon" width="32" height="32" viewBox="0 0 24 24">
+                      <path d="M3.99951 6.25H19.9995V7.75H3.99951V6.25Z" fill="#E8E9EA"/>
+                      <path d="M14.9995 11.25H3.99951V12.75H14.9995V11.25Z" fill="#E8E9EA"/>
+                      <path d="M10.9995 16.25L3.99951 16.25V17.75L10.9995 17.75V16.25Z" fill="#E8E9EA"/>
+                      <path d="M19.7499 20L19.75 17.75L22 17.7499L22 16.2499L19.75 16.25L19.7501 14L18.2501 14L18.25 16.25L16 16.2501L16 17.75L18.25 17.75L18.2499 20L19.7499 20Z" fill="#E8E9EA"/>                </svg>
+                  </button>
+                  <div data-popover id="popover-bottom-catalog" role="tooltip" class="absolute z-10 invisible inline-block w-64 text-sm text-gray-900 dark:text-gray-300 transition-opacity duration-300 bg-gray-100 dark:bg-gray-700 border border-gray-600 dark:border-gray-200 rounded-lg shadow-sm opacity-0">
+                    <div class="px-3 py-2 bg-gray-300 dark:bg-gray-800 border-b border-gray-400 dark:border-gray-700 rounded-t-lg">
+                        <h3 class="font-semibold text-gray-800 dark:text-gray-100">Каталог</h3>
+                    </div>
+                    <div class="px-3 py-2">
+                        <p>Перейти на страницу каталога</p>
+                    </div>
+                    <div data-popper-arrow></div>
+                  </div>
+                </li>
+
+                <li>
+                  <button data-popover-target="popover-bottom-favourites" data-popover-placement="bottom" id="favouritesButton" class="mr-5 cursor-pointer">
+                    <svg class="icon" width="32" height="32" viewBox="0 0 24 24" onclick="goToFavourites()">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M3 8.97831C3 6.24655 5.16494 4 7.87453 4C9.28971 4 10.5168 4.74855 11.3676 5.76904C11.6045 6.0533 11.8168 6.36357 11.9997 6.69262C12.1825 6.36365 12.3946 6.05344 12.6314 5.76922C13.4816 4.74863 14.7083 4 16.1236 4C18.8332 4 20.9981 6.24655 20.9981 8.97831C20.9981 11.4006 19.4893 13.5485 17.7652 15.3159C16.4435 16.6709 14.8908 17.902 13.5947 18.9297C13.1917 19.2493 12.8134 19.5491 12.4747 19.827C12.1981 20.0538 11.8 20.0538 11.5234 19.827C11.1847 19.5491 10.8064 19.2493 10.4034 18.9297C9.10728 17.902 7.55461 16.6709 6.23286 15.3159C4.50876 13.5485 3 11.4006 3 8.97831ZM12.75 9.5H11.25C11.25 8.52096 10.8583 7.50072 10.2154 6.72954C9.5729 5.95883 8.73726 5.5 7.87453 5.5C6.02829 5.5 4.5 7.03961 4.5 8.97831C4.5 10.7843 5.64272 12.5628 7.30662 14.2685C8.5544 15.5477 9.99519 16.6905 11.2792 17.7089C11.5257 17.9044 11.7665 18.0954 11.9991 18.2819C12.2316 18.0954 12.4724 17.9044 12.7189 17.7089C14.0029 16.6905 15.4437 15.5477 16.6915 14.2685C18.3554 12.5628 19.4981 10.7843 19.4981 8.97831C19.4981 7.03961 17.9698 5.5 16.1236 5.5C15.2609 5.5 14.4258 5.95875 13.7838 6.72936C13.1414 7.50047 12.75 8.52075 12.75 9.5Z" fill="#E8E9EA"/>
+                    </svg>
+                  </button>
+                  <div data-popover id="popover-bottom-favourites" role="tooltip" class="absolute z-10 invisible inline-block w-64 text-sm text-gray-900 dark:text-gray-300 transition-opacity duration-300 bg-gray-100 dark:bg-gray-700 border border-gray-600 dark:border-gray-200 rounded-lg shadow-sm opacity-0">
+                    <div class="px-3 py-2 bg-gray-300 dark:bg-gray-800 border-b border-gray-400 dark:border-gray-700 rounded-t-lg">
+                        <h3 class="font-semibold text-gray-800 dark:text-gray-100">Избранное</h3>
+                    </div>
+                    <div class="px-3 py-2">
+                        <p>Перейти на страницу избранных товаров</p>
+                    </div>
+                    <div data-popper-arrow></div>
+                  </div>
+                </li>
+
+                <li>
+                  <button data-popover-target="popover-bottom" data-popover-placement="bottom" id="wardrobeButton" class="mr-5 cursor-pointer" onclick="goToFittingRoom()">
+                    <svg class="icon" version="1.0" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 512.000000 512.000000">
+                      <g transform="translate(0.000000,512.000000) scale(0.100000,-0.100000)" fill="#ffffff" stroke="none">
+                        <path d="M2265 4615 l-25 -24 0 -680 0 -680 23 -27 c17 -20 33 -27 57 -27 24 0 40 7 57 27 l23 27 0 625 0 624 1100 0 1100 0 0 -1920 0 -1920 -1100 0 -1100 0 0 904 c0 899 0 903 -21 930 -29 37 -89 37 -118 0 -21 -27 -21 -31 -21 -986 l0 -959 25 -24 24 -25 1211 0 1211 0 24 25 25 24 0 2031 0 2031 -25 24 -24 25 -1211 0 -1211 0 -24 -25z"/> <path d="M1301 4299 c-58 -18 -120 -67 -151 -121 -53 -95 -49 -174 12 -199 41 -17 95 8 104 48 18 86 44 114 111 120 87 8 149 -61 129 -142 -4 -15 -45 -67 -90 -114 -82 -86 -127 -155 -141 -218 l-7 -33 -109 0 c-84 0 -115 4 -134 16 -20 13 -48 15 -152 12 -119 -3 -132 -6 -193 -35 -36 -17 -79 -47 -97 -65 -48 -51 -366 -624 -366 -661 0 -44 31 -66 167 -117 65 -24 120 -50 123 -57 3 -7 -14 -178 -37 -379 -45 -391 -45 -404 2 -424 30 -13 1228 -152 1275 -148 66 6 68 12 114 418 23 201 45 368 48 372 4 4 60 15 126 23 66 9 130 18 143 21 33 7 62 40 62 72 0 35 -165 663 -184 700 -18 35 -103 115 -146 137 -41 21 -187 65 -218 65 -13 0 -32 -5 -43 -11 -27 -14 -219 29 -219 49 0 32 35 83 109 159 106 108 125 146 125 248 1 64 -4 88 -21 121 -30 57 -79 103 -133 127 -52 23 -159 31 -209 16z m-393 -841 c65 -276 369 -421 620 -297 79 38 161 119 197 193 15 31 31 56 35 56 47 0 135 -58 156 -103 7 -18 41 -140 75 -272 33 -132 62 -247 65 -257 4 -13 -5 -18 -38 -23 -24 -3 -55 -8 -70 -11 -21 -4 -28 -2 -28 9 0 21 -48 57 -76 57 -12 0 -35 -10 -49 -23 -26 -22 -28 -29 -75 -427 -27 -223 -49 -407 -49 -409 -1 -2 -34 0 -73 4 -144 14 -991 114 -994 118 -2 1 17 174 41 383 25 208 45 394 45 413 0 71 -82 109 -131 60 -23 -23 -39 -21 -107 8 l-40 18 132 237 c72 131 143 249 156 264 35 37 76 53 140 54 l55 0 13 -52z m559 -13 l113 -27 -18 -30 c-35 -61 -145 -118 -227 -118 -58 0 -131 29 -179 71 -43 38 -86 103 -86 130 0 22 271 5 397 -26z"/> <path d="M3154 4292 c-115 -41 -184 -138 -184 -260 0 -96 16 -128 118 -234 88 -93 133 -162 115 -178 -4 -4 -49 -17 -100 -30 -79 -19 -96 -20 -127 -9 -31 11 -45 9 -128 -15 -137 -42 -234 -112 -274 -200 -25 -55 -175 -679 -169 -703 9 -38 44 -51 190 -70 l140 -18 47 -378 c28 -225 52 -385 59 -394 7 -8 23 -19 35 -23 19 -8 1196 127 1274 146 43 10 60 33 60 83 0 25 -18 194 -40 374 -22 180 -40 336 -40 346 0 13 25 27 103 56 144 54 176 72 188 103 8 21 7 35 -6 62 -46 97 -332 589 -359 618 -17 18 -59 47 -94 64 -54 27 -81 33 -178 41 -122 9 -153 6 -178 -18 -12 -13 -37 -15 -127 -13 l-112 3 -12 40 c-21 70 -46 108 -135 200 -96 99 -111 131 -87 186 20 48 50 71 99 76 60 6 101 -21 124 -84 30 -83 68 -107 124 -78 91 47 15 238 -118 297 -64 29 -146 33 -208 10z m750 -806 c36 -21 57 -52 184 -276 79 -139 142 -253 140 -254 -2 -1 -30 -12 -62 -24 l-59 -23 -22 21 c-33 31 -83 29 -112 -4 -12 -15 -23 -35 -23 -44 0 -9 20 -183 45 -385 25 -203 45 -381 45 -397 0 -28 0 -28 -97 -39 -54 -7 -291 -36 -528 -65 -236 -29 -433 -50 -436 -47 -4 3 -28 184 -54 401 -25 217 -50 405 -55 417 -26 63 -112 67 -140 5 l-15 -32 -60 6 c-33 4 -63 9 -67 13 -12 11 131 540 154 571 21 29 77 64 119 74 23 5 28 1 40 -25 24 -58 96 -145 151 -181 76 -51 162 -78 247 -78 211 0 386 141 433 349 l12 53 60 -6 c35 -3 76 -16 100 -30z m-339 -28 c-12 -42 -55 -98 -97 -128 -117 -85 -264 -72 -367 33 -23 22 -41 44 -41 48 0 6 78 26 235 62 11 3 78 5 148 6 l128 1 -6 -22z"/> <path d="M663 1654 c-25 -25 -26 -28 -20 -115 19 -255 169 -474 402 -585 102 -49 184 -67 300 -67 164 0 300 47 440 153 36 27 67 50 69 50 2 0 6 -26 10 -58 10 -90 66 -134 122 -98 46 31 48 49 20 229 -14 91 -29 173 -33 182 -3 10 -19 23 -35 30 -25 10 -56 8 -186 -12 -176 -26 -194 -31 -218 -67 -19 -31 -13 -67 18 -98 18 -18 28 -20 91 -14 61 6 68 4 58 -8 -24 -29 -112 -78 -183 -104 -148 -52 -339 -26 -474 64 -145 96 -244 277 -244 445 0 40 -5 55 -25 74 -33 34 -78 33 -112 -1z"/> <path d="M3663 1398 l-243 -242 -138 137 c-120 119 -143 137 -171 137 -43 0 -81 -38 -81 -82 0 -29 20 -52 178 -210 161 -161 181 -178 212 -178 31 0 57 23 317 283 256 255 283 285 283 315 0 44 -38 82 -82 82 -29 0 -58 -25 -275 -242z"/>
+                      </g>
+                    </svg>
+                  </button>
+                  <div data-popover id="popover-bottom" role="tooltip" class="absolute z-10 invisible inline-block w-64 text-sm text-gray-900 dark:text-gray-300 transition-opacity duration-300 bg-gray-100 dark:bg-gray-700 border border-gray-600 dark:border-gray-200 rounded-lg shadow-sm opacity-0">
+                    <div class="px-3 py-2 bg-gray-300 dark:bg-gray-800 border-b border-gray-400 dark:border-gray-700 rounded-t-lg">
+                        <h3 class="font-semibold text-gray-800 dark:text-gray-100">Примерочная</h3>
+                    </div>
+                    <div class="px-3 py-2">
+                        <p>Примерьте выбранную одежду на 3D манекене</p>
+                    </div>
+                    <div data-popper-arrow></div>
+                  </div>
+                </li>
+
+                <li class="icon">
+                  <button data-popover-target="popover-bottom-cart" data-popover-placement="bottom" id="cartButton" class="mr-5 cursor-pointer text-white relative" onclick="goToCart()">
+                    <svg width="32" height="32" viewBox="0 0 24 24">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M6.35968 6.96333L5.48272 18.89C5.41879 19.7594 6.10692 20.5 6.97868 20.5H17.0211C17.8929 20.5 18.581 19.7594 18.5171 18.89L17.6403 6.96334C17.6211 6.70213 17.4035 6.5 17.1416 6.5H15.9955L15.9956 8.99994L14.4956 9L14.4955 6.5H9.50016L9.50006 9L8.00006 8.99994L8.00016 6.5H6.85833C6.59641 6.5 6.37889 6.70212 6.35968 6.96333ZM8.00023 5H6.85833C5.81066 5 4.94054 5.80849 4.86372 6.85334L3.98676 18.78C3.8589 20.5188 5.23516 22 6.97868 22H17.0211C18.7646 22 20.1409 20.5188 20.0131 18.78L19.1362 6.85336C19.0594 5.8085 18.1893 5 17.1416 5H15.9954L15.9954 4.74988C15.9953 3.23115 14.7641 2 13.2454 2H10.7502C9.2315 2 8.0003 3.23115 8.00024 4.74989L8.00023 5ZM9.50023 5L9.50024 4.74995C9.50027 4.05961 10.0599 3.5 10.7502 3.5H13.2454C13.9357 3.5 14.4954 4.05961 14.4954 4.74995L14.4954 5H9.50023Z" fill="#E8E9EA"/>
+                    </svg>
+                    <div id="cartCounter" class="absolute top-0 right-0 bg-red-500 w-4 text-sm rounded-full">0</div>
+                  </button>
+                  <div data-popover id="popover-bottom-cart" role="tooltip" class="absolute z-10 invisible inline-block w-80 text-sm text-gray-900 dark:text-gray-300 transition-opacity duration-300 bg-gray-100 dark:bg-gray-700 border border-gray-600 dark:border-gray-200 rounded-lg shadow-sm opacity-0">
+                    <div class="p-3">
+                        <div class="flex justify-center items-center">
+                            <div>
+                                <p class="mb-1 text-bold text-2xl leading-none text-purple-500">
+                                    <a href="cart.html" class="hover:underline object-center">Корзина</a>
+                                </p>
+                                <section id="notEmptyCartBlock" hidden>
+                                  <div class="overflow-y-auto h-64">
+                                    <ul class="text-sm mt-4" id="cartModalList">
+                                    </ul>
+                                  </div>
+                                </section>
+                                <section id="emptyCartBlock">
+                                  <p class="mb-3 text-xl font-normal text-center">
+                                    Корзина пуста
+                                  </p>
+                                  <img src="../images/empty_shopping_cart.svg" class="w-36 h-36"/>
+                                </section>
+
+                                <div class="flex mt-4">
+                                    <button onclick="goToCart()" type="button" class="inline-flex items-center justify-center w-full px-5 py-2 me-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-purple-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                                      Перейти в корзину
+                                    </button>
+                              </div>
+                          </div>
+                      </div>
+                      <div data-popper-arrow></div>
+                  </div>
+                </li>
+                
+                <li>
+                  <button data-popover-target="popover-bottom-auth" data-popover-placement="bottom" id="authButton" class="mr-5 cursor-pointer">
+                    <svg class="icon" width="32" height="32" viewBox="0 0 24 24">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M17.3266 18.6244C19.2617 17.0664 20.5 14.6778 20.5 12C20.5 7.30558 16.6944 3.5 12 3.5C7.30558 3.5 3.5 7.30558 3.5 12C3.5 14.6778 4.73826 17.0664 6.67343 18.6244C7.2842 16.2525 9.43744 14.5 12 14.5C14.5626 14.5 16.7158 16.2525 17.3266 18.6244ZM15.9712 19.5172C15.7328 17.5357 14.0457 16 12 16C9.95426 16 8.26721 17.5357 8.02884 19.5172C9.21409 20.1447 10.5655 20.5 12 20.5C13.4345 20.5 14.7859 20.1447 15.9712 19.5172ZM12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM12 11.5C12.8284 11.5 13.5 10.8284 13.5 10C13.5 9.17157 12.8284 8.5 12 8.5C11.1716 8.5 10.5 9.17157 10.5 10C10.5 10.8284 11.1716 11.5 12 11.5ZM12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z" fill="#E8E9EA"/>
+                    </svg>
+                  </button>
+                  <!-- Dropdown -->
+                  <div data-popover id="popover-bottom-auth" role="tooltip" class="absolute z-10 invisible inline-block w-32 text-sm text-gray-900 dark:text-gray-300 transition-opacity duration-300 bg-gray-100 dark:bg-gray-700 border border-gray-600 dark:border-gray-200 rounded-lg shadow-sm opacity-0">
+                    <ul class="py-2 font-medium" role="none">
+                      <li>
+                        <a id="toProfileButton" class="cursor-pointer block px-4 py-2 text-m text-gray-800 hover:bg-gray-200 dark:text-gray-100 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">
+                          <div class="inline-flex items-center">
+                            Профиль
+                          </div>
+                        </a>
+                      </li>
+                      <li>
+                        <a href="auth.html" class="block px-4 py-2 text-m text-gray-800 hover:bg-gray-200 dark:text-gray-100 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">
+                          <div class="inline-flex items-center">
+                            Войти
+                          </div>
+                        </a>
+                      </li>
+                      <li>
+                        <a href="#" id="exitButton" class="block px-4 py-2 text-m text-red-500 hover:bg-gray-200 dark:text-red-500-100 dark:hover:bg-gray-600" role="menuitem">
+                          <div class="inline-flex items-center">
+                            Выйти
+                          </div>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </li>
+
+              </ul>
+            </nav>
+          </section>
+      </div>
+      </header>
+
+        <!-- Mobile Header & Nav -->
+        <header x-data="{ isOpen: false }" class="w-full bg-sidebar py-5 px-6 sm:hidden">
+          <div class="flex items-center justify-between">
+              <a href="admin.html" class="text-white text-3xl font-semibold uppercase hover:text-gray-300">Администратор</a>
+              <button @click="isOpen = !isOpen" class="text-white text-3xl focus:outline-none">
+                  <i x-show="!isOpen" class="fas fa-bars"></i>
+                  <i x-show="isOpen" class="fas fa-times"></i>
+              </button>
+          </div>
+
+          <!-- Dropdown Nav -->
+          <nav :class="isOpen ? 'flex': 'hidden'" class="flex flex-col pt-4">
+              <a href="admin.html" class="flex items-center text-white opacity-75 hover:opacity-100 py-2 pl-4 nav-item">
+                  <i class="fas fa-tachometer-alt mr-3"></i>
+                  Главная
+              </a>
+              <a href="admin_clothes.html" class="flex items-center text-white opacity-75 hover:opacity-100 py-2 pl-4 nav-item">
+                  <i class="fas fa-sticky-note mr-3"></i>
+                  Товары
+              </a>
+              <a href="admin_styles.html" class="flex items-center text-white opacity-75 hover:opacity-100 py-2 pl-4 nav-item">
+                  <i class="fas fa-table mr-3"></i>
+                  Стили
+              </a>
+              <a href="admin_users.html" class="flex items-center text-white opacity-75 hover:opacity-100 py-2 pl-4 nav-item">
+                  <i class="fas fa-user mr-3"></i>
+                  Пользователи
+              </a>
+              <a href="admin_orders.html" class="flex items-center active-nav-link text-white py-2 pl-4 nav-item">
+                  <i class="fas fa-tablet-alt mr-3"></i>
+                  Заказы
+              </a>
+              <button class="w-full bg-white cta-btn font-semibold py-2 mt-3 rounded-lg shadow-lg hover:shadow-xl hover:bg-gray-300 flex items-center justify-center">
+                  <i class="fas fa-arrow-circle-up mr-3"></i> Скачать руководство
+              </button>
+          </nav>
+          <!-- <button class="w-full bg-white cta-btn font-semibold py-2 mt-5 rounded-br-lg rounded-bl-lg rounded-tr-lg shadow-lg hover:shadow-xl hover:bg-gray-300 flex items-center justify-center">
+              <i class="fas fa-plus mr-3"></i> New Report
+          </button> -->
+      </header>
+
+        <div class="w-full overflow-x-hidden border-t flex flex-col">
+          <main class="w-full flex-grow p-6" id="main">
+            <div class="mx-auto container my-8">
+              <h1 class="mb-4 text-3xl font-extrabold leading-none tracking-tight md:text-5xl lg:text-6xl dark:text-white">Управление данными <mark class="px-2 text-white bg-purple-600 rounded">заказов</mark></h1>
+            </div>
+              
+
+            <div class="mx-auto container dark:bg-gray-950 shadow rounded mt-4 bg-gray-400">
+              <div class="flex flex-col lg:flex-row p-4 lg:p-8 justify-between items-start lg:items-stretch w-full">
+                  <div class="w-full lg:w-1/3 flex flex-col lg:flex-row items-start lg:items-center">
+                      <div class="flex items-center">
+                          <div class="flex">
+                            <label for="searchInput" class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Заказы</label>
+                            <div class="relative w-full">
+                                <input type="search" id="searchInput" class="block p-2.5 w-full min-w-80 z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Найти..." required />
+                                <button type="submit" id="searchButton" class="absolute top-0 end-0 p-2.5 text-sm font-medium h-full text-white bg-purple-700 rounded-e-lg border border-purple-700 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300">
+                                    <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                                    </svg>
+                                    <span class="sr-only">Search</span>
+                                </button>
+                            </div>
+                        </div>
+                      </div>
+                  </div>
+                  <div class="w-full lg:w-2/3 flex flex-col lg:flex-row items-start lg:items-center justify-end">
+        
+                      <div class="lg:ml-6 flex items-center">
+                          <button id="addOrderButton" role="button" class="text-white ml-4 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 border border-transparent bg-indigo-700 transition duration-150 ease-in-out hover:bg-indigo-600 w-8 h-8 rounded flex items-center justify-center">
+                              <img src="https://tuk-cdn.s3.amazonaws.com/can-uploader/compact_table_with_actions_and_select-svg7.svg" alt="plus">
+                          </button>
+                          <!-- Main modal -->
+                          <div id="crud-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+                            <div class="relative p-4 w-full max-w-5xl max-h-full">
+                                <!-- Modal content -->
+                                <div id="modalWindow" class="relative bg-gray-200 rounded-lg shadow dark:bg-gray-800">
+                                    <!-- Modal header -->
+                                    <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                                        <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">
+                                            Данные заказа
+                                        </h3>
+                                        <button type="button" class="text-gray-600 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-toggle="crud-modal">
+                                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                                            </svg>
+                                            <span class="sr-only">Close modal</span>
+                                        </button>
+                                    </div>
+                                    <!-- Modal body -->
+                                    <form class="p-4 md:p-5">
+                                      <div class="w-full p-6 mx-auto">
+                                        <div class="flex justify-center items-center">
+                                          <div class="w-full max-w-4xl px-3 shrink-0 md:w-10/12 md:flex-0">
+                                            <div class="container mx-auto relative flex break-words bg-gray-100 border-0 shadow-xl dark:bg-gray-900 dark:shadow-dark-xl rounded-2xl bg-clip-border">
+                                              <div class="flex-auto p-6">
+                                                <p class="leading-normal uppercase text-purple-800 text-xl">Общая информация</p>
+                                                <div class="flex flex-wrap -mx-3">
+                                                  
+                                                  <div class="w-full max-w-full px-3 shrink-0 md:w-6/12 md:flex-0">
+                                                    <div class="mb-4">
+                                                      <label for="code" class="inline-block mb-2 ml-1 font-bold text-l text-slate-700 dark:text-white/80">Номер заказа <span class="text-red-400">*</span></label>
+                                                      <input required disabled id="code" type="text" name="code" value="" class="focus:shadow-primary-outline dark:bg-slate-850 dark:text-white text-sm leading-5.6 ease block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 outline-none transition-all placeholder:text-gray-500 focus:border-blue-500 focus:outline-none" />
+                                                    </div>
+                                                    <div class="mb-4">
+                                                      <label for="date" class="inline-block mb-2 ml-1 font-bold text-l text-slate-700 dark:text-white/80">Дата заказа <span class="text-red-400">*</span></label>
+                                                      <input required id="date" type="date" name="date" value="" class="focus:shadow-primary-outline dark:bg-slate-850 dark:text-white text-sm leading-5.6 ease block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 outline-none transition-all placeholder:text-gray-500 focus:border-blue-500 focus:outline-none" />
+                                                    </div>
+                                                  </div>
+
+                                                  <div class="w-full max-w-full px-3 shrink-0 md:w-6/12 md:flex-0">
+                                                    <div class="mb-4">
+                                                      <label for="surname" class="inline-block mb-2 ml-1 font-bold text-l text-slate-700 dark:text-white/80">Фамилия <span class="text-red-400">*</span></label>
+                                                      <input required id="surname" type="text" name="surname" value="" class="focus:shadow-primary-outline dark:bg-slate-850 dark:text-white text-sm leading-5.6 ease block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 outline-none transition-all placeholder:text-gray-500 focus:border-blue-500 focus:outline-none" />
+                                                    </div>
+                                                    <div class="mb-4">
+                                                      <label for="name" class="inline-block mb-2 ml-1 font-bold text-l text-slate-700 dark:text-white/80">Имя <span class="text-red-400">*</span></label>
+                                                      <input required id="name" type="text" name="name" value="" class="focus:shadow-primary-outline dark:bg-slate-850 dark:text-white text-sm leading-5.6 ease block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 outline-none transition-all placeholder:text-gray-500 focus:border-blue-500 focus:outline-none" />
+                                                    </div>
+                                                  </div>
+
+                                                  <div class="w-full max-w-full px-3 shrink-0 md:w-6/12 md:flex-0">
+                                                    <div class="mb-4">
+                                                      <label for="email" class="inline-block mb-2 ml-1 font-bold text-l text-slate-700 dark:text-white/80">Эл. почта <span class="text-red-400">*</span></label>
+                                                      <input required id="email" type="text" name="email" value="" class="focus:shadow-primary-outline dark:bg-slate-850 dark:text-white text-sm leading-5.6 ease block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 outline-none transition-all placeholder:text-gray-500 focus:border-blue-500 focus:outline-none" />
+                                                    </div>
+                                                    <div class="mb-4">
+                                                      <label for="phone" class="inline-block mb-2 ml-1 font-bold text-l text-slate-700 dark:text-white/80">Телефон <span class="text-red-400">*</span></label>
+                                                      <input required id="phone" type="text" name="phone" value="" class="focus:shadow-primary-outline dark:bg-slate-850 dark:text-white text-sm leading-5.6 ease block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 outline-none transition-all placeholder:text-gray-500 focus:border-blue-500 focus:outline-none" />
+                                                    </div>
+                                                  </div>
+
+                                                </div>
+                                                <hr class="h-px mx-0 my-4 bg-transparent border-0 opacity-25 bg-gradient-to-r from-transparent via-black/40 to-transparent dark:bg-gradient-to-r dark:from-transparent dark:via-white dark:to-transparent " />
+                                                
+                                                <p class="leading-normal uppercase text-purple-800 dark:opacity-60 text-xl">Выдача заказа</p>
+                                                <div class="flex flex-wrap -mx-3">
+                                                  <div class="w-full max-w-full px-3 shrink-0 md:w-full md:flex-0">
+                                                    <div class="mb-4 flex">
+                                                      <label class="block w-3/12">
+                                                        <select required id="orderTypeSelect" class="form-select text-gray-700 mt-1 block w-full">
+                                                            <option value="Доставка">Доставка</option>
+                                                            <option value="Пункт выдачи">Пункт выдачи</option>
+                                                        </select>
+                                                      </label>
+                                                      <div class="block flex-1 ml-3 justify-between">
+                                                        <input required id="addressInput" type="text" class="form-input pl-1 ml-1 mt-1 mb-1 block w-full text-gray-700" placeholder="Адрес (Новосибирская область)">
+                                                        <select disabled id="pickUpPointSelect" class="form-select ml-1 mt-2 mb-1 block w-full text-gray-700" disabled>
+                                                          <option value="Пункт 1">ул. Рабочая, д. 1/1</option>
+                                                          <option value="Пункт 2">ул. Жилмассив, д. 13</option>
+                                                        </select>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                <hr class="h-px mx-0 my-4 bg-transparent border-0 opacity-25 bg-gradient-to-r from-transparent via-black/40 to-transparent dark:bg-gradient-to-r dark:from-transparent dark:via-white dark:to-transparent " />
+                                
+                                                <div class="flex flex-wrap -mx-3">
+                                                  <div class="w-full max-w-full px-3 shrink-0 md:w-full md:flex-0">
+                                                    <div class="mb-4">
+                                                      <label for="price" class="inline-block mb-2 ml-1 font-bold text-l text-slate-700 dark:text-white/80">Сумма заказа <span class="text-red-400">*</span></label>
+                                                      <input required disabled id="price" type="number" name="price" value="" class="input-with-currency focus:shadow-primary-outline dark:bg-slate-850 dark:text-white text-sm leading-5.6 ease block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 outline-none transition-all placeholder:text-gray-500 focus:border-blue-500 focus:outline-none" />
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                            
+                                        </div>
+                                        <div class="p-8 flex flex-wrap items-center justify-center break-words mt-10 bg-gray-100 border-0 shadow-xl dark:bg-gray-900 dark:shadow-dark-xl rounded-2xl bg-clip-border">
+                                          <h3 class="mb-4 font-semibold text-gray-900 text-xl dark:text-white mt-2">Статус заказа</h3>
+                                          <ul class="items-center w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg sm:flex dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                              <li class="w-full border-b border-gray-200 sm:border-b-0 sm:border-r dark:border-gray-600">
+                                                  <div class="flex items-center ps-3 bg-purple-300 text-purple-600">
+                                                    <svg class="me-1 h-8 w-8" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.5 4h-13m13 16h-13M8 20v-3.333a2 2 0 0 1 .4-1.2L10 12.6a1 1 0 0 0 0-1.2L8.4 8.533a2 2 0 0 1-.4-1.2V4h8v3.333a2 2 0 0 1-.4 1.2L13.957 11.4a1 1 0 0 0 0 1.2l1.643 2.867a2 2 0 0 1 .4 1.2V20H8Z" />
+                                                    </svg>
+                                                      <input checked id="horizontal-list-radio-license" type="radio" value="В обработке" name="list-radio" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
+                                                      <label for="horizontal-list-radio-license" class="w-full py-3 ms-2 text-sm font-medium text-purple-800 dark:text-gray-300">В обработке</label>
+                                                  </div>
+                                              </li>
+                                              <li class="w-full border-b border-gray-200 sm:border-b-0 sm:border-r dark:border-gray-600">
+                                                  <div class="flex items-center ps-3 bg-yellow-100 text-yellow-800">
+                                                    <svg class="me-1 h-8 w-8" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h6l2 4m-8-4v8m0-8V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v9h2m8 0H9m4 0h2m4 0h2v-4m0 0h-5m3.5 5.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm-10 0a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
+                                                    </svg>
+                                                      <input id="horizontal-list-radio-id" type="radio" value="В ожидании" name="list-radio" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
+                                                      <label for="horizontal-list-radio-id" class="w-full py-3 ms-2 text-sm font-medium text-yellow-800 dark:text-gray-300">В ожидании</label>
+                                                  </div>
+                                              </li>
+                                              <li class="w-full border-b border-gray-200 sm:border-b-0 sm:border-r dark:border-gray-600">
+                                                  <div class="flex items-center ps-3 bg-green-100 text-green-800">
+                                                    <svg class="me-1 h-8 w-8" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11.917 9.724 16.5 19 7.5" />
+                                                    </svg>
+                                                      <input id="horizontal-list-radio-military" type="radio" value="Выполнен" name="list-radio" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
+                                                      <label for="horizontal-list-radio-military" class="w-full py-3 ms-2 text-sm font-medium text-green-800 dark:text-gray-300">Выполнен</label>
+                                                  </div>
+                                              </li>
+                                              <li class="w-full dark:border-gray-600">
+                                                  <div class="flex items-center ps-3 bg-red-100 text-red-800">
+                                                    <svg class="me-1 h-8 w-8" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6" />
+                                                    </svg>
+                                                      <input id="horizontal-list-radio-passport" type="radio" value="Отменен" name="list-radio" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500">
+                                                      <label for="horizontal-list-radio-passport" class="w-full py-3 ms-2 text-sm font-medium text-red-800 dark:text-gray-300">Отменен</label>
+                                                  </div>
+                                              </li>
+                                          </ul>     
+                                        </div>
+                                        <div class="p-1 flex flex-wrap items-center justify-center">
+                                          <div class="container mx-auto bg-gray-700 lg:py-6 md:py-4 py-2 mt-4 rounded-lg">
+                                            <p class="w-10/12 mx-auto md:w-full font-semibold lg:text-xl text-xl lg:leading-9 md:leading-7 dark:text-white leading-9 text-center text-gray-200">Товары заказа</p>
+                                          </div>
+                                          <div class="container mx-auto p-4 break-words mt-10 bg-gray-100 border-0 shadow-xl dark:bg-gray-900 dark:shadow-dark-xl rounded-2xl bg-clip-border">
+                                            <button id="dropdownProductsButton" data-dropdown-toggle="dropdownProducts" data-dropdown-placement="bottom" class="group bg-blue-700/80 py-2 px-4 flex flex-wrap justify-center items-center space-y-2 cursor-pointer rounded-md hover:bg-blue-900/60 hover:smooth-hover w-full">
+                                              <div class="bg-blue-900/70 text-white/50 group-hover:text-white group-hover:smooth-hover flex p-2 rounded-full items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                </svg>
+                                              </div>
+                                              <span class="text-white/70 group-hover:text-white group-hover:smooth-hover text-center ml-2">Добавить товар</span>
+                                            </button>
+                                            <!-- Dropdown menu -->
+                                            <div id="dropdownProducts" class="z-10 hidden bg-white rounded-lg shadow w-96 dark:bg-gray-700">
+                                              <ul id="productsList" class="h-48 py-2 overflow-y-auto text-gray-700 dark:text-gray-200" aria-labelledby="dropdownProductsButton">
+                                                <div role="status" class="max-w-md p-4 space-y-4 border border-gray-200 divide-y divide-gray-200 rounded shadow animate-pulse dark:divide-gray-700 md:p-6 dark:border-gray-700">
+                                                  <div class="flex items-center justify-between">
+                                                      <div>
+                                                          <div class="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 w-24 mb-2.5"></div>
+                                                          <div class="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+                                                      </div>
+                                                      <div class="h-2.5 bg-gray-300 rounded-full dark:bg-gray-700 w-12"></div>
+                                                  </div>
+                                                  <div class="flex items-center justify-between pt-4">
+                                                      <div>
+                                                          <div class="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 w-24 mb-2.5"></div>
+                                                          <div class="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+                                                      </div>
+                                                      <div class="h-2.5 bg-gray-300 rounded-full dark:bg-gray-700 w-12"></div>
+                                                  </div>
+                                                  <div class="flex items-center justify-between pt-4">
+                                                      <div>
+                                                          <div class="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 w-24 mb-2.5"></div>
+                                                          <div class="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+                                                      </div>
+                                                      <div class="h-2.5 bg-gray-300 rounded-full dark:bg-gray-700 w-12"></div>
+                                                  </div>
+                                                  <div class="flex items-center justify-between pt-4">
+                                                      <div>
+                                                          <div class="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 w-24 mb-2.5"></div>
+                                                          <div class="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+                                                      </div>
+                                                      <div class="h-2.5 bg-gray-300 rounded-full dark:bg-gray-700 w-12"></div>
+                                                  </div>
+                                                  <div class="flex items-center justify-between pt-4">
+                                                      <div>
+                                                          <div class="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 w-24 mb-2.5"></div>
+                                                          <div class="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+                                                      </div>
+                                                      <div class="h-2.5 bg-gray-300 rounded-full dark:bg-gray-700 w-12"></div>
+                                                  </div>
+                                                  <span class="sr-only">Loading...</span>
+                                                </div>
+                                              </ul>
+                                            </div>
+                                            <div id="orderProductsList" class="container mx-auto mb-10 sm:mb-0 mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+
+                                              <div class="relative group bg-gray-300 py-10 sm:py-20 px-4 flex flex-col space-y-2 items-center rounded-md">
+                                                <div class="relative flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                  <div class="block absolute w-48 h-48 bottom-0 left-0 -mb-24"
+                                                      style="background: radial-gradient(black, transparent 60%); transform: rotate3d(0, 0, 1, 20deg) scale3d(1, 0.6, 1); opacity: 0.2;">
+                                                  </div>
+                                                  <img class="relative w-28 h-28" src="../images/w-T.png" alt="">
+                                                </div>
+                                                <p class="text-gray-800">Футболка</p>
+                                                <h4 class="text-purple-600 text-2xl font-bold capitalize text-center">Compton Style</h4>
+                                                <select id="colors" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                                  <option selected>Выберите цвет</option>
+                                                  <option value="US">United States</option>
+                                                  <option value="CA">Canada</option>
+                                                  <option value="FR">France</option>
+                                                  <option value="DE">Germany</option>
+                                                </select>
+                                                <select id="sizes" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                                  <option selected>Выберите размер</option>
+                                                  <option value="US">United States</option>
+                                                  <option value="CA">Canada</option>
+                                                  <option value="FR">France</option>
+                                                  <option value="DE">Germany</option>
+                                                </select>
+                                                <p class="absolute top-2 text-gray-700 inline-flex items-center text-xs">Мужская <span class="ml-2 w-2 h-2 block bg-blue-500 rounded-full group-hover:animate-pulse"></span></p>
+                                                <p class="absolute bottom-4 right-4 text-red-500 inline-flex items-center text-xl">1780 Р</p>
+                                                <button id="removeProductButton" data-tooltip-target="tooltip-product" type="button" class="cursor-pointer absolute top-0 right-0 mt-2 mr-2 text-white">
+                                                  <img src="../images/delete-style-product.svg" alt="Корзина" class="w-6 h-6">
+                                                </button>
+                                                <div id="tooltip-product" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                                                  Убрать
+                                                  <div class="tooltip-arrow" data-popper-arrow></div>
+                                                </div>
+                                              </div>
+                                              <div class="relative group bg-gray-300 py-10 sm:py-20 px-4 flex flex-col space-y-2 items-center rounded-md">
+                                                <div class="relative flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                  <div class="block absolute w-48 h-48 bottom-0 left-0 -mb-24"
+                                                      style="background: radial-gradient(black, transparent 60%); transform: rotate3d(0, 0, 1, 20deg) scale3d(1, 0.6, 1); opacity: 0.2;">
+                                                  </div>
+                                                  <img class="relative w-28 h-28" src="../images/w-T.png" alt="">
+                                                </div>
+                                                <p class="text-gray-800">Футболка</p>
+                                                <h4 class="text-purple-600 text-2xl font-bold capitalize text-center">Compton Style</h4>
+                                                <select id="colors" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                                  <option selected>Выберите цвет</option>
+                                                  <option value="US">United States</option>
+                                                  <option value="CA">Canada</option>
+                                                  <option value="FR">France</option>
+                                                  <option value="DE">Germany</option>
+                                                </select>
+                                                <select id="sizes" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                                  <option selected>Выберите размер</option>
+                                                  <option value="US">United States</option>
+                                                  <option value="CA">Canada</option>
+                                                  <option value="FR">France</option>
+                                                  <option value="DE">Germany</option>
+                                                </select>
+                                                <p class="absolute top-2 text-gray-700 inline-flex items-center text-xs">Мужская <span class="ml-2 w-2 h-2 block bg-blue-500 rounded-full group-hover:animate-pulse"></span></p>
+                                                <p class="absolute bottom-4 right-4 text-red-500 inline-flex items-center text-xl">1780 Р</p>
+                                                <button id="removeProductButton" data-tooltip-target="tooltip-product" type="button" class="cursor-pointer absolute top-0 right-0 mt-2 mr-2 text-white">
+                                                  <img src="../images/delete-style-product.svg" alt="Корзина" class="w-6 h-6">
+                                                </button>
+                                                <div id="tooltip-product" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                                                  Убрать
+                                                  <div class="tooltip-arrow" data-popper-arrow></div>
+                                                </div>
+                                              </div>
+                                              <div class="relative group bg-gray-300 py-10 sm:py-20 px-4 flex flex-col space-y-2 items-center rounded-md">
+                                                <div class="relative flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                  <div class="block absolute w-48 h-48 bottom-0 left-0 -mb-24"
+                                                      style="background: radial-gradient(black, transparent 60%); transform: rotate3d(0, 0, 1, 20deg) scale3d(1, 0.6, 1); opacity: 0.2;">
+                                                  </div>
+                                                  <img class="relative w-28 h-28" src="../images/w-T.png" alt="">
+                                                </div>
+                                                <p class="text-gray-800">Футболка</p>
+                                                <h4 class="text-purple-600 text-2xl font-bold capitalize text-center">Compton Style</h4>
+                                                <select id="colors" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                                  <option selected>Выберите цвет</option>
+                                                  <option value="US">United States</option>
+                                                  <option value="CA">Canada</option>
+                                                  <option value="FR">France</option>
+                                                  <option value="DE">Germany</option>
+                                                </select>
+                                                <select id="sizes" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                                  <option selected>Выберите размер</option>
+                                                  <option value="US">United States</option>
+                                                  <option value="CA">Canada</option>
+                                                  <option value="FR">France</option>
+                                                  <option value="DE">Germany</option>
+                                                </select>
+                                                <p class="absolute top-2 text-gray-700 inline-flex items-center text-xs">Мужская <span class="ml-2 w-2 h-2 block bg-blue-500 rounded-full group-hover:animate-pulse"></span></p>
+                                                <p class="absolute bottom-4 right-4 text-red-500 inline-flex items-center text-xl">1780 Р</p>
+                                                <button id="removeProductButton" data-tooltip-target="tooltip-product" type="button" class="cursor-pointer absolute top-0 right-0 mt-2 mr-2 text-white">
+                                                  <img src="../images/delete-style-product.svg" alt="Корзина" class="w-6 h-6">
+                                                </button>
+                                                <div id="tooltip-product" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                                                  Убрать
+                                                  <div class="tooltip-arrow" data-popper-arrow></div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                        </div>
+                                      </div>
+                                        <button id="saveButton" type="submit" class="w-full text-white p-2 inline-flex items-center bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-lg text-l px-5 py-2.5 text-center">
+                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                          </svg>                                   
+                                          Сохранить
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                          </div> 
+                      </div>
+                  </div>
+              </div>
+
+              <div class="w-full overflow-x-scroll xl:overflow-x-hidden">
+                  <table class="min-w-full">
+                      <thead>
+                          <tr class="w-full h-16 border-gray-300 border-b py-8">
+                              <th role="columnheader" class="pl-8 text-gray-800 dark:text-gray-400 font-normal pr-6 text-left text-xl tracking-normal leading-4">ID</th>
+                              <th role="columnheader" class="text-gray-800 dark:text-gray-400 font-normal pr-6 text-left text-xl tracking-normal leading-4">Код заказа</th>
+                              <th role="columnheader" class="text-gray-800 dark:text-gray-400 font-normal pr-6 text-left text-xl tracking-normal leading-4">Фамилия</th>
+                              <th role="columnheader" class="text-gray-800 dark:text-gray-400 font-normal pr-6 text-left text-xl tracking-normal leading-4">Имя</th>
+                              <th role="columnheader" class="text-gray-800 dark:text-gray-400 font-normal pr-6 text-left text-xl tracking-normal leading-4">Тип заказа</th>
+                              <th role="columnheader" class="text-gray-800 dark:text-gray-400 font-normal pr-6 text-left text-xl tracking-normal leading-4">Адрес</th>
+                              <th role="columnheader" class="text-gray-800 dark:text-gray-400 font-normal pr-6 text-left text-xl tracking-normal leading-4">Почта</th>
+                              <th role="columnheader" class="text-gray-800 dark:text-gray-400 font-normal pr-6 text-left text-xl tracking-normal leading-4">Телефон</th>
+                              <th role="columnheader" class="text-gray-800 dark:text-gray-400 font-normal pr-6 text-left text-xl tracking-normal leading-4">Стоимость</th>
+                              <th role="columnheader" class="text-gray-800 dark:text-gray-400 font-normal pr-6 text-left text-xl tracking-normal leading-4">Статус</th>
+                              <td role="columnheader" class="text-gray-800 dark:text-gray-400 font-normal pr-6 text-left text-xl tracking-normal leading-4">Действия</td>
+                          </tr>
+                      </thead>
+                      <tbody class="bg-gray-200 dark:bg-gray-800" id="ordersTable">
+                      </tbody>
+                  </table>
+              </div>
+            </div>
+          </main>
+  
+          <div class="flex flex-wrap"> 
+            <img src="https://images.unsplash.com/photo-1524738258074-f8125c6a7588?ixid=MXwyMDkyMnwwfDF8c2VhcmNofDE5fHxkb2d8ZW58MHx8fA&amp;ixlib=rb-1.2.1q=85&amp;fm=jpg&amp;crop=faces&amp;cs=srgb&amp;w=400&amp;h=400&amp;fit=crop" class="h-auto w-2/12" alt="Instagram image" width="400" height="400">
+            <img src="https://images.unsplash.com/photo-1532453288672-3a27e9be9efd?ixid=MXwyMDkyMnwwfDF8c2VhcmNofDE5fHxkb2d8ZW58MHx8fA&amp;ixlib=rb-1.2.1q=85&amp;fm=jpg&amp;crop=faces&amp;cs=srgb&amp;w=400&amp;h=400&amp;fit=crop" class="h-auto w-2/12" alt="Instagram image" width="400" height="400">
+            <img src="https://images.unsplash.com/photo-1477044545293-98b9221de30a?ixid=MXwyMDkyMnwwfDF8c2VhcmNofDE5fHxkb2d8ZW58MHx8fA&amp;ixlib=rb-1.2.1q=85&amp;fm=jpg&amp;crop=faces&amp;cs=srgb&amp;w=400&amp;h=400&amp;fit=crop" class="h-auto w-2/12" alt="Instagram image" width="400" height="400">
+            <img src="https://images.unsplash.com/photo-1603217192634-61068e4d4bf9?ixid=MXwyMDkyMnwwfDF8c2VhcmNofDE5fHxkb2d8ZW58MHx8fA&amp;ixlib=rb-1.2.1q=85&amp;fm=jpg&amp;crop=faces&amp;cs=srgb&amp;w=400&amp;h=400&amp;fit=crop" class="h-auto w-2/12" alt="Instagram image" width="400" height="400">
+            <img src="https://images.unsplash.com/photo-1583001308455-e5d48b880c67?ixid=MXwyMDkyMnwwfDF8c2VhcmNofDE5fHxkb2d8ZW58MHx8fA&amp;ixlib=rb-1.2.1q=85&amp;fm=jpg&amp;crop=faces&amp;cs=srgb&amp;w=400&amp;h=400&amp;fit=crop" class="h-auto w-2/12" alt="Instagram image" width="400" height="400">
+            <img src="https://images.unsplash.com/photo-1579362094443-5d73793e4d3c?ixid=MXwyMDkyMnwwfDF8c2VhcmNofDE5fHxkb2d8ZW58MHx8fA&amp;ixlib=rb-1.2.1q=85&amp;fm=jpg&amp;crop=faces&amp;cs=srgb&amp;w=400&amp;h=400&amp;fit=crop" class="h-auto w-2/12" alt="Instagram image" width="400" height="400"> 
+          </div>
+          <footer class="bottom-0 body-font shadow-md p-0 m-0 jusitfy-center items-center hidden lg:block bg-neutral-900" style="background-color: rgb(19, 18, 18)">
+            <div class="container mx-auto px-6 pt-6">
+              <section id="">
+                <!-- Social media icons container -->
+                <div class="mb-6 flex justify-center">  
+                  <a href="#!"type="button" class="m-1 h-9 w-9 rounded-full border-2 border-white uppercase leading-normal text-white transition duration-150 ease-in-out hover:bg-black hover:bg-opacity-5 focus:outline-none focus:ring-0"
+                    data-te-ripple-init
+                    data-te-ripple-color="light">
+                    <svg fill="#ffffff" class="mx-auto h-full w-4 text-white" viewBox="0 0 100 100" version="1.1" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g id="Layer_1"/><g id="Layer_2"><g>
+                      <path class="st117" d="M88.723,12.142C76.419,17.238,23.661,39.091,9.084,45.047c-9.776,3.815-4.053,7.392-4.053,7.392    s8.345,2.861,15.499,5.007c7.153,2.146,10.968-0.238,10.968-0.238l33.62-22.652c11.922-8.107,9.061-1.431,6.199,1.431    c-6.199,6.2-16.452,15.975-25.036,23.844c-3.815,3.338-1.908,6.199-0.238,7.63c6.199,5.246,23.129,15.976,24.082,16.691    c5.037,3.566,14.945,8.699,16.452-2.146c0,0,5.961-37.435,5.961-37.435c1.908-12.637,3.815-24.321,4.053-27.659    C97.307,8.804,88.723,12.142,88.723,12.142z"/></g></g>
+                    </svg>
+                  </a>
+      
+                  <a href="#!"type="button" class="m-1 h-9 w-9 rounded-full border-2 border-white uppercase leading-normal text-white transition duration-150 ease-in-out hover:bg-black hover:bg-opacity-5 focus:outline-none focus:ring-0"
+                    data-te-ripple-init
+                    data-te-ripple-color="light">
+                    <svg fill="#ffffff" class="mx-auto h-full w-4 text-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m23.456 5.784c-.27.849-.634 1.588-1.09 2.259l.019-.03q-.672 1.12-1.605 2.588-.8 1.159-.847 1.2c-.138.173-.234.385-.267.618l-.001.007c.027.212.125.397.268.535l.4.446q3.21 3.299 3.611 4.548c.035.092.055.198.055.309 0 .194-.062.373-.167.52l.002-.003c-.176.181-.422.293-.694.293-.03 0-.061-.001-.09-.004h.004-2.631c-.001 0-.003 0-.005 0-.337 0-.647-.118-.89-.314l.003.002c-.354-.291-.669-.606-.951-.948l-.009-.012q-.691-.781-1.226-1.315-1.782-1.694-2.63-1.694c-.021-.002-.045-.003-.07-.003-.165 0-.319.051-.446.138l.003-.002c-.104.13-.167.298-.167.479 0 .036.002.07.007.105v-.004c-.027.314-.043.679-.043 1.048 0 .119.002.237.005.355v-.017 1.159c.01.047.016.101.016.156 0 .242-.11.458-.282.601l-.001.001c-.387.177-.839.281-1.316.281-.102 0-.202-.005-.301-.014l.013.001c-1.574-.03-3.034-.491-4.275-1.268l.035.02c-1.511-.918-2.763-2.113-3.717-3.525l-.027-.042c-.906-1.202-1.751-2.56-2.471-3.992l-.07-.154c-.421-.802-.857-1.788-1.233-2.802l-.06-.185c-.153-.456-.264-.986-.31-1.535l-.002-.025q0-.758.892-.758h2.63c.024-.002.052-.003.081-.003.248 0 .477.085.658.228l-.002-.002c.2.219.348.488.421.788l.003.012c.484 1.367.997 2.515 1.587 3.615l-.067-.137c.482.97 1.015 1.805 1.623 2.576l-.023-.031q.8.982 1.248.982c.009.001.02.001.032.001.148 0 .277-.08.347-.2l.001-.002c.074-.19.117-.411.117-.641 0-.049-.002-.098-.006-.146v.006-3.879c-.021-.457-.133-.884-.32-1.267l.008.019c-.124-.264-.273-.492-.45-.695l.003.004c-.164-.164-.276-.379-.311-.619l-.001-.006c0-.17.078-.323.2-.423l.001-.001c.121-.111.283-.178.46-.178h.008 4.146c.022-.003.047-.004.073-.004.195 0 .37.088.486.226l.001.001c.103.188.164.413.164.651 0 .038-.002.075-.005.112v-.005 5.173c-.002.024-.003.052-.003.08 0 .184.051.357.139.504l-.002-.004c.073.108.195.178.333.178h.001c.176-.012.336-.07.471-.162l-.003.002c.272-.187.506-.4.709-.641l.004-.005c.607-.686 1.167-1.444 1.655-2.25l.039-.07c.344-.57.716-1.272 1.053-1.993l.062-.147.446-.892c.155-.446.571-.76 1.06-.76.019 0 .038 0 .057.001h-.003 2.631q1.066 0 .8.981z"/></svg>
+                  </a>
+                </div>
+      
+      
+                <!-- Copyright information -->
+                <div class="mb-6 text-gray-100 text-center">
+                  <p>
+                    Fabulous Finds - онлайн сервис для заказа одежды с возможностью подбора стиля.
+                  </p>
+                </div>
+      
+                  <!-- Links section -->
+                  <div class="grid md:grid-cols-2 lg:grid-cols-4 text-gray-100">
+                    <div class="mb-6">
+                      <h5 class="mb-2.5 font-bold uppercase text-purple-500">Ссылки</h5>
+      
+                      <ul class="mb-0 list-none">
+                        <li>
+                          <a href="#!" class="text-gray-200 hover:underline">Группа ВКонтакте</a>
+                        </li>
+                        <li>
+                          <a href="#!" class="text-gray-200 hover:underline">Группа в Телеграм</a>
+                        </li>
+                      </ul>
+                    </div>
+      
+                    <div class="mb-6">
+                      <h5 class="mb-2.5 font-bold uppercase text-purple-500">Ссылки</h5>
+      
+                      <ul class="mb-0 list-none">
+                        <li>
+                          <a href="#!" class="text-gray-200 hover:underline">Чат в Телеграм</a>
+                        </li>
+                        <li>
+                          <a href="#!" class="text-gray-200 hover:underline">Чат ВКонтакте</a>
+                        </li>
+                      </ul>
+                    </div>
+      
+                    <div class="mb-6">
+                      <h5 class="mb-2.5 font-bold uppercase text-purple-500">Навигация</h5>
+      
+                      <ul class="mb-0 list-none">
+                        <li>
+                          <a href="catalog.html" class="text-gray-200 hover:underline">Каталог товаров</a>
+                        </li>
+                        <li>
+                          <a href="styling.html" class="text-gray-200 hover:underline">Подбор стиля</a>
+                        </li>
+                      </ul>
+                    </div>
+      
+                    <div class="mb-6">
+                      <h5 class="mb-2.5 font-bold uppercase text-purple-500">Навигация</h5>
+      
+                      <ul class="mb-0 list-none">
+                        <li>
+                          <a href="garderob.html" class="text-gray-200 hover:underline">Примерочная</a>
+                        </li>
+                        <li>
+                          <a href="auth.html" class="text-gray-200 hover:underline">Вход в систему</a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </section>
+      
+      
+            <!-- Copyright section -->
+            <div
+              class="w-full p-4 text-center text-white"
+              style="background-color: rgba(0, 0, 0, 0.2)">
+              2024:
+              <a class="text-white" href="https://vk.com/sopelka11">Осташко Владислав</a>
+            </div>
+          </footer>
+        <!--Меню мобилки-->
+        <section id="" class="lg:hidden">
+          <div class="fixed z-50 w-full h-16 max-w-lg -translate-x-1/2 border border-gray-200 rounded-full bottom-4 left-1/2 dark:border-gray-600" style="background-color: rgb(22, 21, 21)">
+            <div class="grid h-full max-w-lg grid-cols-5 mx-auto">
+                <button data-tooltip-target="tooltip-home" type="button" class="inline-flex flex-col items-center justify-center px-5 rounded-s-full hover:bg-neutral-800 group" onclick="goToCatalog()">
+                  <svg class="w-8 h-8 mb-1 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-500" width="32" height="32" viewBox="0 0 24 24">
+                    <path d="M3.99951 6.25H19.9995V7.75H3.99951V6.25Z" fill="#E8E9EA"/>
+                    <path d="M14.9995 11.25H3.99951V12.75H14.9995V11.25Z" fill="#E8E9EA"/>
+                    <path d="M10.9995 16.25L3.99951 16.25V17.75L10.9995 17.75V16.25Z" fill="#E8E9EA"/>
+                    <path d="M19.7499 20L19.75 17.75L22 17.7499L22 16.2499L19.75 16.25L19.7501 14L18.2501 14L18.25 16.25L16 16.2501L16 17.75L18.25 17.75L18.2499 20L19.7499 20Z" fill="#E8E9EA"/>                
+                  </svg>
+                    <span class="sr-only">Каталог</span>
+                </button>
+                <div id="tooltip-home" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-neutral-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                  Каталог
+                    <div class="tooltip-arrow" data-popper-arrow></div>
+                </div>
+                <button data-tooltip-target="tooltip-wallet" type="button" class="inline-flex flex-col items-center justify-center px-5 hover:bg-neutral-800 group" onclick="goToFavourites()">
+                  <svg class="w-8 h-8 mb-1 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-500" width="32" height="32" viewBox="0 0 24 24">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M3 8.97831C3 6.24655 5.16494 4 7.87453 4C9.28971 4 10.5168 4.74855 11.3676 5.76904C11.6045 6.0533 11.8168 6.36357 11.9997 6.69262C12.1825 6.36365 12.3946 6.05344 12.6314 5.76922C13.4816 4.74863 14.7083 4 16.1236 4C18.8332 4 20.9981 6.24655 20.9981 8.97831C20.9981 11.4006 19.4893 13.5485 17.7652 15.3159C16.4435 16.6709 14.8908 17.902 13.5947 18.9297C13.1917 19.2493 12.8134 19.5491 12.4747 19.827C12.1981 20.0538 11.8 20.0538 11.5234 19.827C11.1847 19.5491 10.8064 19.2493 10.4034 18.9297C9.10728 17.902 7.55461 16.6709 6.23286 15.3159C4.50876 13.5485 3 11.4006 3 8.97831ZM12.75 9.5H11.25C11.25 8.52096 10.8583 7.50072 10.2154 6.72954C9.5729 5.95883 8.73726 5.5 7.87453 5.5C6.02829 5.5 4.5 7.03961 4.5 8.97831C4.5 10.7843 5.64272 12.5628 7.30662 14.2685C8.5544 15.5477 9.99519 16.6905 11.2792 17.7089C11.5257 17.9044 11.7665 18.0954 11.9991 18.2819C12.2316 18.0954 12.4724 17.9044 12.7189 17.7089C14.0029 16.6905 15.4437 15.5477 16.6915 14.2685C18.3554 12.5628 19.4981 10.7843 19.4981 8.97831C19.4981 7.03961 17.9698 5.5 16.1236 5.5C15.2609 5.5 14.4258 5.95875 13.7838 6.72936C13.1414 7.50047 12.75 8.52075 12.75 9.5Z" fill="#E8E9EA"/>
+                  </svg>
+                    <span class="sr-only">Избранное</span>
+                </button>
+                <div id="tooltip-wallet" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-neutral-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                    Избранное
+                    <div class="tooltip-arrow" data-popper-arrow></div>
+                </div>
+                <button data-tooltip-target="tooltip-new" type="button" class="inline-flex flex-col items-center justify-center px-5 hover:bg-neutral-800 group" onclick="goToFittingRoom()">
+                  <svg class="w-8 h-8 mb-1 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-500" version="1.0" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 512.000000 512.000000">
+                    <g transform="translate(0.000000,512.000000) scale(0.100000,-0.100000)" fill="#ffffff" stroke="none">
+                    <path d="M2265 4615 l-25 -24 0 -680 0 -680 23 -27 c17 -20 33 -27 57 -27 24
+                    0 40 7 57 27 l23 27 0 625 0 624 1100 0 1100 0 0 -1920 0 -1920 -1100 0 -1100
+                    0 0 904 c0 899 0 903 -21 930 -29 37 -89 37 -118 0 -21 -27 -21 -31 -21 -986
+                    l0 -959 25 -24 24 -25 1211 0 1211 0 24 25 25 24 0 2031 0 2031 -25 24 -24 25
+                    -1211 0 -1211 0 -24 -25z"/>
+                    <path d="M1301 4299 c-58 -18 -120 -67 -151 -121 -53 -95 -49 -174 12 -199 41
+                    -17 95 8 104 48 18 86 44 114 111 120 87 8 149 -61 129 -142 -4 -15 -45 -67
+                    -90 -114 -82 -86 -127 -155 -141 -218 l-7 -33 -109 0 c-84 0 -115 4 -134 16
+                    -20 13 -48 15 -152 12 -119 -3 -132 -6 -193 -35 -36 -17 -79 -47 -97 -65 -48
+                    -51 -366 -624 -366 -661 0 -44 31 -66 167 -117 65 -24 120 -50 123 -57 3 -7
+                    -14 -178 -37 -379 -45 -391 -45 -404 2 -424 30 -13 1228 -152 1275 -148 66 6
+                    68 12 114 418 23 201 45 368 48 372 4 4 60 15 126 23 66 9 130 18 143 21 33 7
+                    62 40 62 72 0 35 -165 663 -184 700 -18 35 -103 115 -146 137 -41 21 -187 65
+                    -218 65 -13 0 -32 -5 -43 -11 -27 -14 -219 29 -219 49 0 32 35 83 109 159 106
+                    108 125 146 125 248 1 64 -4 88 -21 121 -30 57 -79 103 -133 127 -52 23 -159
+                    31 -209 16z m-393 -841 c65 -276 369 -421 620 -297 79 38 161 119 197 193 15
+                    31 31 56 35 56 47 0 135 -58 156 -103 7 -18 41 -140 75 -272 33 -132 62 -247
+                    65 -257 4 -13 -5 -18 -38 -23 -24 -3 -55 -8 -70 -11 -21 -4 -28 -2 -28 9 0 21
+                    -48 57 -76 57 -12 0 -35 -10 -49 -23 -26 -22 -28 -29 -75 -427 -27 -223 -49
+                    -407 -49 -409 -1 -2 -34 0 -73 4 -144 14 -991 114 -994 118 -2 1 17 174 41
+                    383 25 208 45 394 45 413 0 71 -82 109 -131 60 -23 -23 -39 -21 -107 8 l-40
+                    18 132 237 c72 131 143 249 156 264 35 37 76 53 140 54 l55 0 13 -52z m559
+                    -13 l113 -27 -18 -30 c-35 -61 -145 -118 -227 -118 -58 0 -131 29 -179 71 -43
+                    38 -86 103 -86 130 0 22 271 5 397 -26z"/>
+                    <path d="M3154 4292 c-115 -41 -184 -138 -184 -260 0 -96 16 -128 118 -234 88
+                    -93 133 -162 115 -178 -4 -4 -49 -17 -100 -30 -79 -19 -96 -20 -127 -9 -31 11
+                    -45 9 -128 -15 -137 -42 -234 -112 -274 -200 -25 -55 -175 -679 -169 -703 9
+                    -38 44 -51 190 -70 l140 -18 47 -378 c28 -225 52 -385 59 -394 7 -8 23 -19 35
+                    -23 19 -8 1196 127 1274 146 43 10 60 33 60 83 0 25 -18 194 -40 374 -22 180
+                    -40 336 -40 346 0 13 25 27 103 56 144 54 176 72 188 103 8 21 7 35 -6 62 -46
+                    97 -332 589 -359 618 -17 18 -59 47 -94 64 -54 27 -81 33 -178 41 -122 9 -153
+                    6 -178 -18 -12 -13 -37 -15 -127 -13 l-112 3 -12 40 c-21 70 -46 108 -135 200
+                    -96 99 -111 131 -87 186 20 48 50 71 99 76 60 6 101 -21 124 -84 30 -83 68
+                    -107 124 -78 91 47 15 238 -118 297 -64 29 -146 33 -208 10z m750 -806 c36
+                    -21 57 -52 184 -276 79 -139 142 -253 140 -254 -2 -1 -30 -12 -62 -24 l-59
+                    -23 -22 21 c-33 31 -83 29 -112 -4 -12 -15 -23 -35 -23 -44 0 -9 20 -183 45
+                    -385 25 -203 45 -381 45 -397 0 -28 0 -28 -97 -39 -54 -7 -291 -36 -528 -65
+                    -236 -29 -433 -50 -436 -47 -4 3 -28 184 -54 401 -25 217 -50 405 -55 417 -26
+                    63 -112 67 -140 5 l-15 -32 -60 6 c-33 4 -63 9 -67 13 -12 11 131 540 154 571
+                    21 29 77 64 119 74 23 5 28 1 40 -25 24 -58 96 -145 151 -181 76 -51 162 -78
+                    247 -78 211 0 386 141 433 349 l12 53 60 -6 c35 -3 76 -16 100 -30z m-339 -28
+                    c-12 -42 -55 -98 -97 -128 -117 -85 -264 -72 -367 33 -23 22 -41 44 -41 48 0
+                    6 78 26 235 62 11 3 78 5 148 6 l128 1 -6 -22z"/>
+                    <path d="M663 1654 c-25 -25 -26 -28 -20 -115 19 -255 169 -474 402 -585 102
+                    -49 184 -67 300 -67 164 0 300 47 440 153 36 27 67 50 69 50 2 0 6 -26 10 -58
+                    10 -90 66 -134 122 -98 46 31 48 49 20 229 -14 91 -29 173 -33 182 -3 10 -19
+                    23 -35 30 -25 10 -56 8 -186 -12 -176 -26 -194 -31 -218 -67 -19 -31 -13 -67
+                    18 -98 18 -18 28 -20 91 -14 61 6 68 4 58 -8 -24 -29 -112 -78 -183 -104 -148
+                    -52 -339 -26 -474 64 -145 96 -244 277 -244 445 0 40 -5 55 -25 74 -33 34 -78
+                    33 -112 -1z"/>
+                    <path d="M3663 1398 l-243 -242 -138 137 c-120 119 -143 137 -171 137 -43 0
+                    -81 -38 -81 -82 0 -29 20 -52 178 -210 161 -161 181 -178 212 -178 31 0 57 23
+                    317 283 256 255 283 285 283 315 0 44 -38 82 -82 82 -29 0 -58 -25 -275 -242z"/>
+                    </g>
+                  </svg>
+                    <span class="sr-only">Примерочная</span>
+                </button>
+                <div id="tooltip-new" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-neutral-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                    Примерочная
+                    <div class="tooltip-arrow" data-popper-arrow></div>
+                </div>
+                <button data-tooltip-target="tooltip-settings" type="button" class="inline-flex flex-col items-center justify-center px-5 hover:bg-neutral-800 dark:hover:bg-gray-800 group" onclick="goToCart()">
+                  <svg class="w-8 h-8 mb-1 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-500" width="32" height="32" viewBox="0 0 24 24">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M6.35968 6.96333L5.48272 18.89C5.41879 19.7594 6.10692 20.5 6.97868 20.5H17.0211C17.8929 20.5 18.581 19.7594 18.5171 18.89L17.6403 6.96334C17.6211 6.70213 17.4035 6.5 17.1416 6.5H15.9955L15.9956 8.99994L14.4956 9L14.4955 6.5H9.50016L9.50006 9L8.00006 8.99994L8.00016 6.5H6.85833C6.59641 6.5 6.37889 6.70212 6.35968 6.96333ZM8.00023 5H6.85833C5.81066 5 4.94054 5.80849 4.86372 6.85334L3.98676 18.78C3.8589 20.5188 5.23516 22 6.97868 22H17.0211C18.7646 22 20.1409 20.5188 20.0131 18.78L19.1362 6.85336C19.0594 5.8085 18.1893 5 17.1416 5H15.9954L15.9954 4.74988C15.9953 3.23115 14.7641 2 13.2454 2H10.7502C9.2315 2 8.0003 3.23115 8.00024 4.74989L8.00023 5ZM9.50023 5L9.50024 4.74995C9.50027 4.05961 10.0599 3.5 10.7502 3.5H13.2454C13.9357 3.5 14.4954 4.05961 14.4954 4.74995L14.4954 5H9.50023Z" fill="#E8E9EA"/>
+                  </svg>
+                    <span class="sr-only">Корзина</span>
+                </button>
+                <div id="tooltip-settings" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-neutral-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                    Корзина
+                    <div class="tooltip-arrow" data-popper-arrow></div>
+                </div>
+                <button id="toProfileButtonMoile" data-tooltip-target="tooltip-profile" type="button" class="inline-flex flex-col items-center justify-center px-5 rounded-e-full hover:bg-neutral-800 dark:hover:bg-gray-800 group" onclick="goToAuth()">
+                  <svg class="w-8 h-8 mb-1 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-500" width="32" height="32" viewBox="0 0 24 24">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M17.3266 18.6244C19.2617 17.0664 20.5 14.6778 20.5 12C20.5 7.30558 16.6944 3.5 12 3.5C7.30558 3.5 3.5 7.30558 3.5 12C3.5 14.6778 4.73826 17.0664 6.67343 18.6244C7.2842 16.2525 9.43744 14.5 12 14.5C14.5626 14.5 16.7158 16.2525 17.3266 18.6244ZM15.9712 19.5172C15.7328 17.5357 14.0457 16 12 16C9.95426 16 8.26721 17.5357 8.02884 19.5172C9.21409 20.1447 10.5655 20.5 12 20.5C13.4345 20.5 14.7859 20.1447 15.9712 19.5172ZM12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM12 11.5C12.8284 11.5 13.5 10.8284 13.5 10C13.5 9.17157 12.8284 8.5 12 8.5C11.1716 8.5 10.5 9.17157 10.5 10C10.5 10.8284 11.1716 11.5 12 11.5ZM12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z" fill="#E8E9EA"/>
+                  </svg>
+                    <span class="sr-only">Профиль</span>
+                </button>
+                <div id="tooltip-profile" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-neutral-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                    Профиль
+                    <div class="tooltip-arrow" data-popper-arrow></div>
+                </div>
+            </div>
+        </div>
+
+        </section>
+
+        <!-- Full page overlay loading screen -->
+        <div id="loadingScreen" class="w-full h-full fixed block top-0 left-0 bg-white opacity-75 z-50" style="background-color: rgb(19, 18, 18)">
+          <span class="text-green-500 opacity-75 top-1/2 my-0 mx-auto block relative w-0 h-0" style="
+            top: 50%;">
+            <i class="fas fa-circle-notch fa-spin fa-5x"></i>
+            <div class="w-full h-full flex items-center justify-center bg-white z-50">
+              <div class="loader ease-linear rounded-full h-64 w-64">
+
+              </div>
+            </div>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AlpineJS -->
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
+    <!-- Font Awesome -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/js/all.min.js" integrity="sha256-KzZiKy0DWYsnwMF+X1DvQngQ2/FxF7MF3Ff72XcpuPs=" crossorigin="anonymous"></script>
+    <!-- ChartJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" integrity="sha256-R4pqcOYV8lt7snxMQO/HSbVCFRPMdrhAFMH+vr9giYI=" crossorigin="anonymous"></script>
+
+    <script>
+        var chartOne = document.getElementById('chartOne');
+        var myChart = new Chart(chartOne, {
+            type: 'bar',
+            data: {
+                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                datasets: [{
+                    label: '# of Votes',
+                    data: [12, 19, 3, 5, 2, 3],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+
+        var chartTwo = document.getElementById('chartTwo');
+        var myLineChart = new Chart(chartTwo, {
+            type: 'line',
+            data: {
+                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                datasets: [{
+                    label: '# of Votes',
+                    data: [12, 19, 3, 5, 2, 3],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+    </script>
+</body>
+<script>
+  function goToFavourites(){
+    window.location.href='favourites.html';
+  }
+  function goToMain(){
+    window.location.href='index.html';
+  }
+  function goToCart(){
+    window.location.href='cart.html';
+  }
+  function goToFittingRoom(){
+    window.location.href='garderob.html';
+  }
+  function goToCatalog(){
+    window.location.href='catalog.html';
+  }
+  function goToAuth(){
+    window.location.href='auth.html';
+  }
+</script>
+<script>
+  function checkAll(element) {
+  let rows = element.parentElement.parentElement.parentElement.nextElementSibling.children;
+  for (var i = 0; i < rows.length; i++) {
+      if (element.checked) {
+          rows[i].classList.add("bg-gray-700");
+          rows[i].classList.add("dark:bg-gray-700");
+          let checkbox = rows[i].getElementsByTagName("input")[0];
+          if (checkbox) {
+              checkbox.checked = true;
+          }
+      } else {
+          rows[i].classList.remove("bg-gray-700");
+          rows[i].classList.remove("dark:bg-gray-700");
+          let checkbox = rows[i].getElementsByTagName("input")[0];
+          if (checkbox) {
+              checkbox.checked = false;
+          }
+      }
+  }
+  }
+  function tableInteract(element) {
+  var single = element.parentElement.parentElement;
+  single.classList.toggle("bg-gray-700");
+  single.classList.toggle("dark:bg-gray-700");
+  }
+  let temp = 0;
+  function pageView(val) {
+  let text = document.getElementById("page-view");
+  if (val) {
+      if (temp === 2) {
+          temp = 0;
+      } else {
+          temp = temp + 1;
+      }
+  } else if (temp !== 0) {
+      temp = temp - 1;
+  }
+  switch (temp) {
+      case 0:
+          text.innerHTML = "Просмотр 1 - 20 из 60";
+          break;
+      case 1:
+          text.innerHTML = "Просмотр 21 - 40 из 60";
+          break;
+      case 2:
+          text.innerHTML = "Просмотр 41 - 60 из 60";
+      default:
+  }
+  }
+</script>
+
+</html>

@@ -13,11 +13,12 @@
     border: 1px solid rgb(255, 255, 255);
 }
 .active {
-    background-color: rgb(29, 27, 29);
-    color: white;
+    background-color: rgb(126 34 206);
+    color: rgb(255, 255, 255);
   }
 
 .filled-heart {
 fill: rgb(206, 25, 25);
 stroke: black;
 }
+

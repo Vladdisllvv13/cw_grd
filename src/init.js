@@ -3,14 +3,18 @@ import Stats from 'stats.js';
 import * as dat from 'lil-gui';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
+const ui = document.getElementById('ui');
+
 const init = () => {
 	const sizes = {
-		width: window.innerWidth / 1.8,
-		height: window.innerHeight / 1.8,
+		width: ui.clientWidth - 36,
+		height: window.innerHeight / 1.5,
 	};
 
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color( '#393d3f' );
+	scene.fog = new THREE.Fog('#393d3f', 20, 100);
+
 	const canvas = document.querySelector('.canvas');
 	
 	const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height);
@@ -20,7 +24,7 @@ const init = () => {
 
 	const controls = new OrbitControls(camera, canvas);
 	controls.enableDamping = true;
-	controls.dampingFactor = 0.05;
+	controls.dampingFactor = 0.1;
 	controls.maxPolarAngle = Math.PI / 2.1;
 	controls.minPolarAngle = Math.PI / -1.2;
 	controls.minDistance = 8;
@@ -28,13 +32,11 @@ const init = () => {
 	controls.target = new THREE.Vector3(0,10,0);
 
 	
-	// const stats = new Stats();
-	// stats.showPanel(0);
-	// document.body.appendChild(stats.dom);
 
-	//const gui = new dat.GUI();
+	// const gui = new dat.GUI();
+	
 
-	const renderer = new THREE.WebGLRenderer({ canvas });
+	const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 	renderer.physicallyCorrectLights = true;
 	renderer.setPixelRatio( window.devicePixelRatio * 2);
 	renderer.gammaOutput = true;
@@ -45,7 +47,7 @@ const init = () => {
 	renderer.setSize(sizes.width, sizes.height);
 	renderer.render(scene, camera);
 
-	return { sizes, scene, canvas, camera, renderer, controls };
+	return { sizes, scene, canvas, camera, renderer, controls};
 };
 
 export default init;

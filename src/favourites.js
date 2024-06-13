@@ -17,7 +17,6 @@ async function getUserId(){
   }
 }
 
-
 const firebaseConfig = {
     apiKey: "AIzaSyAgfHpqhm8BYiQTE30cusEJMC4uK8lTPis",
     authDomain: "virt-shop.firebaseapp.com",
@@ -32,287 +31,195 @@ const db = getFirestore(firebaseApp);
 const storage = getStorage(firebaseApp);
 
 const clothesCollection = collection(db, 'clothes');
+const cartCollection = collection(db, 'shoppingCart');
 const clothesSnapshot = await getDocs(clothesCollection);
-const clothesData = [];
+let clothesData = [];
 let userClothesData = [];
-let userStylesData = [];
-
-
-
-
-const exitButton = document.getElementById('exitButton');
-exitButton.addEventListener('click', function() {
-    localStorage.setItem('userId', 'ALL');
-    exitButton.hidden = true;
-    location.reload();
-
-});
-
-
-
-
-
-//Получаем данные об одежде и записываем в clothesData
-clothesSnapshot.forEach((document) => {
-    const data = document.data();
-    const sizeRefs = data.idSizes.map((sizeId) => doc(db, 'sizes', sizeId.toString()));
-    const nameRef = doc(clothesCollection, document.id);
-    const imageRef = doc(clothesCollection, document.id);
-    const priceRef = doc(clothesCollection, document.id);
-    const clothTypeRef = doc(db, 'clothType', data.idClothType.toString());
-    const clothTypeGenderRef = doc(db, 'clothTypeGender', data.idClothTypeGender.toString());
-    const colorsRef = data.idColors.map((colorId) => doc(db, 'colors', colorId.toString()));
-    clothesData.push({
-      sizeRefs,
-      nameRef,
-      imageRef,
-      priceRef,
-      clothTypeRef,
-      colorsRef,
-      clothTypeGenderRef
-    });
-  });
 
 // Получаем данные о пользователе
 const userCollection = collection(db, 'users');
 const userId = await getUserId()
-console.log(userId);
 
-if(userId !== 'ALL'){
-  exitButton.hidden = false;
+async function getProductSizes(sizeRefs) {
+  const sizeSnapshots = await Promise.all(sizeRefs.map((sizeRef) => getDoc(sizeRef)));
+  const sizes = sizeSnapshots.map((sizeSnapshot) => sizeSnapshot.data().name).join(', ');
+  return sizes;
 }
-else window.location.href = "catalog.html";
 
-const userSnapshot = await getDoc(doc(userCollection, `${userId}`)); // Замените '1' на идентификатор пользователя, для которого вы хотите отобразить одежду
-const userData = userSnapshot.data();
+async function getProductTypeName(productTypeRef) {
+  const productTypeSnapshot = await getDoc(productTypeRef);
+  const productTypeValue = productTypeSnapshot.data().name;
+  return productTypeValue;
+}
 
-// Преобразуем идентификаторы в строковый формат
-const userFavouritesIds = userData.idFavourites.map(String);
-// Фильтруем данные об одежде по идентификаторам из коллекции clothes
-userClothesData = clothesData.filter((cloth) => userFavouritesIds.includes(cloth.nameRef.id));
-console.log(userClothesData);
+async function getProductGenderName(clothTypeRef) {
+  const clothTypeSnapshot = await getDoc(clothTypeRef);
+  const clothTypeValue = clothTypeSnapshot.data().name;
+  return clothTypeValue;
+}
+
+async function getProducts(snapshot){
+  const promises = [];
+  const neededData = [];
+
+  snapshot.forEach((document) => {
+    const data = document.data();
+    const id = document.id;
+    const idColors = data.idColors;
+    const idSizes = data.idSizes;
+    const name = data.name;
+    const price = data.price;
+    const discount = data.discount;
+    const image = data.image;
+    const createAt = data.createAt;
+    const isActivated = data.isActivated;
+
+
+    const sizeRefs = idSizes.map((sizeId) => doc(db, 'sizes', sizeId.toString()));
+
+    const productTypeRef = doc(db, 'clothType', data.idClothType.toString());
+    const productGenderNameRef = doc(db, 'clothTypeGender', data.idClothTypeGender.toString());
+
+    promises.push(getProductTypeName(productTypeRef));
+    promises.push(getProductGenderName(productGenderNameRef));
+    promises.push(getProductSizes(sizeRefs));
+
+
+    neededData.push({
+      idColors,
+      idSizes,
+      id,
+      name,
+      price,
+      productType: null,
+      productGender: null,
+      productSizes: null,
+      discount,
+      image,
+      createAt,
+      isActivated
+    });
+  });
+
+  const results = await Promise.all(promises);
+
+  for (let i = 0; i < results.length; i += 3) {
+    neededData[i / 3].productType = results[i];
+    neededData[i / 3].productGender = results[i + 1];
+    neededData[i / 3].productSizes = results[i + 2];
+  }
+
+  return neededData;
+}
+
+
+async function getUserFavorites(clothesData){
+  const userSnapshot = await getDoc(doc(userCollection, `${userId}`));
+  const userData = userSnapshot.data();
+  
+  // Преобразуем идентификаторы в строковый формат
+  const userFavouritesIds = userData.idFavourites.map(String);
+  // Фильтруем данные об одежде по идентификаторам из коллекции clothes
+  const userClothesData = clothesData.filter((cloth) => userFavouritesIds.includes(cloth.id));
+  return(userClothesData);
+}
+
 
 
 
 //Создаем ClothData
 async function createClothBlock(data, list) {
   try {
-    let isFavourite = false;
-    let imageUrl;
+    let isFavourite;
     const clothesList = document.getElementById(list);
     const clothesBlock = document.createElement('div');
-    clothesBlock.className = "p-4 flex flex-shrink-0 justify-center items-center mb-4";
-    clothesBlock.classList.add('inline-flex');
+    clothesBlock.hidden = true;
     clothesBlock.innerHTML = `
-      <div class="imageContainerClothesOne720x400 bg-gray-100 p-6 rounded-lg border border-gray-950 shadow hover:shadow-lg">
-        <img class="object-scale-down h-40 rounded w-40 object-center mb-6" src="" alt="content">
-        <h3 class="sizesOne tracking-widest text-purple-500 text-xs font-medium title-font"></h3>
-        <h1 class="clothTypeOne text-lg text-gray-900 font-medium title-font"></h4>
-        <h5 class="nameOne text-lg text-2xl text-gray-900 font-medium title-font"></h5>
-
-        <div class="flex items-end mb-4">
-          <h5 class="priceOne text-lg text-3xl font-bold font-medium text-purple-800 title-font"></h5>
-          <svg class="h-8 w-8 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path id="heartIcon" d="M2 9.1371C2 14 6.01943 16.5914 8.96173 18.9109C10 19.7294 11 20.5 12 20.5C13 20.5 14 19.7294 15.0383 18.9109C17.9806 16.5914 22 14 22 9.1371C22 4.27416 16.4998 0.825464 12 5.50063C7.50016 0.825464 2 4.27416 2 9.1371Z" fill="#4f4f4f"/>
-          </svg>  
-        </div>
-        
-        <div class="colorsOne flex mb-4"></div>
-        <div class="flex items-stretch">
-          <button id="moreButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">
-            Больше
-          </button>
-          <button id="addToWardrobeButton" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-r">
-            В гардероб
-          </button>
-        </div>
-      </div>`;
-    clothesList.appendChild(clothesBlock);
-    const clothTypeElement = clothesBlock.querySelector('.clothTypeOne');
-    const nameElement = clothesBlock.querySelector('.nameOne');
-    const priceElement = clothesBlock.querySelector('.priceOne');
-    const sizesElement = clothesBlock.querySelector('.sizesOne');
-    const imageElement = clothesBlock.querySelector('.imageContainerClothesOne720x400 img'); 
-    const colorsElement = clothesBlock.querySelector('.colorsOne');
-
-    if (clothTypeElement && nameElement && sizesElement && imageElement && colorsElement && priceElement) {
-      const clothTypeSnapshot = await getDoc(data.clothTypeRef);
-      const clothTypeValue = clothTypeSnapshot.data().name;
-      const clothTypeGenderSnapshot = await getDoc(data.clothTypeGenderRef);
-      const clothTypeGenderValue = clothTypeGenderSnapshot.data().name;
-      const nameSnapshot = await getDoc(data.nameRef); // Fetch the document snapshot
-      const priceSnapshot = await getDoc(data.priceRef);
-      const sizeSnapshots = await Promise.all(data.sizeRefs.map((sizeRef) => getDoc(sizeRef)));
-      const sizeValues = sizeSnapshots.map((sizeSnapshot) => sizeSnapshot.data().name).join(', ');
-      const colorsSnapshots = await Promise.all(data.colorsRef.map((colorRef) => getDoc(colorRef)));
-      const colorsValues = colorsSnapshots.map((colorSnapshot) => colorSnapshot.data().hexColor).join(', ');
-
-      const imagePathSnapshot = await getDoc(data.imageRef);
-      const imagePath = imagePathSnapshot.data().image;
-      if (imagePath) {
-        const storageImageRef = ref(storage, `images/${imagePath}.jpg`);
-        imageUrl = await getDownloadURL(storageImageRef);
-        imageElement.src = imageUrl;
-      }
-      clothTypeElement.textContent = `${clothTypeValue} (${clothTypeGenderValue[0]})`;
-      nameElement.textContent = nameSnapshot.data().name; // Access the data from the snapshot
-      priceElement.textContent = `${priceSnapshot.data().price} руб.`;
-      sizesElement.textContent = sizeValues;
-
-      // Create color circles
-      colorsValues.split(',').forEach((color) => {
-        const colorCircle = document.createElement('div');
-        colorCircle.className = 'colorCircle';
-        colorCircle.style.backgroundColor = color.trim();
-        colorsElement.appendChild(colorCircle);
-      });
-
-
-      
-      if(userId !== 'ALL'){
-        const userDoc = doc(userCollection, userId);
-
-        // Получаем текущие данные пользователя
-        getDoc(userDoc).then((userDocSnapshot) => {
-          if (userDocSnapshot.exists()) {
-            const userData = userDocSnapshot.data();
-            let favouritesClothesIds = userData.idFavourites || [];
-
-            // Преобразуем идентификатор одежды в числовой формат
-            const clothIdNumber = parseInt(data.nameRef.id, 10);
-
-            // Проверяем, содержит ли массив уже выбранный идентификатор одежды
-            if (favouritesClothesIds.includes(clothIdNumber)) {
-              isFavourite = true;
-              const heartIcon = clothesBlock.querySelector('#heartIcon');
-              heartIcon.classList.add('filled-heart');
-              console.log(`${data.nameRef.id} в избранном`);
-            }
-          }})
-      }
-
-      const addToWardrobeButton = clothesBlock.querySelector('#addToWardrobeButton');
-      addToWardrobeButton.addEventListener('click', () => {
-        const clothId = data.nameRef.id; // Replace with the actual way to retrieve the clothing identifier
-        addToWardrobe(clothId);
-      });
-
-      const moreButton = clothesBlock.querySelector('#moreButton');
-      moreButton.addEventListener('click', (event) => {
-        event.stopPropagation(); // Stop the click event from propagating to the document
-        const moreInfoContainer = document.createElement('div');
-        moreInfoContainer.className = 'flex ml-50 mr-50 bg-gradient-to-r from-purple-100 to-purple-400 rounded-lg shadow dark:bg-gray-800 border-1 border-black';
-        moreInfoContainer.style.position = 'absolute';
-        moreInfoContainer.style.zIndex = '9999';
-        moreInfoContainer.style.overflow = 'auto';
-        moreInfoContainer.innerHTML = `
-          <div class="relative flex-none w-20 md:w-48">
-            <img alt="shopping image" class="clothImage absolute inset-0 object-cover w-full h-full rounded-lg"/>
+        <div class="relative rounded-bl-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 bg-gray-200"">
+          <div class="p-4">
+            <div class="isNew absolute top-0 left-0 py-2 px-4 bg-purple-500 bg-opacity-50 text-gray-200 dark:text-gray-800" hidden><p class="text-xs leading-3 text-gray-100 dark:text-gray-800">New</p></div>
+            <div class="bg-white bg-opacity-50 absolute top-0 right-0 px-2 py-1"><p class="text-gray-800 dark:text-white fonr-normal text-base leading-4">${data.productSizes}</p></div>
+            <div class="relative group">
+                <div class="flex justify-center items-center opacity-0 bg-gradient-to-t from-gray-200 dark:from-gray-800 via-gray-300 dark:via-gray-800 to-opacity-30 group-hover:opacity-50 absolute top-0 left-0 h-full w-full"></div>
+                <img class="productImage w-full group-hover:scale-105"/>
+                <div class="absolute bottom-0 p-8 w-full opacity-0 group-hover:opacity-100">
+                    <button class="productButton font-medium text-base leading-4 text-gray-800 bg-white py-3 w-full">Подробнее</button>
+                    <button class="removeFromFavouritesButton bg-transparent font-medium text-base leading-4 border-2 border-white py-3 w-full mt-2 text-white">Удалить из избранного</button>
+                </div>
+            </div>
+            <p class="font-normal dark:text-white text-xl leading-5 text-gray-700 dark:text-gray-300 md:mt-6 mt-4">${data.name}</p>
+            <p class="priceOne font-semibold dark:text-gray-300 text-xl leading-5 text-purple-400 mt-4">$1550</p>
+            <p class="colorsCount font-normal dark:text-gray-300 text-base leading-4 text-gray-500 mt-4">2 цвета</p>
+            <div class="bg-gray-300 dark:bg-gray-700 absolute bottom-0 rounded-tl-lg right-0 px-2 py-1"><p class="text-purple-600 dark:text-purple-400 fonr-normal text-base leading-4">${data.productGender}</p></div>
           </div>
-          <form id="clothInfoForm" class="clothInfoForm flex-auto p-6">
-            <div class="flex flex-wrap">
-              <h1 class="nameRef flex-auto text-xl font-semibold dark:text-gray-50">
-                Classic Utility Jacket
-              </h1>
-              <div class="priceRef text-xl font-semibold text-red-800 dark:text-gray-300">
-                $110.00
-              </div>
-              <div class="clothTypeRef flex-none w-full mt-2 text-sm font-medium text-gray-500 dark:text-gray-300">
-              </div>
-            </div>
-            <div class="sizesRadioGroup flex items-baseline mt-4 mb-6 text-gray-700 dark:text-gray-300"></div>
-            <div class="clothColors flex items-baseline mt-4 mb-6 text-gray-700 dark:text-gray-300"></div>
-            <div class="flex mb-4 text-sm font-medium">
-              <button id="addToCartButton" type="button" class="py-2 px-4  bg-purple-600 hover:bg-purple-700 focus:ring-purple-500 focus:ring-offset-purple-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-lg ">
-                В корзину
-              </button>
-            </div>
-          </form>
-            `;
-        clothesBlock.appendChild(moreInfoContainer);
-
-        const nameRef = moreInfoContainer.querySelector('.nameRef');
-        const priceRef = moreInfoContainer.querySelector('.priceRef');
-        const clothTypeRef = moreInfoContainer.querySelector('.clothTypeRef');
-        const clothImage = moreInfoContainer.querySelector('.clothImage');
-  
-        nameRef.textContent = nameSnapshot.data().name;
-        priceRef.textContent = `${priceSnapshot.data().price} руб.`;
-        clothTypeRef.textContent = clothTypeValue;
-        clothImage.src = imageUrl;
-        const clothInfoForm = moreInfoContainer.querySelector('#clothInfoForm');
-        
-        const sizesValues = sizeSnapshots.map((sizeSnapshot) => sizeSnapshot.data().name);
-        // Create color radio buttons
-        const sizeRadioGroup = document.createElement('div');
-        sizeRadioGroup.className = 'sizeRadioGroup flex space-x-2';
-        sizesValues.forEach((size) => {
-          const sizeRadio = document.createElement('label');
-          sizeRadio.className = 'text-center';
-          sizeRadio.innerHTML = `
-            <input type="radio" class="flex flex-wrap items-center justify-center w-6 h-6" name="size" value="${size}">
-            ${size}
+        </div>
           `;
-          sizeRadioGroup.appendChild(sizeRadio);
-        });
-        clothInfoForm.appendChild(sizeRadioGroup);
+    
+    const priceElement = clothesBlock.querySelector('.priceOne');
+    const isNewElement = clothesBlock.querySelector('.isNew');
+    const colorsCountElement = clothesBlock.querySelector('.colorsCount');
+    const imageElement = clothesBlock.querySelector('.productImage'); 
 
 
-        const colorsValues = colorsSnapshots.map((colorSnapshot) => colorSnapshot.data().name);
-        // Create color radio buttons
-        const colorRadioGroup = document.createElement('div');
-        colorRadioGroup.className = 'colorRadioGroup flex space-x-2';
-        colorsValues.forEach((color) => {
-          const colorRadio = document.createElement('label');
-          colorRadio.className = 'text-center';
-          colorRadio.innerHTML = `
-            <input type="radio" class="flex flex-wrap items-center justify-center w-6 h-6" name="color" value="${color}">
-            ${color}
-          `;
-          colorRadioGroup.appendChild(colorRadio);
-        });
-        clothInfoForm.appendChild(colorRadioGroup);
+    const imagePath = data.image;
+    const storageImageRef = ref(storage, `images/${imagePath}.png`);
+    const imageUrl = await getDownloadURL(storageImageRef);
+    imageElement.src = imageUrl;
 
-
-        const darkenOverlay = document.createElement('div');
-        darkenOverlay.className = 'darken-overlay';
-        document.body.appendChild(darkenOverlay);
-        darkenOverlay.classList.add('active');
-
-
-        const addToCartButton = clothesBlock.querySelector('#addToCartButton');
-        addToCartButton.addEventListener('click', () => {
-          const selectedSize = document.querySelector('input[name="size"]:checked').value;
-          const selectedColor = document.querySelector('input[name="color"]:checked').value;
-          addToCart(data, selectedSize, selectedColor);
-        });
-
-        // Close the window when clicking outside of it
-        const closeWindowHandler = (event) => {
-          if (!moreInfoContainer.contains(event.target)) {
-            moreInfoContainer.remove();
-            darkenOverlay.classList.remove('active');
-            document.removeEventListener('click', closeWindowHandler);
-          }
-        };
-        document.addEventListener('click', closeWindowHandler);
-      });
-
-      const heartIcon = clothesBlock.querySelector('#heartIcon') 
-      heartIcon.addEventListener('click', () => {
-        heartIcon.classList.toggle('filled-heart');
-        if(userId !== 'ALL'){
-          if(!isFavourite){
-            addToFavourites(data.nameRef.id);
-            isFavourite = true;
-          } 
-          else if(isFavourite){
-            removeFromFavourites(data.nameRef.id);
-            isFavourite = false;
-          } 
-        }
-      });
+    const price = data.price;
+    const discount = data.discount;
+    if(discount != 0){
+      priceElement.textContent = `₽ ${price * (100 - discount) / 100}`;
+    }else{
+      priceElement.textContent = `₽ ${price}`;
     }
+
+    const currentDate = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const createAt = new Date(data.createAt);
+    if(createAt >= thirtyDaysAgo && createAt <= currentDate){
+      isNewElement.textContent = 'Новинка'; 
+      isNewElement.hidden = false;
+    };
+
+    const colors = data.idColors.length;
+    colorsCountElement.textContent = `${colors} цвет.`;
+
+
+    clothesBlock.querySelector('.removeFromFavouritesButton').addEventListener('click', () => {
+      const clothId = data.id;
+      removeFromFavourites(clothId);
+    });
+
+    clothesBlock.querySelector('.productButton').addEventListener('click', () => {
+      localStorage.setItem('lastProductId', data.id)
+      // Получаем значение из localStorage и проверяем, является ли оно массивом
+      let lastProducts = localStorage.getItem('lastProducts');
+      try {
+        lastProducts = lastProducts ? JSON.parse(lastProducts) : [];
+        if (!Array.isArray(lastProducts)) {
+          throw new Error('lastProducts is not an array');
+        }
+      } catch (error) {
+        console.error('Error parsing lastProducts from localStorage:', error);
+        lastProducts = []; // Инициализируем как пустой массив, если возникла ошибка
+      }
+    
+      // Удаляем существующий data.id, если он уже есть в массиве
+      lastProducts = lastProducts.filter(productID => productID !== data.id);
+
+      // Добавляем новый ID продукта и сохраняем только последние 5 ID
+      lastProducts.push(data.id);
+      lastProducts = lastProducts.slice(-5);
+      localStorage.setItem('lastProducts', JSON.stringify(lastProducts));
+      console.log(lastProducts)
+      window.location.href = 'product_overview.html';
+    });
+
+    clothesBlock.hidden = false;
+    clothesList.appendChild(clothesBlock);
+
   } catch (error) {
     console.error("Error adding clothes:", error);
   }
@@ -340,7 +247,7 @@ async function addToFavourites(clothId) {
       let favouritesClothesIds = userData.idFavourites || [];
 
       // Преобразуем идентификатор одежды в числовой формат
-      const clothIdNumber = parseInt(clothId, 10);
+      const clothIdNumber = clothId;
 
       // Проверяем, содержит ли массив уже выбранный идентификатор одежды
       if (!favouritesClothesIds.includes(clothIdNumber)) {
@@ -377,11 +284,9 @@ async function removeFromFavourites(clothId){
     if (userDocSnapshot.exists()) {
       const userData = userDocSnapshot.data();
       let favouritesClothesIds = userData.idFavourites || [];
+      console.log(favouritesClothesIds)
 
-      // Remove the selected cloth's ID from the wardrobeClothesIds array
-      const clothIdNumber = parseInt(clothId, 10);
-      console.log(clothIdNumber);
-      favouritesClothesIds = favouritesClothesIds.filter((id) => id !== clothIdNumber);
+      favouritesClothesIds = favouritesClothesIds.filter((id) => id !== clothId);
 
       // Update the user document with the modified wardrobeClothesIds array
       await updateDoc(userDoc, { idFavourites: favouritesClothesIds });
@@ -395,7 +300,10 @@ async function removeFromFavourites(clothId){
         showConfirmButton: false,
         timer: 1500
       });
-      setTimeout(function() {
+      setTimeout(async function() {
+        clothesData = await getProducts(clothesSnapshot);
+        userClothesData = await getUserFavorites(clothesData)
+        await renderClothes(userClothesData);
       }, 2000);
     }
   } catch (error) {
@@ -403,417 +311,217 @@ async function removeFromFavourites(clothId){
   }
 }
 
-  
-  async function addToCart(data, size, color){
-    const userId = await getUserId();
-    console.log(userId);
-    if(userId === 'ALL'){
-      Swal.fire({
-        icon: "error",
-        title: "Упс...",
-        text: "Нельзя добавить одежду в корзину для незарегистрированного пользователя",
-      });
-      return;
-    }
-    let idUser = userId;
-    let idColor = color;
-    let idSize = size;
-    let idCloth = data.nameRef.id;
-  
-  
-    const newShoppingCart = {
-      idSize,
-      idColor,
-      idCloth,
-      idUser,
-    };
-    console.log(newShoppingCart);
-  
-    const shoppinCartCollection = collection(db, 'shoppingCart');
-    await addDoc(shoppinCartCollection, newShoppingCart);
-  
-    let timerInterval;
-        Swal.fire({
-          title: "Товар добавлен в корзину!",
-          timer: 2000,
-          timerProgressBar: true,
-          didOpen: () => {
-            Swal.showLoading();
-            timerInterval = setInterval(() => {
-            }, 100);
-          },
-          willClose: () => {
-            clearInterval(timerInterval);
-          }
-        }).then((result) => {
-          /* Read more about handling dismissals below */
-          if (result.dismiss === Swal.DismissReason.timer) {
-            console.log("I was closed by the timer");
-          }
-        }); 
-  }
 
-// Обработчик события для кнопки "to wardrobe"
-async function addToWardrobe(clothId) {
-  const userCollection = collection(db, 'users');
-  const userId = await getUserId();
-  console.log(userId);
-  const userDoc = doc(userCollection, userId);
-
-  // Получаем текущие данные пользователя
-  getDoc(userDoc).then((userDocSnapshot) => {
-    if (userDocSnapshot.exists()) {
-      const userData = userDocSnapshot.data();
-      let wardrobeClothesIds = userData.idWardrobeClothes || [];
-
-      // Преобразуем идентификатор одежды в числовой формат
-      const clothIdNumber = parseInt(clothId, 10);
-
-      // Проверяем, содержит ли массив уже выбранный идентификатор одежды
-      if (!wardrobeClothesIds.includes(clothIdNumber)) {
-        // Добавляем идентификатор одежды к массиву
-        wardrobeClothesIds.push(clothIdNumber);
-
-        // Обновляем данные пользователя в базе данных
-        updateDoc(userDoc, { idWardrobeClothes: wardrobeClothesIds }).then(() => {
-          Swal.fire({
-            icon: "success",
-            title: "Одежда добавлена в гардероб!",
-            showConfirmButton: false,
-            timer: 1500
-          });
-        }).catch((error) => {
-          console.error('Error updating user data:', error);
-        });
-      } else {
-        Swal.fire({
-          icon: "info",
-          title: "Выбранная одежда уже есть в вашем гардеробе",
-        });
-      }
-    }
-  }).catch((error) => {
-    console.error('Error fetching user data:', error);
-  });
-}
-
-
-async function populateList(data, userStylesData, styleId, index) {
-  let isFavourite = false;
-  const stylesLists = document.getElementById('garderobStylesList');
-  stylesLists.className = "p-4 -m-4 justify-center items-center";
-
-  // Создание уникального id для блока
-  const blockId = `stylesBlock${index}`;
-
-  // Блок со стилями гардероба
-  const stylesBlock = document.createElement('div');
-  stylesBlock.id = blockId;
-  stylesBlock.className = "-m-4 justify-center items-center";
-  stylesBlock.innerHTML = `
-    <div flex items-center justify-center>
-    <div class="justify-center" style="display: flex; align-items: center;">
-        <h1 id="txtName" class="text-4xl justify-center font-bold text-purple-800 text-center mt-10">${data.name}</h1>
-        <svg class="h-8 w-8 mt-10 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-          <path id="styleHeartIcon" d="M2 9.1371C2 14 6.01943 16.5914 8.96173 18.9109C10 19.7294 11 20.5 12 20.5C13 20.5 14 19.7294 15.0383 18.9109C17.9806 16.5914 22 14 22 9.1371C22 4.27416 16.4998 0.825464 12 5.50063C7.50016 0.825464 2 4.27416 2 9.1371Z" fill="#4f4f4f"/>
-        </svg>
-    </div>
-      <h1 id="txtDescription" class="text-xl justify-center font-bold text-center mt-4">${data.description}</h1>
-      <div class="w-full mt-4 mb-8 justify-center">
-        <div class="h-1 mx-auto gradient w-84 opacity-25 my-0 py-0 rounded-t"></div>
-      </div>
-    </div>
-  `;
-
-  stylesLists.appendChild(stylesBlock);
-
-  userStylesData.forEach((data) => {
-    createClothBlock(data, 'garderobStylesList');
-  });
-
-
-
-
-  if(userId !== 'ALL'){
-    const userDoc = doc(userCollection, userId);
-
-  // Получаем текущие данные пользователя
-  getDoc(userDoc).then((userDocSnapshot) => {
-    if (userDocSnapshot.exists()) {
-      const userData = userDocSnapshot.data();
-      let favouritesStylesIds = userData.idFavouriteStyles || [];
-
-      // Преобразуем идентификатор стиля в числовой формат
-      console.log(styleId);
-
-      // Проверяем, содержит ли массив уже выбранный идентификатор стиля
-      if (favouritesStylesIds.includes(styleId)) {
-        isFavourite = true;
-        const heartIcon = stylesBlock.querySelector('#styleHeartIcon');
-        heartIcon.classList.add('filled-heart');
-        console.log(`${styleId} в избранном`);
-      }
-    }})
-  }
-
-  const styleHeartIcon = stylesBlock.querySelector('#styleHeartIcon') 
-  styleHeartIcon.addEventListener('click', () => {
-  styleHeartIcon.classList.toggle('filled-heart');
-  if(userId !== 'ALL'){
-    if(!isFavourite){
-      addStyleToFavourites(styleId);
-      isFavourite = true;
-    } 
-    else if(isFavourite){
-      removeStyleFromFavourites(styleId);
-      isFavourite = false;
-    } 
-  }
-});
-}
-
-async function addStyleToFavourites(styleId){
-  const userCollection = collection(db, 'users');
-  const userId = await getUserId();
-  console.log(userId);
-  if(userId === 'ALL'){
-    Swal.fire({
-      icon: "error",
-      title: "Упс...",
-      text: "Нельзя добавить стиль в избранное для незарегистрированного пользователя",
-    });
-    return;
-  }
-  const userDoc = doc(userCollection, userId);
-
-  // Получаем текущие данные пользователя
-  getDoc(userDoc).then((userDocSnapshot) => {
-    if (userDocSnapshot.exists()) {
-      const userData = userDocSnapshot.data();
-      let favouritesStylеsIds = userData.idFavouriteStyles || [];
-
-
-      // Проверяем, содержит ли массив уже выбранный идентификатор одежды
-      if (!favouritesStylеsIds.includes(styleId)) {
-        // Добавляем идентификатор одежды к массиву
-        favouritesStylеsIds.push(styleId);
-
-        // Обновляем данные пользователя в базе данных
-        updateDoc(userDoc, { idFavouriteStyles: favouritesStylеsIds }).then(() => {
-          Swal.fire({
-            icon: "success",
-            title: "Стиль добавлен в избранное!",
-            showConfirmButton: false,
-            timer: 1500
-          });
-          setTimeout(function() {
-          }, 2000);
-        }).catch((error) => {
-          console.error('Error updating user data:', error);
-        });
-      }
-    }
-  }).catch((error) => {
-    console.error('Error fetching user data:', error);
-  });
-}
-async function removeStyleFromFavourites(styleId){
-  try {
-    const userCollection = collection(db, 'users');
-    const userDoc = doc(userCollection, userId);
-
-    // Retrieve the user document
-    const userDocSnapshot = await getDoc(userDoc);
-    if (userDocSnapshot.exists()) {
-      const userData = userDocSnapshot.data();
-      let favouritesStylesIds = userData.idFavouriteStyles || [];
-
-      favouritesStylesIds = favouritesStylesIds.filter((id) => id !== styleId);
-
-      // Update the user document with the modified wardrobeClothesIds array
-      await updateDoc(userDoc, { idFavouriteStyles: favouritesStylesIds });
-
-      // Optional: You can also update the UI to reflect the deletion
-      // For example, remove the deleted cloth from the DOM
-
-      Swal.fire({
-        icon: "success",
-        title: "Стиль удален из избранного!",
-        showConfirmButton: false,
-        timer: 1500
-      });
-      setTimeout(function() {
-      }, 2000);
-    }
-  } catch (error) {
-    console.error('Error deleting style:', error);
-  }
-}
-
-async function getStyles(){
-  let i = 0;
-  const stylesBody = document.getElementById('garderobStylesList');
-  stylesBody.innerHTML = '';
-
-
-  const userFavouriteStyles = userData.idFavouriteStyles; // Получение списка избранных стилей пользователя
-  console.log(userFavouriteStyles);
-
-  // Запрос данных из коллекции "styles" с использованием фильтра по идентификаторам избранных стилей пользователя
-  const stylesRef = collection(db, 'styles');
-  const stylesDocs = await Promise.all(userFavouriteStyles.map(styleId => getDoc(doc(stylesRef, styleId))));
-
-  // Получение данных из запроса
-  stylesDocs.forEach((styleDoc) => {
-    i += 1;
-    const data = styleDoc.data();
-    if (data && data.idClothes) { // Проверка наличия свойства 'idClothes'
-      const userStylesIds = data.idClothes.map(String);
-      userStylesData = clothesData.filter((cloth) => userStylesIds.includes(cloth.nameRef.id));
-      populateList(data, userStylesData, styleDoc.id, i);
-    }
-  });
-}
 
 //Рендерим все найденное
 async function renderClothes(clothes) {
-  const clothesList = document.getElementById('favouritesClothesList');
+  const clothesList = document.getElementById('favouritesList');
   clothesList.innerHTML = ''; // Очищаем лист
 
-  clothes.forEach((data) => {
-    createClothBlock(data, 'favouritesClothesList');
-  });
-}
-//Проверяем комбобоксы и поиск
-async function handleSearchAndFilter() {
-  try {
-    const searchTerm = searchInput.value.toLowerCase();
-    const selectedSizes = Array.from(document.querySelectorAll('#dropdownSizes input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
-    const selectedTypes = Array.from(document.querySelectorAll('#dropdownType input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
-    const selectedTypesGender = Array.from(document.querySelectorAll('#dropdownGender input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
-    const filteredClothesData = [];
-
-    const promises = userClothesData.map(async (cloth) => {
-      const [nameSnapshot, clothTypeSnapshot, clothTypeGenderSnapshot] = await Promise.all([
-        getDoc(cloth.nameRef),
-        getDoc(cloth.clothTypeRef),
-        getDoc(cloth.clothTypeGenderRef)
-      ]);
-
-      const name = nameSnapshot.data().name.toLowerCase();
-      const clothTypeValue = clothTypeSnapshot.data().name.toLowerCase();
-      const clothTypeGenderValue = clothTypeGenderSnapshot.data().name.toLowerCase();
-      const sizeIds = cloth.sizeRefs.map((sizeRef) => sizeRef.id);
-
-      if (
-        (name.includes(searchTerm) || clothTypeValue.includes(searchTerm) || clothTypeGenderValue.includes(searchTerm)) &&
-        selectedSizes.some((size) => sizeIds.includes(size)) &&
-        selectedTypes.includes(cloth.clothTypeRef.id) &&
-        selectedTypesGender.includes(cloth.clothTypeGenderRef.id)
-      ) {
-        filteredClothesData.push(cloth);
-      }
-    });
-
-    await Promise.all(promises);
-    renderClothes(filteredClothesData);
-  } catch (error) {
-    console.error("Error handling search and filter:", error);
+  let index = 0;
+  for (const data of clothes) {
+    if (!data.isActivated) {
+      continue; // Пропускаем итерацию, если условие истинно
+    }
+    createClothBlock(data, 'favouritesList');
+    index += 1;
   }
+  const countText = document.getElementById('countText');
+  countText.textContent = `Показано ${index} товаров`
 }
 
 
-const garderobStylesBlock = document.getElementById('favouritesStylesBlock');
-const garderobClothesBlock = document.getElementById('favouritesClothesBlock');
-// Функция для обработки выбора одежды
-function handleClothesSelection() {
 
-  garderobStylesBlock.hidden = true;
-  garderobClothesBlock.hidden = false;
+async function getCartItemsCount(idUser){
+  const cartQuery = query(cartCollection, where('idUser', '==', idUser));
+  const querySnapshot = await getDocs(cartQuery);
+  return querySnapshot.size;
+}
+
+
+const notEmptyCartBlock = document.getElementById('notEmptyCartBlock');
+const emptyCartBlock = document.getElementById('emptyCartBlock');
+const cartModalList = document.getElementById('cartModalList');
+
+// Функция для обработки выбора одежды
+function handleEmptyCart() {
+  notEmptyCartBlock.hidden = true;
+  emptyCartBlock.hidden = false;
 }
 
 // Функция для обработки выбора стилей
-function handleStylesSelection() {
-
-  garderobStylesBlock.hidden = false;
-  garderobClothesBlock.hidden = true;
-  getStyles();
+function handleNotEmptyCart() {
+  notEmptyCartBlock.hidden = false;
+  emptyCartBlock.hidden = true;
 }
 
-// Получаем ссылки на кнопки
-const clothesButton = document.getElementById('clothes');
-const stylesButton = document.getElementById('styles');
+
+async function populateCartList(data, itemId){
+  const userClothesItemsQuery = doc(clothesCollection, data.idCloth);
+
+  // Получение данных из запроса
+  getDoc(userClothesItemsQuery).then((doc) => {
+      if (doc.exists()) {
+      // Доступ к данным документа и вывод информации о каждом элементе одежды
+      const productData = doc.data();
+      const cartModalBlock = document.createElement('section');
+      cartModalBlock.innerHTML = `
+      <li class="flex items-center mb-2 rounded-md border border-2 border-gray-600 gradientReverse p-4 justify-center bg-opacity-75">
+        <div class="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
+          <img src="" alt="image" class="Img h-full w-full object-cover object-center">
+        </div>
+
+        <div class="ml-4 flex flex-1 flex-col">
+          <div>
+            <div class="flex justify-between text-base font-medium text-gray-100">
+              <h3>
+                <a href="#" class="text-gray-700 dark:text-gray-100">${productData.name}</a>
+              </h3>
+              <p class="ml-4 text-sm text-red-500">₽${productData.price}</p>
+            </div>
+          </div>
+          <div class="flex flex-1 items-end justify-between text-l">
+            <p class="text-red-500">-${productData.discount}%</p>
+
+            <div class="flex">
+              <button type="button" class="deleteFromCartButton font-medium text-purple-400 hover:text-purple-300">Удалить</button>
+            </div>
+          </div>
+        </div>
+      </li>
+      `;
+      const clothImage = cartModalBlock.querySelector('.Img');
+      const image = productData.image;
+      const storageImageRef = ref(storage, `images/${image}.png`);
+      const imageUrlPromise = getDownloadURL(storageImageRef);
+      imageUrlPromise.then((imageUrl) => {
+      clothImage.src = imageUrl;
+      }).catch((error) => {
+      console.log('Error retrieving image URL:', error);
+      });
+    
+      const deleteFromCartButton = cartModalBlock.querySelector('.deleteFromCartButton');
+      deleteFromCartButton.addEventListener('click', () => {
+        deleteFromCart(itemId);
+      });
+
+      cartModalList.appendChild(cartModalBlock);
+
+    } else {
+    console.log('Документ не найден!');
+    }
+  }).catch((error) => {
+      console.log('Ошибка:', error);
+  });
+}
 
 
-// Добавляем обработчики событий для кнопок
-clothesButton.addEventListener('click', function() {
-  // Добавляем класс активности к кнопке "Мужчина"
-  clothesButton.classList.add('act');
-  // Удаляем класс активности с кнопки "Женщина"
-  stylesButton.classList.remove('act');
-  console.log('выбрана одежда');
-  handleClothesSelection();
-});
+async function renderCartModal(){
+  cartModalList.innerHTML = ``;
+  const userCartItemsQuery = query(cartCollection, where('idUser', '==', userId));
+  const querySnapshots = await getDocs(userCartItemsQuery);
+  if(querySnapshots.empty){
+    handleEmptyCart();
+    return;
+  } 
+  // Получение данных из запроса
+  getDocs(userCartItemsQuery).then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      // Доступ к данным каждого документа и вывод информации о каждом элементе одежды
+      const data = doc.data();
+      populateCartList(data, doc.id)
+    });
+    
+  });
+}
 
-stylesButton.addEventListener('click', function() {
-  // Добавляем класс активности к кнопке "Женщина"
-  stylesButton.classList.add('act');
-  // Удаляем класс активности с кнопки "Мужчина"
-  clothesButton.classList.remove('act');
-  console.log('выбраны стили');
-  handleStylesSelection();
-});
+async function getProductsData(userWardrobeClothesIds) {
+  const clothesCollection = collection(db, 'clothes');
 
+  const promises = userWardrobeClothesIds.map(async (clothesId) => {
+    const docRef = doc(clothesCollection, clothesId);
+    const docSnap = await getDoc(docRef);
+    return docSnap;
+  });
 
-const searchInput = document.getElementById('search');
-searchInput.addEventListener('input', handleSearchAndFilter);
+  const snapshots = await Promise.all(promises);
 
+  return snapshots;
+}
 
-const sizeCheckboxes = document.querySelectorAll('#dropdownSizes input[type="checkbox"]');
-sizeCheckboxes.forEach((checkbox) => {
-  checkbox.addEventListener('change', handleSearchAndFilter);
-});
+async function goToProfile(){
+  if(userId !== 'ALL') window.location.href = "user_profile.html"
+  else{
+    Swal.fire({
+      title: "Вы не вошли в систему. Перейти на страницу аутентификации?",
+      showCancelButton: true,
+      confirmButtonText: "Перейти",
+      cancelButtonText: "Отмена",
+    }).then((result) => {
+      /* Read more about isConfirmed, isDenied below */
+      if (result.isConfirmed) {
+        window.location.href = "auth.html"
+      }
+    });
+  }
+}
 
-const dropdownButton = document.getElementById('dropdownSizesButton');
-// Обработчик события клика на кнопке
-dropdownButton.addEventListener('click', function() {
-  dropdownSizes.classList.toggle('hidden'); // Переключение класса для скрытия или показа выпадающего списка
-});
+async function exitUser(){
+  Swal.fire({
+    title: "Вы уверены, что хотите выйти?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    cancelButtonText: "Отмена",
+    confirmButtonText: "Да!"
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        localStorage.setItem('userId', 'ALL');
+        window.location.href = 'index.html';
+      } catch (error) {
+        console.log('Ошибка при удалении документа:', error);
+        showAlert("Не удалось выйти из системы!");
+      }
+    }
+  });
+}
 
-const typeCheckboxes = document.querySelectorAll('#dropdownType input[type="checkbox"]');
-typeCheckboxes.forEach((checkbox) => {
-  checkbox.addEventListener('change', handleSearchAndFilter);
-});
-
-const typeDropdownButton = document.getElementById('dropdownTypeButton');
-// Обработчик события клика на кнопке
-typeDropdownButton.addEventListener('click', function() {
-  dropdownType.classList.toggle('hidden'); // Переключение класса для скрытия или показа выпадающего списка
-});
-
-const genderCheckboxes = document.querySelectorAll('#dropdownGender input[type="checkbox"]');
-genderCheckboxes.forEach((checkbox) => {
-  checkbox.addEventListener('change', handleSearchAndFilter);
-});
-
-const genderDropdownButton = document.getElementById('dropdownGenderButton');
-// Обработчик события клика на кнопке
-genderDropdownButton.addEventListener('click', function() {
-  dropdownGender.classList.toggle('hidden'); // Переключение класса для скрытия или показа выпадающего списка
-});
-
+const toProfileButton = document.getElementById('toProfileButton');
+toProfileButton.addEventListener('click', goToProfile);
 
 const authButton = document.getElementById('authButton');
-authButton.addEventListener('click', function() {
-    window.location.href = "auth.html";
-});
+authButton.addEventListener('click', goToProfile);
 
+const toProfileButtonMoile = document.getElementById('toProfileButtonMoile');
+toProfileButtonMoile.addEventListener('click', goToProfile);
+
+const exitButton = document.getElementById('exitButton');
+exitButton.addEventListener('click', exitUser);
 
 async function main(){
     
   if(userId !== 'ALL'){
+    clothesData = await getProducts(clothesSnapshot);
+    userClothesData = await getUserFavorites(clothesData)
     await renderClothes(userClothesData);
   }
+  const loadingScreen = document.getElementById('loadingScreen');
+  loadingScreen.classList.add("hidden");
+
+  await getCartItemsCount(userId).then(count => {
+    console.log(`Количество документов с idUser ${userId}: ${count}`);
+    const countElement = document.getElementById('cartCounter');
+    countElement.textContent = count;
+    if(count > 0) {
+      renderCartModal();
+      handleNotEmptyCart()
+    }
+    else{
+      handleEmptyCart();
+    }
+  })
 }
 
 main();

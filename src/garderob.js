@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import TWEEN from 'three/examples/jsm/libs/tween.module';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
+import { InteractionManager } from "three.interactive";
 import init from './init';
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, query, where, addDoc, deleteDoc } from "firebase/firestore";
@@ -9,6 +10,11 @@ import './garderob.css';
 
 const { sizes, camera, scene, canvas, controls, renderer, stats, gui } = init();
 
+const interactionManager = new InteractionManager(
+  renderer,
+  camera,
+  renderer.domElement
+);
 
 let tshirtCounter = 0;
 let coatCounter = 0;
@@ -25,6 +31,8 @@ let isFemale = false;
 
 let isClothes = true;
 let isStyles = false;
+
+let _productsData = [];
 
 // Получите идентификатор пользователя из локального хранилища
 async function getUserId(){
@@ -62,6 +70,21 @@ let userClothesData = [];
 
 let userStylesData = [];
 
+let selectedProducts = {
+  'tops': null,
+  'bottoms': null,
+  'headdresses': null,
+  'accessories': null,
+};;
+const typeMappings = {
+  'tops': ['1', '3', '5', '7'],
+  'bottoms': ['2', '4', '6'],
+  'headdresses': ['8', '9', '10'],
+  'accessories': ['8', '9', '10']
+};
+
+
+
 const userId = await getUserId()
 if(userId === "ALL"){
   Swal.fire({
@@ -70,28 +93,113 @@ if(userId === "ALL"){
   });
 }
 
+const userCollection = collection(db, 'users');
+const userSnapshot = await getDoc(doc(userCollection, `${userId}`));
+const userData = userSnapshot.data();
+try{
+  const userGender = userData.gender;
+  if(userGender === "Женский"){
+    isMale = false;
+    isFemale = true;
+  }
+} catch(error){};
 
-//Получаем данные об одежде и записываем в clothesData
-clothesSnapshot.forEach((document) => {
-  const data = document.data();
-  const sizeRefs = data.idSizes.map((sizeId) => doc(db, 'sizes', sizeId.toString()));
-  const nameRef = doc(clothesCollection, document.id);
-  const imageRef = doc(clothesCollection, document.id);
-  const modelRef = doc(clothesCollection, document.id);
-  const clothTypeRef = doc(db, 'clothType', data.idClothType.toString());
-  const clothTypeGenderRef = doc(db, 'clothTypeGender', data.idClothTypeGender.toString());
-  const colorsRef = data.idColors.map((colorId) => doc(db, 'colors', colorId.toString()));
-  clothesData.push({
-    sizeRefs,
-    nameRef,
-    imageRef,
-    clothTypeRef,
-    modelRef,
-    colorsRef,
-    clothTypeGenderRef
+async function getProductColors(colorRefs) {
+  const colorSnapshots = await Promise.all(colorRefs.map((colorRef) => getDoc(colorRef)));
+  const colors = colorSnapshots.map((colorSnapshot) => colorSnapshot.data().hexColor).join(', ');
+  return colors;
+}
+
+async function getProductSizes(sizeRefs) {
+  const sizeSnapshots = await Promise.all(sizeRefs.map((sizeRef) => getDoc(sizeRef)));
+  const sizes = sizeSnapshots.map((sizeSnapshot) => sizeSnapshot.data().name).join(', ');
+  return sizes;
+}
+
+async function getProductTypeName(productTypeRef) {
+  const productTypeSnapshot = await getDoc(productTypeRef);
+  const productTypeValue = productTypeSnapshot.data().name;
+  return productTypeValue;
+}
+
+async function getProductGenderName(clothTypeRef) {
+  const clothTypeSnapshot = await getDoc(clothTypeRef);
+  const clothTypeValue = clothTypeSnapshot.data().name;
+  return clothTypeValue;
+}
+
+async function getProducts(snapshot){
+  const promises = [];
+  const neededData = [];
+
+  snapshot.forEach((document) => {
+    const data = document.data();
+    const id = document.id;
+    const idColors = data.idColors;
+    const idSizes = data.idSizes;
+    const name = data.name;
+    const price = data.price;
+    const discount = data.discount;
+    const image = data.image;
+    const genderId = data.idClothTypeGender;
+    const typeId = data.idClothType;
+    const model = data.model;
+
+    const sizeRefs = idSizes.map((sizeId) => doc(db, 'sizes', sizeId.toString()));
+    const colorRefs = idColors.map((colorId) => doc(db, 'colors', colorId.toString()));
+
+    const productTypeRef = doc(db, 'clothType', data.idClothType.toString());
+    const productGenderNameRef = doc(db, 'clothTypeGender', data.idClothTypeGender.toString());
+
+    promises.push(getProductTypeName(productTypeRef));
+    promises.push(getProductGenderName(productGenderNameRef));
+    promises.push(getProductSizes(sizeRefs));
+    promises.push(getProductColors(colorRefs));
+
+
+
+    neededData.push({
+      idColors,
+      id,
+      name,
+      price,
+      typeId,
+      model,
+      productType: null,
+      productGender: null,
+      productSizes: null,
+      productColors: null,
+      discount,
+      image,
+      genderId
+    });
   });
-});
 
+  const results = await Promise.all(promises);
+
+  for (let i = 0; i < results.length; i += 4) {
+    neededData[i / 4].productType = results[i];
+    neededData[i / 4].productGender = results[i + 1];
+    neededData[i / 4].productSizes = results[i + 2];
+    neededData[i / 4].productColors = results[i + 3];
+  }
+
+  return neededData;
+}
+
+//Изменение размеров окна
+window.addEventListener('resize', () => {
+  sizes.width = ui.clientWidth - 36;
+  sizes.height = window.innerHeight / 1.2;
+
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.render(scene, camera);
+  
+})
 
 
 //Пол
@@ -113,18 +221,18 @@ async function addFloor(){
 //Свет
 async function addLights(){
   const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.61);
-  hemiLight.position.set(0, 20, 0);
+  hemiLight.position.set(0, 40, 0);
   scene.add(hemiLight);
 
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.54);
-  dirLight.position.set(0, 100, 80);
-  dirLight.target.position.set(0, 20, 0);
+  const dirLight = new THREE.DirectionalLight(0xf3f3f3, 0.54);
+  dirLight.position.set(12, 100, 80);
+  dirLight.target.position.set(0, 21, 0);
   dirLight.castShadow = true;
   dirLight.shadow.bias = -0.01;
   dirLight.shadow.mapSize = new THREE.Vector2(2048, 2048);
   scene.add(dirLight);
 
-  const dirLightBack = new THREE.DirectionalLight(0xffffff, 0.25);
+  const dirLightBack = new THREE.DirectionalLight(0xf3f3f3, 0.25);
   dirLightBack.position.set(10, 100, -80);
   dirLightBack.target.position.set(0, 20, 0);
   dirLightBack.castShadow = true;
@@ -146,7 +254,6 @@ function setMaterial(currentColor, currentMetalness, currentRoughness, currentMa
         //map: texture
     });
 }
-
 
 
 //Загрузка модели
@@ -177,7 +284,40 @@ function loadMannequin(){
         },
     );
 }
-function loadCloth(modelName, clothType, clothId, firstColor){
+
+function moveCamera(positionX, positionY, positionZ){
+  const coords = { x: camera.position.x, y: camera.position.y, z: camera.position.z  };
+  new TWEEN.Tween(coords)
+    .to({x: positionX, y: positionY, z: positionZ })
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onUpdate(() =>
+      camera.position.set(coords.x, coords.y, coords.z)
+    )
+    .start();
+}
+
+const topsCameraButton = document.getElementById(`topsCameraButton`);
+topsCameraButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  moveCamera(0, 18, 8);
+});
+const bottomsCameraButton = document.getElementById(`bottomsCameraButton`);
+bottomsCameraButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  moveCamera(0, 12, 14);
+});
+const headdressesCameraButton = document.getElementById(`headdressesCameraButton`);
+headdressesCameraButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  moveCamera(0, 24, 8);
+});
+const accessoriesCameraButton = document.getElementById(`accessoriesCameraButton`);
+accessoriesCameraButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  moveCamera(0, 20, 12);
+});
+
+function loadCloth(modelName, type, firstColor){
   const loader = new GLTFLoader();
   loader.load(
       `./3DModels/clothes/${modelName}.glb`,
@@ -185,32 +325,20 @@ function loadCloth(modelName, clothType, clothId, firstColor){
           console.log('success');
           console.log(gltf);
           const cloth = gltf.scene.children[0];
-          cloth.scale.set(10,10,10);
-          
-          
-          
-          if (clothType == "Футболка" || clothType == "Топ" || clothType == "Майка"){
-            tshirtCounter += 1;
-            tshirtId = clothId;
-            cloth.name = "clothType2";
-          }
-          if (clothType == "Кофта"){
-            coatCounter += 1;
-            coatId = clothId;
-            cloth.name = "clothType3";
-          }
-          if (clothType == "Брюки" || clothType == "Шорты" || clothType == "Юбка"){
-            pantsCounter += 1;
-            pantsId = clothId;
-            cloth.name = "clothType4";
-          }
-          if (clothType == "Шапка" || clothType == "Кепка" || clothType == "Шляпа"){
-            hatCounter += 1;
-            hatId = clothId;
-            cloth.name = "clothType1";
-          }
+
+          cloth.name = type;
+
+          cloth.addEventListener("click", (event) => {
+            event.stopPropagation();
+            if(type === 'tops') moveCamera(0, 18, 8);
+            if(type === 'bottoms') moveCamera(0, 12, 14);
+            if(type === 'headdresses') moveCamera(0, 24, 8);
+            if(type === 'accessories') moveCamera(0, 20, 12);
+          });
+          interactionManager.add(cloth);
+
           scene.add(cloth);
-          setColor(clothType, firstColor);
+          setColor(type, firstColor);
       },
       (progress) => {
           // console.log('progess');
@@ -223,13 +351,9 @@ function loadCloth(modelName, clothType, clothId, firstColor){
   );
 }
 
-function setColor(clothType, color){
-  let clothObject;
-  if (clothType == "Шапка" || clothType == "Кепка" || clothType == "Шляпа") clothObject = scene.getObjectByName("clothType1");
-  else if (clothType == "Футболка" || clothType == "Топ" || clothType == "Майка") clothObject = scene.getObjectByName("clothType2");
-  else if (clothType == "Кофта") clothObject = scene.getObjectByName("clothType3");
-  else if (clothType == "Брюки" || clothType == "Шорты" || clothType == "Юбка") clothObject = scene.getObjectByName("clothType4");
-  clothObject.material = setMaterial(color, 0, 0.4);
+function setColor(type, color){
+  const productObject = scene.getObjectByName(type);
+  productObject.material = setMaterial(color, 0, 0.4);
 }
 
 //Анимация
@@ -238,8 +362,7 @@ const tick = () => {
     //stats.begin();
     controls.update();
     const delta = clock.getDelta();
-
-    
+    interactionManager.update();
     TWEEN.update();
     renderer.render(scene, camera);
     //stats.end();
@@ -250,13 +373,6 @@ const tick = () => {
 
 
 
-const exitButton = document.getElementById('exitButton');
-exitButton.addEventListener('click', function() {
-    localStorage.setItem('userId', 'ALL');
-    exitButton.hidden = true;
-    location.reload();
-
-});
 
 
 
@@ -369,31 +485,6 @@ saveStyleButton.addEventListener('click', function() {
 
 
 
-const favouritesSection = document.getElementById('favouritesSection');
-// Получаем данные о пользователе
-const userCollection = collection(db, 'users');
-
-if(userId !== 'ALL'){
-  exitButton.hidden = false;
-  favouritesSection.hidden = false;
-}
-
-const userSnapshot = await getDoc(doc(userCollection, `${userId}`)); // Замените '1' на идентификатор пользователя, для которого вы хотите отобразить одежду
-const userData = userSnapshot.data();
-try{
-  const userGender = userData.gender;
-  if(userGender === "Женский"){
-    isMale = false;
-    isFemale = true;
-  }
-} catch(error){};
-
-
-// Преобразуем идентификаторы в строковый формат
-const userWardrobeClothesIds = userData.idWardrobeClothes.map(String);
-// Фильтруем данные об одежде по идентификаторам из коллекции clothes
-userClothesData = clothesData.filter((cloth) => userWardrobeClothesIds.includes(cloth.nameRef.id));
-
 //Создаем ClothData
 async function createClothBlock(data, list) {
   try {
@@ -403,111 +494,100 @@ async function createClothBlock(data, list) {
     clothesBlock.className = "p-4 flex flex-shrink-0 justify-center items-center mb-4";
     clothesBlock.classList.add('inline-flex');
     clothesBlock.innerHTML = `
-      <div class="imageContainerClothesOne720x400 bg-gray-100 p-6 rounded-lg border border-gray-950 shadow hover:shadow-lg">
-        <img class="object-scale-down h-40 rounded w-40 object-center mb-6" src="" alt="content">
-        <h3 class="sizesOne tracking-widest text-purple-500 text-xs font-medium title-font"></h3>
-        <h1 class="headingOne text-lg text-gray-900 font-medium title-font"></h4>
+      <div class="relative group bg-gray-200 dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg cursor-pointer">
+        <button id="deleteClothButton" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded" hidden>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+        </button>
+        <div class="relative group mt-2">
+          <img class="img object-scale-down h-40 rounded w-40 object-center mb-6 group-hover:scale-105">
+          <div class="absolute bottom-0 w-full opacity-0 group-hover:opacity-100 flex items-center w-full justify-center">
+            <button id="addToSceneButton" class="bg-purple-600 w-full hover:bg-purple-700 text-gray-100 font-bold py-2 px-4 rounded-r rounded-l">
+            Надеть
+            </button>
+          </div>
+        </div>
+        <h3 class="sizesOne tracking-widest text-purple-500 text-xs font-medium title-font">${data.productSizes}</h3>
+        <h1 class="headingOne text-lg text-gray-700 dark:text-gray-200 font-medium title-font">${data.productType}</h4>
         <div class="flex items-end mb-4">
-          <h5 class="headingTwo text-lg text-gray-900 font-medium title-font"></h5>
+          <h5 class="headingTwo text-lg text-gray-800 dark:text-gray-100 text-gray-100 font-medium title-font">${data.name}</h5>
           <svg class="h-8 w-8 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <path id="heartIcon" d="M2 9.1371C2 14 6.01943 16.5914 8.96173 18.9109C10 19.7294 11 20.5 12 20.5C13 20.5 14 19.7294 15.0383 18.9109C17.9806 16.5914 22 14 22 9.1371C22 4.27416 16.4998 0.825464 12 5.50063C7.50016 0.825464 2 4.27416 2 9.1371Z" fill="#4f4f4f"/>
           </svg>
         </div>
-        <div class="colorsOne flex mb-4"></div>
-        <div class="flex items-stretch">
-        <button id="addToSceneButton" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-r rounded-l mr-2">
-        Надеть
-        </button>
-        <button id="deleteClothButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-r rounded-l" hidden>
-        Удалить
-        </button>
-        </div>
+        <div class="colorsOne flex mb-2"></div>
       </div>`;
     clothesList.appendChild(clothesBlock);
-    const clothTypeElement = clothesBlock.querySelector('.headingOne');
-    const nameElement = clothesBlock.querySelector('.headingTwo');
-    const sizesElement = clothesBlock.querySelector('.sizesOne');
-    const imageElement = clothesBlock.querySelector('.imageContainerClothesOne720x400 img'); 
+
+    const imageElement = clothesBlock.querySelector('.img'); 
     const colorsElement = clothesBlock.querySelector('.colorsOne');
 
-    if (clothTypeElement && nameElement && sizesElement && imageElement && colorsElement) {
-      const clothTypeSnapshot = await getDoc(data.clothTypeRef);
-      const clothTypeValue = clothTypeSnapshot.data().name;
-      const nameSnapshot = await getDoc(data.nameRef); // Fetch the document snapshot
-      const sizeSnapshots = await Promise.all(data.sizeRefs.map((sizeRef) => getDoc(sizeRef)));
-      const sizeValues = sizeSnapshots.map((sizeSnapshot) => sizeSnapshot.data().name).join(', ');
-      const colorsSnapshots = await Promise.all(data.colorsRef.map((colorRef) => getDoc(colorRef)));
-      const colorsValues = colorsSnapshots.map((colorSnapshot) => colorSnapshot.data().hexColor).join(', ');
+    const imagePath = data.image;
+    const storageImageRef = ref(storage, `images/${imagePath}.png`);
+    const imageUrl = await getDownloadURL(storageImageRef);
+    imageElement.src = imageUrl;
 
-      const imagePathSnapshot = await getDoc(data.imageRef);
-      const imagePath = imagePathSnapshot.data().image;
-      if (imagePath) {
-        const storageImageRef = ref(storage, `images/${imagePath}.jpg`);
-        const imageUrl = await getDownloadURL(storageImageRef);
-        imageElement.src = imageUrl;
-      }
-      clothTypeElement.textContent = clothTypeValue;
-      nameElement.textContent = nameSnapshot.data().name; // Access the data from the snapshot
-      sizesElement.textContent = sizeValues;
+    const colorsValues = data.productColors;
 
-      // Create color circles
-      colorsValues.split(',').forEach((color) => {
-        const colorCircle = document.createElement('div');
-        colorCircle.className = 'colorCircle';
-        colorCircle.style.backgroundColor = color.trim();
-        colorsElement.appendChild(colorCircle);
-      });
+    // Create color circles
+    colorsValues.split(',').forEach((color) => {
+      const colorCircle = document.createElement('div');
+      colorCircle.className = 'colorCircle';
+      colorCircle.style.backgroundColor = color.trim();
+      colorsElement.appendChild(colorCircle);
+    });
 
-      if(userId !== 'ALL'){
-        const userDoc = doc(userCollection, userId);
+    if(userId !== 'ALL'){
+      const userDoc = doc(userCollection, userId);
 
-      // Получаем текущие данные пользователя
-      getDoc(userDoc).then((userDocSnapshot) => {
-        if (userDocSnapshot.exists()) {
-          const userData = userDocSnapshot.data();
-          let favouritesClothesIds = userData.idFavourites || [];
+    // Получаем текущие данные пользователя
+    getDoc(userDoc).then((userDocSnapshot) => {
+      if (userDocSnapshot.exists()) {
+        const userData = userDocSnapshot.data();
+        let favouritesClothesIds = userData.idFavourites || [];
 
-          // Преобразуем идентификатор одежды в числовой формат
-          const clothIdNumber = parseInt(data.nameRef.id, 10);
+        // Преобразуем идентификатор одежды в числовой формат
+        const clothIdNumber = parseInt(data.id, 10);
 
-          // Проверяем, содержит ли массив уже выбранный идентификатор одежды
-          if (favouritesClothesIds.includes(clothIdNumber)) {
-            isFavourite = true;
-            const heartIcon = clothesBlock.querySelector('#heartIcon');
-            heartIcon.classList.add('filled-heart');
-          }
-        }})
-      }
-
-      const addToSceneButton = clothesBlock.querySelector('#addToSceneButton');
-      addToSceneButton.addEventListener('click', () => {
-      addToScene(data);
-      });
-
-      const deleteClothButton = clothesBlock.querySelector('#deleteClothButton');
-      if(userId !== 'ALL' && list !== 'garderobStylesList'){
-        deleteClothButton.hidden = false;
-        deleteClothButton.addEventListener('click', () => {
-          const clothId = data.nameRef.id;
-          deleteCloth(clothId);
-          });
-      }
-
-      const heartIcon = clothesBlock.querySelector('#heartIcon') 
-      heartIcon.addEventListener('click', () => {
-        heartIcon.classList.toggle('filled-heart');
-        if(userId !== 'ALL'){
-          if(!isFavourite){
-            addToFavourites(data.nameRef.id);
-            isFavourite = true;
-          } 
-          else if(isFavourite){
-            removeFromFavourites(data.nameRef.id);
-            isFavourite = false;
-          } 
+        // Проверяем, содержит ли массив уже выбранный идентификатор одежды
+        if (favouritesClothesIds.includes(clothIdNumber)) {
+          isFavourite = true;
+          const heartIcon = clothesBlock.querySelector('#heartIcon');
+          heartIcon.classList.add('filled-heart');
         }
-      });
+      }})
     }
+
+    const addToSceneButton = clothesBlock.querySelector('#addToSceneButton');
+    addToSceneButton.addEventListener('click', () => {
+    addToScene(data);
+    });
+
+    const deleteClothButton = clothesBlock.querySelector('#deleteClothButton');
+    if(userId !== 'ALL' && list !== 'garderobStylesList'){
+      deleteClothButton.hidden = false;
+      deleteClothButton.addEventListener('click', () => {
+        const clothId = data.id;
+        deleteCloth(clothId);
+        });
+    }
+
+    const heartIcon = clothesBlock.querySelector('#heartIcon') 
+    heartIcon.addEventListener('click', () => {
+      heartIcon.classList.toggle('filled-heart');
+      if(userId !== 'ALL'){
+        if(!isFavourite){
+          addToFavourites(data.id);
+          isFavourite = true;
+        } 
+        else if(isFavourite){
+          removeFromFavourites(data.id);
+          isFavourite = false;
+        } 
+      }
+    });
+
   } catch (error) {
     console.error("Error adding clothes:", error);
   }
@@ -653,209 +733,99 @@ async function deleteCloth(clothId){
 }
 
 //Удаление со сцены одежды
-async function removeFromScene(clothType){
+async function removeFromScene(type){
   try{
-    let block = null;
-    let imageElement = null;
-    let nameElement = null;
-    let imagePath = null;
-    let colorsContainer = null;
+    const block = document.getElementById(`${type}Block`);
+    const imageElement = block.querySelector('.image');
+    const nameElement = block.querySelector('.name');
+    const typeElement = block.querySelector('.productType');
+    const priceElement = block.querySelector('.price');
+    const removeButton = block.querySelector('#removeButton');
+    const colorsContainer = block.querySelector('.colorsContainer');
+    const imagePath = "images/upload-icon.svg";
+    removeButton.hidden = true;
+    colorsContainer.innerHTML = ``;
+    const productObject = scene.getObjectByName(type);
 
-    let clothObject;
-    
-
-    if (clothType == "Шапка" || clothType == "Кепка" || clothType == "Шляпа"){
-      block = document.getElementById('HatBlock');
-      imageElement = block.querySelector('.imageContainer720x400');
-      nameElement = block.querySelector('.nameOne');
-      const removeButton = block.querySelector('#removeButton');
-      colorsContainer = block.querySelector('.colorsContainer');
-      imagePath = "images/shapka.png";
-      removeButton.hidden = true;
-      if (colorsContainer) {
-        colorsContainer.remove(); // Удаление контейнера с кнопками-кружочками цветов
-      }
-      clothObject = scene.getObjectByName("clothType1");
-      hatCounter = 0;
-      hatId = 0;
-    }
-    else if (clothType == "Футболка" || clothType == "Топ" || clothType == "Майка"){
-      block = document.getElementById('TshirtBlock');
-      imageElement = block.querySelector('.imageContainer720x400');
-      nameElement = block.querySelector('.nameOne');
-      const removeButton = block.querySelector('#removeButton');
-      colorsContainer = block.querySelector('.colorsContainer');
-      imagePath = "images/futbolka.png";
-      removeButton.hidden = true;
-      if (colorsContainer) {
-        colorsContainer.remove(); // Удаление контейнера с кнопками-кружочками цветов
-      }
-      clothObject = scene.getObjectByName("clothType2");
-      tshirtCounter = 0;
-      tshirtId = 0;
-    }
-    else if (clothType == "Кофта"){
-      block = document.getElementById('CoatBlock');
-      imageElement = block.querySelector('.imageContainer720x400');
-      nameElement = block.querySelector('.nameOne');
-      const removeButton = block.querySelector('#removeButton');
-      colorsContainer = block.querySelector('.colorsContainer');
-      imagePath = "images/hudi.png";
-      removeButton.hidden = true;
-      if (colorsContainer) {
-        colorsContainer.remove(); // Удаление контейнера с кнопками-кружочками цветов
-      }
-      clothObject = scene.getObjectByName("clothType3");
-      coatCounter = 0;
-      coatId = 0;
-    }
-    else if (clothType == "Брюки" || clothType == "Шорты" || clothType == "Юбка"){
-      block = document.getElementById('PantsBlock');
-      imageElement = block.querySelector('.imageContainer720x400');
-      nameElement = block.querySelector('.nameOne');
-      const removeButton = block.querySelector('#removeButton');
-      colorsContainer = block.querySelector('.colorsContainer');
-      imagePath = "images/shtani.png";
-      removeButton.hidden = true;
-      if (colorsContainer) {
-        colorsContainer.remove(); // Удаление контейнера с кнопками-кружочками цветов
-      }
-      clothObject = scene.getObjectByName("clothType4");
-      pantsCounter = 0;
-      pantsId = 0;
-    }
-
-    scene.remove(clothObject);
+    scene.remove(productObject);
     nameElement.textContent = '';
+    typeElement.textContent = '';
+    priceElement.textContent = '';
     imageElement.src = imagePath;
 
-    if(tshirtCounter === 0 && coatCounter === 0 && pantsCounter === 0 && hatCounter === 0){
+    selectedProducts[type] = null;
+
+    // Подсчет заполненных полей
+    let filledFields = 0;
+    for (const key in selectedProducts) {
+      if (selectedProducts[key] !== null) {
+        filledFields++;
+      }
+    }
+    if(filledFields < 2){
       saveStyleContainer.style.display = 'none';
     }
-    
     
   }catch (error) {
     console.error("Ошибка при удалении одежды:", error);
   }
 }
+
 //Добавление одежды на сцену
 async function addToScene(data) {
   try {
-    let block = null;
-    let imageElement = null;
-    let nameElement = null;
-    let colorsContainer = null;
-    // Получаем данные об одежде
-    const clothTypeSnapshot = await getDoc(data.clothTypeRef);
-    const clothTypeValue = clothTypeSnapshot.data().name;
-    const colorsSnapshots = await Promise.all(data.colorsRef.map((colorRef) => getDoc(colorRef)));
-    const colorsValues = colorsSnapshots.map((colorSnapshot) => colorSnapshot.data().hexColor).join(', ');
+    const type = data.typeId;
+    const colorsValues = data.productColors;
 
-    if (clothTypeValue == "Шапка" || clothTypeValue == "Кепка" || clothTypeValue == "Шляпа"){
-      block = document.getElementById('HatBlock');
-      imageElement = block.querySelector('.imageContainer720x400');
-      nameElement = block.querySelector('.nameOne');
+    const productType = Object.keys(typeMappings).find(key => typeMappings[key].includes(type));
+    if (!productType) return;
 
-      const removeButton = block.querySelector('#removeButton');
-      if(hatCounter != 0){
-        removeFromScene(clothTypeValue);
-      }
-      removeButton.hidden = false;
-      removeButton.addEventListener('click', () => {
-        removeFromScene(clothTypeValue);
-      });
-    }
-    else if (clothTypeValue == "Футболка" || clothTypeValue == "Топ" || clothTypeValue == "Майка"){
-      block = document.getElementById('TshirtBlock');
-      imageElement = block.querySelector('.imageContainer720x400');
-      nameElement = block.querySelector('.nameOne');
+    const block = document.getElementById(`${productType}Block`);
+    const imageElement = block.querySelector('.image');
+    const nameElement = block.querySelector('.name');
+    const typeElement = block.querySelector('.productType');
+    const priceElement = block.querySelector('.price');
+    const removeButton = block.querySelector('#removeButton');
 
-      const removeButton = block.querySelector('#removeButton');
-      if(tshirtCounter != 0){
-        removeFromScene(clothTypeValue);
-      }
-      removeButton.hidden = false;
-      removeButton.addEventListener('click', () => {
-        removeFromScene(clothTypeValue);
-      });
-    }
-    else if (clothTypeValue == "Кофта"){
-      block = document.getElementById('CoatBlock');
-      imageElement = block.querySelector('.imageContainer720x400');
-      nameElement = block.querySelector('.nameOne');
+    if (selectedProducts[productType] !== null) removeFromScene(productType);
 
-      const removeButton = block.querySelector('#removeButton');
-      if(coatCounter != 0){
-        removeFromScene(clothTypeValue);
-      }
-      removeButton.hidden = false;
-      removeButton.addEventListener('click', () => {
-        removeFromScene(clothTypeValue);
-      });
-    }
-    else if (clothTypeValue == "Брюки" || clothTypeValue == "Шорты" || clothTypeValue == "Юбка"){
-      block = document.getElementById('PantsBlock');
-      imageElement = block.querySelector('.imageContainer720x400');
-      nameElement = block.querySelector('.nameOne');
+    removeButton.hidden = false;
+    removeButton.addEventListener('click', () => {
+      removeFromScene(productType);
+    });
 
-      const removeButton = block.querySelector('#removeButton');
-      if(pantsCounter != 0){
-        removeFromScene(clothTypeValue);
-      }
-      removeButton.hidden = false;
-      removeButton.addEventListener('click', () => {
-        removeFromScene(clothTypeValue);
-      });
-      
-    }
-
-    // Показ элемента
     saveStyleContainer.style.display = 'block';
 
-    colorsContainer = document.createElement('div');
-    colorsContainer.className = 'colorsContainer mt-4';
-    block.appendChild(colorsContainer);
-
-    let firstColor;
-    let isFirst = true;
+    const colorsContainer = block.querySelector('.colorsContainer');
+    colorsContainer.innerHTML = '';
 
     colorsValues.split(',').forEach((color) => {
       const colorButton = document.createElement('button');
-      colorButton.className = 'colorButton shadow hover:shadow-lg';
+      colorButton.className = 'colorButton shadow hover:scale-105';
       colorButton.style.backgroundColor = color.trim();
       colorsContainer.appendChild(colorButton);
 
-      if(isFirst) {firstColor = color.trim();} 
-
       colorButton.addEventListener('click', () => {
-        setColor(clothTypeValue, color.trim());
+        setColor(productType, color.trim());
       });
-      isFirst = false;
     });
 
-    const nameSnapshot = await getDoc(data.nameRef);
-    const nameValue = nameSnapshot.data().name;
-    const imagePathSnapshot = await getDoc(data.imageRef);
-    const imagePath = imagePathSnapshot.data().image;
+    const storageImageRef = ref(storage, `images/${data.image}.png`);
+    const imageUrl = await getDownloadURL(storageImageRef);
+    imageElement.src = imageUrl;
+    nameElement.textContent = data.name;
+    priceElement.textContent = `₽${data.price}`;
+    typeElement.textContent = data.productType;
 
+    const firstColor = colorsValues.split(',')[0].trim()
 
-    // Обновляем содержимое блока
-    if (imageElement && nameElement && colorsContainer) {
-      if (imagePath) {
-        const storageImageRef = ref(storage, `images/${imagePath}.jpg`);
-        const imageUrl = await getDownloadURL(storageImageRef);
-        imageElement.src = imageUrl;
-      }
-      nameElement.textContent = nameValue;
-
-      const modelSnapshot = await getDoc(data.modelRef);
-      const modelName = modelSnapshot.data().model;
-      loadCloth(modelName, clothTypeValue, data.nameRef.id, firstColor);
-    }
+    loadCloth(data.model, productType, firstColor);
+    selectedProducts[productType] = data.id;
   } catch (error) {
-    console.error("Ошибка при добавлении одежды:", error);
+    console.error("Ошибка при добавлении одежды на сцену:", error);
   }
 }
+
 
 //Рендерим все найденное
 async function renderClothes(clothes) {
@@ -867,31 +837,16 @@ async function renderClothes(clothes) {
   });
 }
 //Проверяем комбобоксы и поиск
-async function handleSearchAndFilter() {
+async function handleSearchAndFilter(userClothesData) {
   try {
-    const selectedSizes = Array.from(document.querySelectorAll('#dropdownSizes input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
-    const selectedTypes = Array.from(document.querySelectorAll('#dropdownType input[type="checkbox"]:checked')).map((checkbox) => checkbox.value);
-    const searchTerm = searchInput.value.toLowerCase();
-    const selectedTypesGender = isMale ? ['1'] : isFemale ? ['2'] : [];
-
     const filteredClothesData = [];
 
-    const nameSnapshots = await Promise.all(userClothesData.map((cloth) => getDoc(cloth.nameRef)));
-    const clothTypeSnapshots = await Promise.all(userClothesData.map((cloth) => getDoc(cloth.clothTypeRef)));
+    const selectedTypesGender = isMale ? ['1'] : isFemale ? ['2'] : [];
 
     for (let i = 0; i < userClothesData.length; i++) {
       const cloth = userClothesData[i];
-      const nameSnapshot = nameSnapshots[i];
-      const name = nameSnapshot.data().name.toLowerCase();
-      const clothTypeSnapshot = clothTypeSnapshots[i];
-      const clothTypeValue = clothTypeSnapshot.data().name.toLowerCase();
-      const sizeIds = cloth.sizeRefs.map((sizeRef) => sizeRef.id);
-
       if (
-        (name.includes(searchTerm) || clothTypeValue.includes(searchTerm)) &&
-        selectedSizes.some((size) => sizeIds.includes(size)) &&
-        selectedTypes.includes(cloth.clothTypeRef.id) &&
-        selectedTypesGender.includes(cloth.clothTypeGenderRef.id)
+        selectedTypesGender.includes(cloth.genderId)
       ) {
         filteredClothesData.push(cloth);
       }
@@ -1116,6 +1071,7 @@ async function populateList(data, userStylesData, styleId, index) {
 });
 }
 
+
 async function getStyles(){
   let i = 0;
   let userStylesItemsQuery = null;
@@ -1147,15 +1103,12 @@ async function getStyles(){
       // Преобразуем идентификаторы в строковый формат
       const userStylesIds = data.idClothes.map(String);
       // Фильтруем данные об одежде по идентификаторам из коллекции clothes
-      userStylesData = clothesData.filter((cloth) => userStylesIds.includes(cloth.nameRef.id));
+      userStylesData = _productsData.filter((product) => userStylesIds.includes(product.id));
       
       populateList(data, userStylesData, doc.id,  i)
     });
   });
 }
-
-
-
 
 const garderobStylesBlock = document.getElementById('garderobStylesBlock');
 const garderobClothesBlock = document.getElementById('garderobClothesBlock');
@@ -1174,7 +1127,6 @@ function handleStylesSelection() {
   
   garderobStylesBlock.hidden = false;
   garderobClothesBlock.hidden = true;
-  getStyles();
 }
 
 // Функция для обработки выбора мужской одежды
@@ -1182,7 +1134,7 @@ function handleMaleSelection() {
   console.log('Выбрана мужская одежда');
   isMale = true;
   isFemale = false;
-  handleSearchAndFilter();
+  handleSearchAndFilter(_productsData);
   if(isStyles) getStyles();
 }
 
@@ -1191,55 +1143,12 @@ function handleFemaleSelection() {
   console.log('Выбрана женская одежда');
   isFemale = true;
   isMale = false;
-  handleSearchAndFilter();
+  handleSearchAndFilter(_productsData);
   if(isStyles) getStyles();
 }
 
 
 
-const searchInput = document.getElementById('search');
-searchInput.addEventListener('input', handleSearchAndFilter);
-
-
-const sizeCheckboxes = document.querySelectorAll('#dropdownSizes input[type="checkbox"]');
-sizeCheckboxes.forEach((checkbox) => {
-  checkbox.addEventListener('change', handleSearchAndFilter);
-});
-
-const dropdownButton = document.getElementById('dropdownSizesButton');
-// Обработчик события клика на кнопке
-dropdownButton.addEventListener('click', function() {
-  dropdownSizes.classList.toggle('hidden'); // Переключение класса для скрытия или показа выпадающего списка
-});
-
-const typeCheckboxes = document.querySelectorAll('#dropdownType input[type="checkbox"]');
-typeCheckboxes.forEach((checkbox) => {
-  checkbox.addEventListener('change', handleSearchAndFilter);
-});
-
-const typeDropdownButton = document.getElementById('dropdownTypeButton');
-// Обработчик события клика на кнопке
-typeDropdownButton.addEventListener('click', function() {
-  dropdownType.classList.toggle('hidden'); // Переключение класса для скрытия или показа выпадающего списка
-});
-
-//Изменение размеров окна
-window.addEventListener('resize', () => {
-  sizes.width = window.innerWidth / 1.8;
-  sizes.height = window.innerHeight / 1.8;
-
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
-
-  renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.render(scene, camera);
-})
-
-const authButton = document.getElementById('authButton');
-authButton.addEventListener('click', function() {
-    window.location.href = "auth.html";
-});
 
 
 // Получаем ссылки на кнопки
@@ -1279,15 +1188,7 @@ femaleButton.addEventListener('click', function() {
   femaleButton.classList.add('active');
   // Удаляем класс активности с кнопки "Мужчина"
   maleButton.classList.remove('active');
-  tshirtCounter = 0;
-  coatCounter = 0;
-  pantsCounter = 0;
-  hatCounter = 0;
 
-  tshirtId = 0;
-  coatId = 0;
-  pantsId = 0;
-  hatId = 0;
   // Вызываем функцию для обработки выбора женской одежды
   handleFemaleSelection();
   saveStyleContainer.style.display = 'none';
@@ -1308,15 +1209,7 @@ clothesButton.addEventListener('click', function() {
   // Удаляем класс активности с кнопки "Женщина"
   stylesButton.classList.remove('active');
   console.log('выбрана одежда');
-  tshirtCounter = 0;
-  coatCounter = 0;
-  pantsCounter = 0;
-  hatCounter = 0;
 
-  tshirtId = 0;
-  coatId = 0;
-  pantsId = 0;
-  hatId = 0;
   handleClothesSelection();
   saveStyleContainer.style.display = 'none';
   scene.clear();
@@ -1330,15 +1223,7 @@ stylesButton.addEventListener('click', function() {
   // Удаляем класс активности с кнопки "Мужчина"
   clothesButton.classList.remove('active');
   console.log('выбраны стили');
-  tshirtCounter = 0;
-  coatCounter = 0;
-  pantsCounter = 0;
-  hatCounter = 0;
 
-  tshirtId = 0;
-  coatId = 0;
-  pantsId = 0;
-  hatId = 0;
   handleStylesSelection();
   saveStyleContainer.style.display = 'none';
   scene.clear();
@@ -1352,43 +1237,236 @@ async function createScene(){
   loadMannequin();
 }
 async function clearUiBlocks(){
-  const blocks = ['HatBlock', 'TshirtBlock', 'CoatBlock', 'PantsBlock'];
-  const blocksImg = ['shapka', 'futbolka', 'hudi', 'shtani'];
+  const blocks = ['topsBlock', 'bottomsBlock', 'headdressesBlock', 'accessoriesBlock'];
 
   let i = 0;
   for(const blockElement of blocks){
     const block = document.getElementById(`${blockElement}`);
-    let imageElement = block.querySelector('.imageContainer720x400');
-    let nameElement = block.querySelector('.nameOne');
+    const imageElement = block.querySelector('.image');
+    const nameElement = block.querySelector('.name');
+    const typeElement = block.querySelector('.productType');
+    const priceElement = block.querySelector('.price');
     const removeButton = block.querySelector('#removeButton');
     let colorsContainer = block.querySelector('.colorsContainer');
-    let imagePath = `images/${blocksImg[i]}.png`;
     removeButton.hidden = true;
-    if (colorsContainer) {
-      colorsContainer.remove(); // Удаление контейнера с кнопками-кружочками цветов
-    }
+    colorsContainer.innerHTML = ''
     nameElement.textContent = '';
-    imageElement.src = imagePath;
+    typeElement.textContent = '';
+    priceElement.textContent = '';
+    imageElement.src = `images/upload-icon.svg`;
     i += 1;
   }
-  tshirtCounter = 0;
-  pantsCounter = 0;
-  coatCounter = 0;
-  hatCounter = 0;
 }
 
 const returnCameraButton = document.getElementById('returnCameraButton');
 returnCameraButton.addEventListener('click', function() {
-  camera.position.set(0,18,15);
+  moveCamera(0,18,15);
 	camera.lookAt(new THREE.Vector3(0,10,0));
   controls.target = new THREE.Vector3(0,10,0);
 });
 
+
+const ui = document.getElementById('ui');
+
+const cartCollection = collection(db, 'shoppingCart');
+async function getCartItemsCount(idUser){
+  const cartQuery = query(cartCollection, where('idUser', '==', idUser));
+  const querySnapshot = await getDocs(cartQuery);
+  return querySnapshot.size;
+}
+
+
+const notEmptyCartBlock = document.getElementById('notEmptyCartBlock');
+const emptyCartBlock = document.getElementById('emptyCartBlock');
+const cartModalList = document.getElementById('cartModalList');
+
+// Функция для обработки выбора одежды
+function handleEmptyCart() {
+  notEmptyCartBlock.hidden = true;
+  emptyCartBlock.hidden = false;
+}
+
+// Функция для обработки выбора стилей
+function handleNotEmptyCart() {
+  notEmptyCartBlock.hidden = false;
+  emptyCartBlock.hidden = true;
+}
+
+
+async function populateCartList(data, itemId){
+  const userClothesItemsQuery = doc(clothesCollection, data.idCloth);
+
+  // Получение данных из запроса
+  getDoc(userClothesItemsQuery).then((doc) => {
+      if (doc.exists()) {
+      // Доступ к данным документа и вывод информации о каждом элементе одежды
+      const productData = doc.data();
+      const cartModalBlock = document.createElement('section');
+      cartModalBlock.innerHTML = `
+      <li class="flex items-center mb-2 rounded-md border border-2 border-gray-600 gradientReverse p-4 justify-center bg-opacity-75">
+        <div class="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
+          <img src="" alt="image" class="Img h-full w-full object-cover object-center">
+        </div>
+
+        <div class="ml-4 flex flex-1 flex-col">
+          <div>
+            <div class="flex justify-between text-base font-medium text-gray-100">
+              <h3>
+                <a href="#">${productData.name}</a>
+              </h3>
+              <p class="ml-4 text-sm text-red-500">₽${productData.price}</p>
+            </div>
+          </div>
+          <div class="flex flex-1 items-end justify-between text-l">
+            <p class="text-red-500">-${productData.discount}%</p>
+
+            <div class="flex">
+              <button type="button" class="deleteFromCartButton font-medium text-purple-300 hover:text-purple-200">Удалить</button>
+            </div>
+          </div>
+        </div>
+      </li>
+      `;
+      const clothImage = cartModalBlock.querySelector('.Img');
+      const image = productData.image;
+      const storageImageRef = ref(storage, `images/${image}.png`);
+      const imageUrlPromise = getDownloadURL(storageImageRef);
+      imageUrlPromise.then((imageUrl) => {
+      clothImage.src = imageUrl;
+      }).catch((error) => {
+      console.log('Error retrieving image URL:', error);
+      });
+    
+      const deleteFromCartButton = cartModalBlock.querySelector('.deleteFromCartButton');
+      deleteFromCartButton.addEventListener('click', () => {
+        //deleteFromCart(itemId);
+      });
+
+      cartModalList.appendChild(cartModalBlock);
+
+    } else {
+    console.log('Документ не найден!');
+    }
+  }).catch((error) => {
+      console.log('Ошибка:', error);
+  });
+}
+
+
+async function renderCartModal(){
+  cartModalList.innerHTML = ``;
+  const userCartItemsQuery = query(cartCollection, where('idUser', '==', userId));
+  const querySnapshots = await getDocs(userCartItemsQuery);
+  if(querySnapshots.empty){
+    handleEmptyCart();
+    return;
+  } 
+  // Получение данных из запроса
+  getDocs(userCartItemsQuery).then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      // Доступ к данным каждого документа и вывод информации о каждом элементе одежды
+      const data = doc.data();
+      populateCartList(data, doc.id)
+    });
+    
+  });
+}
+
+async function getProductsData(userWardrobeClothesIds) {
+  const clothesCollection = collection(db, 'clothes');
+
+  const promises = userWardrobeClothesIds.map(async (clothesId) => {
+    const docRef = doc(clothesCollection, clothesId);
+    const docSnap = await getDoc(docRef);
+    return docSnap;
+  });
+
+  const snapshots = await Promise.all(promises);
+
+  return snapshots;
+}
+
+async function goToProfile(){
+  if(_userId !== 'ALL') window.location.href = "user_profile.html"
+  else{
+    Swal.fire({
+      title: "Вы не вошли в систему. Перейти на страницу аутентификации?",
+      showCancelButton: true,
+      confirmButtonText: "Перейти",
+      cancelButtonText: "Отмена",
+    }).then((result) => {
+      /* Read more about isConfirmed, isDenied below */
+      if (result.isConfirmed) {
+        window.location.href = "auth.html"
+      }
+    });
+  }
+}
+
+async function exitUser(){
+  Swal.fire({
+    title: "Вы уверены, что хотите выйти?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    cancelButtonText: "Отмена",
+    confirmButtonText: "Да!"
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        localStorage.setItem('userId', 'ALL');
+        window.location.href = 'index.html';
+      } catch (error) {
+        console.log('Ошибка при удалении документа:', error);
+        showAlert("Не удалось выйти из системы!");
+      }
+    }
+  });
+}
+
+const toProfileButton = document.getElementById('toProfileButton');
+toProfileButton.addEventListener('click', goToProfile);
+
+const authButton = document.getElementById('authButton');
+authButton.addEventListener('click', goToProfile);
+
+const toProfileButtonMoile = document.getElementById('toProfileButtonMoile');
+toProfileButtonMoile.addEventListener('click', goToProfile);
+
+const exitButton = document.getElementById('exitButton');
+exitButton.addEventListener('click', exitUser);
+
 async function main(){
-    await addFloor();
-    await addLights();
-    loadMannequin();
-    await handleSearchAndFilter();
+  await addFloor();
+  await addLights();
+  loadMannequin();
+
+  // Convert the IDs to a string format
+  const userWardrobeClothesIds = userData.idWardrobeClothes.map(String);
+  const userProducts = await getProductsData(userWardrobeClothesIds);
+  const productsData = await getProducts(userProducts);
+  _productsData = productsData;
+  await handleSearchAndFilter(productsData);
+
+  getStyles();
+
+  const loadingScreen = document.getElementById('loadingScreen');
+  loadingScreen.classList.add("hidden");
+
+
+  await getCartItemsCount(userId).then(count => {
+    console.log(`Количество документов с idUser ${userId}: ${count}`);
+    const countElement = document.getElementById('cartCounter');
+    countElement.textContent = count;
+    if(count > 0) {
+      renderCartModal();
+      handleNotEmptyCart()
+    }
+    else{
+      handleEmptyCart();
+    }
+  })
 }
 
 main();
