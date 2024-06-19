@@ -87,6 +87,7 @@ async function registerUser() {
       idFavourites: [],
       idFavouriteStyles: [],
       idOrders: [],
+      idUsedPromo: [],
       purchaseId: "",
       phone: ""
     };

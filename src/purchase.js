@@ -95,7 +95,7 @@ async function populateList(data, size, color, quantity) {
             </div>
         </div>
     </div>
-    <span class="text-gray-800 dark:text-gray-200">₽ ${data.price}</span>
+    <span class="price text-gray-800 dark:text-gray-200"></span>
   `;
 
   const imageElement = purchaseItemsItem.querySelector('.productImage');
@@ -103,6 +103,16 @@ async function populateList(data, size, color, quantity) {
   const storageImageRef = ref(storage, `images/${imagePath}.png`);
   const imageUrl = await getDownloadURL(storageImageRef);
   imageElement.src = imageUrl;
+
+  const price = data.price;
+  const discountProduct = data.discount;
+  let finalPrice = data.price;
+  if(discountProduct != 0){
+    finalPrice = Math.round(price * (100 - discountProduct) / 100)
+    purchaseItemsItem.querySelector('.price').textContent = `₽ ${finalPrice * parseInt(quantity)}`;
+  }else{
+    purchaseItemsItem.querySelector('.price').textContent = `₽ ${finalPrice * parseInt(quantity)}`;
+  }
 
   purchaseItemsList.appendChild(purchaseItemsItem);
 }

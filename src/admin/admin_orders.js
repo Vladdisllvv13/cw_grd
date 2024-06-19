@@ -212,6 +212,13 @@ async function renderProducts(products, clothesSnapshots) {
   });
 }
 
+function sendMessageToUser(email, phone) {
+  // Отправка сообщения по электронной почте
+  email = encodeURIComponent(email);
+  // Открывает новую вкладку или окно браузера с mailto-ссылкой
+  window.open(`https://e.mail.ru/compose?to=${email}, '_blank'`);
+}
+
 async function getProductsFromClothesCollection(productsData) {
   const clothesCollection = collection(db, 'clothes');
   const clothesDocRefs = Object.keys(productsData).map(productId => doc(clothesCollection, productId));
@@ -355,6 +362,7 @@ async function updateOrder(data){
       };
       
       console.log(newOrder)
+
       if(data === null){
         try {
           await addDoc(ordersCollection, newOrder)
@@ -379,6 +387,9 @@ async function updateOrder(data){
         // Update the document in the "clothes" collection with the selected color and size IDs
         const docRef = doc(db, 'orders', data.id);
         updateDoc(docRef, newOrder);
+
+        console.log(status);
+
         Swal.fire({
           icon: "success",
           title: "Изменено!",

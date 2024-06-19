@@ -431,10 +431,10 @@
                                                     <div class="w-full max-w-full px-3 shrink-0 md:w-4/12 md:flex-0">
                                                       <div class="mb-4">
                                                         <label for="select-material" class="inline-block mb-2 ml-1 font-bold text-l text-slate-700 dark:text-white/80">Состав <span class="text-red-400">**</span></label>
-                                                        <div id="selected-materials" class="px-2 py-1 rounded-md text-purple-500 bg-white border rounded-lg mb-1">Выберите..</div>
                                                         <div class="relative flex w-full">
-                                                          <select id="select_material" multiple class="block w-full text-gray-600 rounded-sm cursor-pointer focus:outline-none">
-                                                          </select>
+                                                          <select id="select_material" class="block px-0 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                                                            <option selected>Выберите тип товара</option>
+                                                        </select>
                                                         </div>
                                                       </div>
                                                     </div>
@@ -456,7 +456,7 @@
                                             </div>
                                             <div class="w-full max-w-full px-3 mt-6 shrink-0 md:w-4/12 md:flex-0 md:mt-0">
                                               <div class="relative flex flex-col min-w-0 break-words bg-white border-0 shadow-xl min-w-lg px-2 rounded-2xl bg-clip-border">
-                                                <img id="product_image" class="w-full rounded-t-2xl" src="../images/o-T.png" alt="profile cover image">
+                                                <img id="product_image" class="w-full rounded-t-2xl">
                                                 <div>
                                                   <label class="block text-l font-medium text-gray-900">
                                                   Фото <span class="text-red-400">*</span>

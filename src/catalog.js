@@ -122,8 +122,9 @@ async function getProducts(snapshot){
     const image = data.image;
     const createAt = data.createAt;
     const isActivated = data.isActivated;
+    const ordered = data.orderd;
 
-    const actualPrice = price * (100 - discount) / 100;
+    const actualPrice = Math.round(price * (100 - discount) / 100);
 
     const sizeRefs = idSizes.map((sizeId) => doc(db, 'sizes', sizeId.toString()));
 
@@ -149,6 +150,7 @@ async function getProducts(snapshot){
       image,
       createAt,
       isActivated,
+      ordered,
       actualPrice
     });
   });
@@ -181,7 +183,7 @@ async function createClothBlock(data, list) {
               <div class="block absolute w-48 h-48 bottom-0 left-0 -mb-24 ml-3"
                 style="background: radial-gradient(black, transparent 60%); transform: rotate3d(0, 0, 1, 20deg) scale3d(1, 0.6, 1); opacity: 0.2;">
               </div>
-              <img loading="lazy" class="productImage p-4 h-94 w-80 object-cover object-center justify-center items-center transition duration-200 group-hover:scale-110" />
+              <img loading="lazy" class="productImage p-4 h-94 w-80 object-cover object-scale-down object-center justify-center items-center transition duration-200 group-hover:scale-110" />
     
               <div class="absolute left-0 bottom-2 flex gap-2">
                 <span class="discount rounded-r-lg bg-red-500 px-3 py-1.5 text-sm font-semibold uppercase tracking-wider text-white" hidden></span>
@@ -225,7 +227,7 @@ async function createClothBlock(data, list) {
       discountElement.hidden = false;
 
       discountPriceElement.textContent = `₽ ${price}`;
-      priceElement.textContent = `₽ ${price * (100 - discount) / 100}`;
+      priceElement.textContent = `₽ ${Math.round(price * (100 - discount) / 100)}`;
     }else{
       priceElement.textContent = `₽ ${price}`;
     }
@@ -299,7 +301,7 @@ async function addStyleToWardrobe(data){
     Swal.fire({
       icon: "error",
       title: "Упс...",
-      text: "Нельзя добавить стиль в гардероб для незарегистрированного пользователя",
+      text: "Нельзя добавить стиль для незарегистрированного пользователя",
     });
     return;
   }
@@ -324,7 +326,7 @@ async function addStyleToWardrobe(data){
 
   let timerInterval;
   Swal.fire({
-    title: "Стиль добавлен в гардероб!",
+    title: "Стиль добавлен!",
     timer: 2000,
     timerProgressBar: true,
     didOpen: () => {
@@ -399,7 +401,7 @@ async function createProduct(data, list) {
       discountElement.hidden = false;
 
       discountPriceElement.textContent = `₽ ${price}`;
-      priceElement.textContent = `₽ ${price * (100 - discount) / 100}`;
+      priceElement.textContent = `₽ ${Math.round(price * (100 - discount) / 100)}`;
     }else{
       priceElement.textContent = `₽ ${price}`;
     }
@@ -468,17 +470,18 @@ async function populateList(data, userStyleClothes, styleId, index) {
         <h2 id="txtName" class="text-3xl font-bold tracking-tight text-purple-500 sm:text-4xl">${data.name}</h2>
         <p id="txtDescription" class="mt-4 text-gray-700 dark:text-gray-400">${data.description}</p>
 
-        <dl class="mt-16 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-y-16 lg:gap-x-8">
+        <dl class="mt-8 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-y-16 lg:gap-x-8">
           <div class="border-t border-gray-200 pt-4">
-            <img alt="styleImage" class="img object-cover object-center">
+            <img alt="styleImage" class="img object-cover object-center rounded-lg">
           </div>
         </dl>
+        <p id="txtPrice" class="mt-4 text-4xl text-red-600 text-right">${data.price} ₽</p>
       </div>
       <div class="styleClothesList grid grid-cols-2 grid-rows-2 gap-4 sm:gap-6 lg:gap-8 p-4">
       </div>
     </div>
     <button id="addStyleToWardrobeButton" type="button" class="gradient py-2 px-4 mb-4 bg-purple-600 hover:bg-purple-700 focus:ring-purple-500 focus:ring-offset-purple-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-    Добавить стиль в гардероб
+    Добавить стиль
   </button>
   </div>
   `;
@@ -590,7 +593,7 @@ async function createFilter(name, value, type, section){
   const filterBlock = document.createElement('div');
   filterBlock.className = "flex items-center rounded";
   filterBlock.innerHTML = `
-      <input checked id="filter-${type}-${name}" name="${type}[${name}]" value="${value}" type="checkbox" class="h-4 w-4 ml-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 rounded">
+      <input checked id="filter-${type}-${name}" name="${type}[${name}]" value="${value}" type="checkbox" class="${type}_select h-4 w-4 ml-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 rounded">
       <label for="filter-${type}-${name}" class="ml-3 text-sm text-gray-700 dark:text-gray-300">${name}</label>
     `;
     filterList.appendChild(filterBlock);
@@ -648,7 +651,7 @@ async function SortItems(param){
   if (param === 'noSort') {
     filteredProducts = filteredProducts.sort((a, b) => b.id - a.id);
   } else if (param === 'popular') {
-    q = query(clothesCollection, orderBy('popularity', 'asc'));
+    filteredProducts = filteredProducts.sort((a, b) => b.ordered - a.ordered);
   } else if (param === 'discount') {
     filteredProducts = filteredProducts.sort((a, b) => b.discount - a.discount);
   } else if (param === 'new') {
@@ -679,7 +682,8 @@ noSortItem.addEventListener('click', () => {
 // Добавляем обработчики событий для каждого элемента сортировки
 popularSortItem.addEventListener('click', () => {
   // Выполняем запрос к базе данных для сортировки по популярности
-  // ...
+  sortParameter = 'popular';
+  SortItems(sortParameter);
 });
 
 discountSortItem.addEventListener('click', () => {
@@ -809,7 +813,35 @@ stylesButton.addEventListener('click', function() {
   handleStylesSelection();
 });
 
+const selectAllColorsButton = document.getElementById('selectAllColorsButton');
+selectAllColorsButton.addEventListener('click', function() {
+  const colors = document.querySelectorAll('input[name^="color"]');
 
+  // Перебираем все полученные элементы и устанавливаем свойство 'checked'
+  colors.forEach(color => {
+    color.checked = true;
+  });
+});
+
+const selectAllMaterialsButton = document.getElementById('selectAllMaterialsButton');
+selectAllMaterialsButton.addEventListener('click', function() {
+  const materials = document.querySelectorAll('input[name^="material"]');
+
+  // Перебираем все полученные элементы и устанавливаем свойство 'checked'
+  materials.forEach(material => {
+    material.checked = true;
+  });
+});
+
+const selectAllSizesButton = document.getElementById('selectAllSizesButton');
+selectAllSizesButton.addEventListener('click', function() {
+  const sizes = document.querySelectorAll('input[name^="size"]');
+
+  // Перебираем все полученные элементы и устанавливаем свойство 'checked'
+  sizes.forEach(size => {
+    size.checked = true;
+  });
+});
 
 const filters = document.getElementById('filters');
 const buttonShowFiltersMobile = document.getElementById('buttonShowFiltersMobile');

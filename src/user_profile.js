@@ -178,33 +178,33 @@ async function createStyleBlock(data, stylesBody) {
         </div>
       </div>
       <div class="flex flex-wrap -m-4">
-          <div class="product1 xl:w-1/4 md:w-1/2 p-4 relative" hidden>
+          <div class="product1 xl:w-1/4 md:w-1/2 p-4 relative hover:scale-105 cursor-pointer" hidden>
           <div class="bg-gray-300 dark:bg-gray-800 bg-opacity-40 p-6 rounded-lg">
-            <img class="bg-cover productImage1 h-full w-full object-cover object-center mb-6" src="https://dummyimage.com/720x400" alt="content">
+            <img class="bg-cover productImage1 h-full w-full object-cover object-scale-down h-40 object-center mb-6" src="https://dummyimage.com/720x400" alt="content">
             <h3 class="productType1 tracking-widest text-purple-400 text-xs font-medium title-font">SUBTITLE</h3>
             <h2 class="productName1 text-lg text-gray-900 dark:text-white font-medium title-font mb-4">Chichen Itza</h2>
             <p class="productDescription1 leading-relaxed text-sm text-gray-600 dark:text-gray-400">Fingerstache flexitarian street art 8-bit waistcoat. Distillery hexagon disrupt edison bulbche.</p>
           </div>
         </div>
-        <div class="product2 xl:w-1/4 md:w-1/2 p-4 relative" hidden>
+        <div class="product2 xl:w-1/4 md:w-1/2 p-4 relative hover:scale-105 cursor-pointer" hidden>
           <div class="bg-gray-300 dark:bg-gray-800 bg-opacity-40 p-6 rounded-lg">
-            <img class="bg-cover productImage2 h-full w-full object-cover object-center mb-6" src="https://dummyimage.com/721x401" alt="content">
+            <img class="bg-cover productImage2 h-full w-full object-cover object-scale-down h-40 object-center mb-6" src="https://dummyimage.com/721x401" alt="content">
             <h3 class="productType2 tracking-widest text-purple-400 text-xs font-medium title-font">SUBTITLE</h3>
             <h2 class="productName2 text-lg text-gray-900 dark:text-white  font-medium title-font mb-4">Colosseum Roma</h2>
             <p class="productDescription2 leading-relaxed text-sm text-gray-600 dark:text-gray-400">Fingerstache flexitarian street art 8-bit waistcoat. Distillery hexagon disrupt edison bulbche.</p>
           </div>
         </div>
-        <div class="product3 xl:w-1/4 md:w-1/2 p-4 relative" hidden>
+        <div class="product3 xl:w-1/4 md:w-1/2 p-4 relative hover:scale-105 cursor-pointer" hidden>
           <div class="bg-gray-300 dark:bg-gray-800 bg-opacity-40 p-6 rounded-lg">
-            <img class="bg-cover productImage3 h-full w-full object-cover object-center mb-6" src="https://dummyimage.com/722x402" alt="content">
+            <img class="bg-cover productImage3 h-full w-full object-cover object-scale-down h-40 object-center mb-6" src="https://dummyimage.com/722x402" alt="content">
             <h3 class="productType3 tracking-widest text-purple-400 text-xs font-medium title-font">SUBTITLE</h3>
             <h2 class="productName3 text-lg text-gray-900 dark:text-white  font-medium title-font mb-4">Great Pyramid of Giza</h2>
             <p class="productDescription3 leading-relaxed text-sm text-gray-600 dark:text-gray-400">Fingerstache flexitarian street art 8-bit waistcoat. Distillery hexagon disrupt edison bulbche.</p>
           </div>
         </div>
-        <div class="product4 xl:w-1/4 md:w-1/2 p-4 relative" hidden>
+        <div class="product4 xl:w-1/4 md:w-1/2 p-4 relative hover:scale-105 cursor-pointer" hidden>
           <div class="bg-gray-300 dark:bg-gray-800 bg-opacity-40 p-6 rounded-lg">
-            <img class="bg-cover productImage4 h-full w-full object-cover object-center mb-6" src="https://dummyimage.com/723x403" alt="content">
+            <img class="bg-cover productImage4 h-full w-full object-cover object-scale-down h-40 object-center mb-6" src="https://dummyimage.com/723x403" alt="content">
             <h3 class="productType4 tracking-widest text-purple-400 text-xs font-medium title-font">SUBTITLE</h3>
             <h2 class="productName4 text-lg text-gray-900 dark:text-white font-medium title-font mb-4">San Francisco</h2>
             <p class="productDescription4 leading-relaxed text-sm text-gray-600 dark:text-gray-400">Fingerstache flexitarian street art 8-bit waistcoat. Distillery hexagon disrupt edison bulbche.</p>
@@ -228,6 +228,30 @@ async function createStyleBlock(data, stylesBody) {
         styleBlock.querySelector(`.productType${index}`).textContent = productType;
         styleBlock.querySelector(`.productDescription${index}`).textContent = productDescription;
         styleBlock.querySelector(`.product${index}`).hidden = false; 
+
+        styleBlock.querySelector(`.product${index}`).addEventListener('click', () => {
+          localStorage.setItem('lastProductId', productId)
+          // Получаем значение из localStorage и проверяем, является ли оно массивом
+          let lastProducts = localStorage.getItem('lastProducts');
+          try {
+            lastProducts = lastProducts ? JSON.parse(lastProducts) : [];
+            if (!Array.isArray(lastProducts)) {
+              throw new Error('lastProducts is not an array');
+            }
+          } catch (error) {
+            console.error('Error parsing lastProducts from localStorage:', error);
+            lastProducts = []; // Инициализируем как пустой массив, если возникла ошибка
+          }
+        
+          // Удаляем существующий data.id, если он уже есть в массиве
+          lastProducts = lastProducts.filter(productID => productID !== productId);
+    
+          // Добавляем новый ID продукта и сохраняем только последние 5 ID
+          lastProducts.push(productId);
+          lastProducts = lastProducts.slice(-5);
+          localStorage.setItem('lastProducts', JSON.stringify(lastProducts));
+          window.location.href = 'product_overview.html';
+        });
       }
       index += 1;
     });

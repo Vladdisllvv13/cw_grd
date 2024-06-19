@@ -40,9 +40,10 @@ let selectedProducts = {
 const typeMappings = {
   '1': ['1', '3', '5', '7'],
   '2': ['2', '4', '6'],
-  '3': ['8', '9', '10'],
-  '4': ['8', '9', '10']
+  '3': ['8', '9', '10', '13'],
+  '4': ['11']
 };
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyAgfHpqhm8BYiQTE30cusEJMC4uK8lTPis",
@@ -136,7 +137,6 @@ async function createStylesTable(data, tableBody) {
     newRow.className = 'h-24 border-gray-400 dark:border-gray-300 border-b dark:text-gray-300 text-gray-700';
     newRow.hidden = true;
 
-  
     // Populate the table row with data from Firestore
     newRow.innerHTML = `
     <td class="pl-8 text-sm pr-6 whitespace-no-wrap dark:text-gray-100 tracking-normal leading-4">${data.id}</td>

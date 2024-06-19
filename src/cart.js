@@ -172,26 +172,30 @@ async function populateList(data, itemId) {
         const discountPriceElement = cartItem.querySelector('.discountPriceElement');
         const priceElement = cartItem.querySelector('.priceElement');
         const price = clothData.price;
-        const discount = clothData.discount;
-        if(discount != 0){
+        const discountProduct = clothData.discount;
+
+        let finalPrice = clothData.price;
+        if(discountProduct != 0){
           priceElement.hidden = false;
     
-          discountPriceElement.textContent = `₽ ${price}`;
-          priceElement.textContent = `₽ ${price * (100 - discount) / 100}`;
+          priceElement.textContent = `₽ ${price}`;
+          finalPrice = Math.round(price * (100 - discountProduct) / 100)
+          discountPriceElement.textContent = `₽ ${finalPrice * parseInt(data.quantity)}`;
         }else{
-          discountPriceElement.textContent = `₽ ${price}`;
+          discountPriceElement.textContent = `₽ ${finalPrice * parseInt(data.quantity)}`;
         }
       
         // Append the new row to the table body
         cartBody.appendChild(cartItem);
 
-        totalSum += clothData.price;
+
+        totalSum += finalPrice * parseInt(data.quantity);
         
         const totalSumText = document.getElementById('totalSum');
         const finalSumText = document.getElementById('finalSum');
         const discountText = document.getElementById('discount');
         totalSumText.textContent = `₽ ${totalSum}`;
-        finalSum = totalSum * (100 - discount) / 100;
+        finalSum = Math.round(totalSum * (100 - discount) / 100);
         finalSumText.textContent = `₽ ${finalSum}`;
         discountText.textContent = `${discount}%`;
 
@@ -262,15 +266,31 @@ async function usePromo(value) {
     const promoQuery = query(promoCollection, where('name', '==', value));
     const querySnapshot = await getDocs(promoQuery);
 
+    console.log(discount)
+
     if (!querySnapshot.empty) {
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        discount = data.discount;
+      querySnapshot.forEach(async (document) => {
+        const data = document.data();
+        const promoId = document.id;
+
+        const userCollection = collection(db, 'users');
+        const userDoc = doc(userCollection, userId);
+        // Retrieve the user document
+        const userDocSnapshot = await getDoc(userDoc);
+        const userData = userDocSnapshot.data();
+        const usedPromoIds = userData.idUsedPromo || [];
+        if (!usedPromoIds.includes(promoId)) {
+          discount = data.discount;
+        }
+        else{
+          showAlert("Скидочный код уже был использован!")
+        }
+
         getCart();
     });
     
     } else {
-      console.log('Промокод не найден');
+      showAlert("Промокод не найден!")
     }
   } catch (error) {
     console.error('Ошибка при получении промокода:', error);

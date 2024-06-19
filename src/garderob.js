@@ -79,8 +79,8 @@ let selectedProducts = {
 const typeMappings = {
   'tops': ['1', '3', '5', '7'],
   'bottoms': ['2', '4', '6'],
-  'headdresses': ['8', '9', '10'],
-  'accessories': ['8', '9', '10']
+  'headdresses': ['8', '9', '10', '13'],
+  'accessories': ['11']
 };
 
 
@@ -243,7 +243,7 @@ async function addLights(){
 
 //Текстуры
 const textureLoader = new THREE.TextureLoader();
-const texture = textureLoader.load('textures/1K_fabric_73_roughness.png');
+const texture = textureLoader.load('textures/fabric_104_ambientocclusion-1K.png');
 
 //Материал
 function setMaterial(currentColor, currentMetalness, currentRoughness, currentMap){
@@ -251,7 +251,7 @@ function setMaterial(currentColor, currentMetalness, currentRoughness, currentMa
         color: currentColor,
         metalness: currentMetalness,
         roughness: currentRoughness,
-        //map: texture
+        //map: currentMap
     });
 }
 
@@ -270,7 +270,7 @@ function loadMannequin(){
             console.log('success');
             console.log(gltf);
             const mannequin = gltf.scene.children[0];
-            mannequin.material = setMaterial("#F2DCC7", 0, 0.4);
+            mannequin.material = setMaterial("#F2DCC7", 0, 0.4, null);
             scene.add(mannequin);
             mannequin.name = 'mannequin';
         },
@@ -353,7 +353,7 @@ function loadCloth(modelName, type, firstColor){
 
 function setColor(type, color){
   const productObject = scene.getObjectByName(type);
-  productObject.material = setMaterial(color, 0, 0.4);
+  productObject.material = setMaterial(color, 0, 0.9, texture);
 }
 
 //Анимация
@@ -679,7 +679,7 @@ async function removeFromFavourites(clothId){
 async function deleteCloth(clothId){
   try {
     Swal.fire({
-      title: "Вы уверены, что хотите удалить одежду из гардероба?",
+      title: "Вы уверены, что хотите удалить одежду из примерочной?",
       text: "Чтобы вернуть ее, вам придется заново добавить ее в каталоге",
       icon: "warning",
       showCancelButton: true,
@@ -699,8 +699,7 @@ async function deleteCloth(clothId){
             let wardrobeClothesIds = userData.idWardrobeClothes || [];
 
             // Remove the selected cloth's ID from the wardrobeClothesIds array
-            const clothIdNumber = parseInt(clothId, 10);
-            wardrobeClothesIds = wardrobeClothesIds.filter((id) => id !== clothIdNumber);
+            wardrobeClothesIds = wardrobeClothesIds.filter((id) => id !== clothId);
 
             // Update the user document with the modified wardrobeClothesIds array
             await updateDoc(userDoc, { idWardrobeClothes: wardrobeClothesIds });
@@ -709,7 +708,7 @@ async function deleteCloth(clothId){
           Swal.fire({
             icon: "success",
             title: "Удалено!",
-            text: "Одежда была удалена из гардероба.",
+            text: "Одежда была удалена из примерочной.",
             showConfirmButton: false,
             timer: 1500
           });
@@ -1004,9 +1003,6 @@ async function populateList(data, userStylesData, styleId, index) {
     <div flex items-center justify-center>
     <div class="justify-center" style="display: flex; align-items: center;">
         <h1 id="txtName" class="text-4xl justify-center font-bold text-purple-800 text-center mt-10">${data.name}</h1>
-        <svg class="h-8 w-8 mt-10 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-          <path id="styleHeartIcon" d="M2 9.1371C2 14 6.01943 16.5914 8.96173 18.9109C10 19.7294 11 20.5 12 20.5C13 20.5 14 19.7294 15.0383 18.9109C17.9806 16.5914 22 14 22 9.1371C22 4.27416 16.4998 0.825464 12 5.50063C7.50016 0.825464 2 4.27416 2 9.1371Z" fill="#4f4f4f"/>
-        </svg>
     </div>
       <h1 id="txtDescription" class="text-xl justify-center font-bold text-center mt-4">${data.description}</h1>
       <div class="w-full mt-4 mb-8 justify-center">
@@ -1038,37 +1034,7 @@ async function populateList(data, userStylesData, styleId, index) {
       deleteStyle(styleId);
     });
 
-    const userDoc = doc(userCollection, userId);
-
-    // Получаем текущие данные пользователя
-    getDoc(userDoc).then((userDocSnapshot) => {
-      if (userDocSnapshot.exists()) {
-        const userData = userDocSnapshot.data();
-        let favouritesStylesIds = userData.idFavouriteStyles || [];
-
-        // Проверяем, содержит ли массив уже выбранный идентификатор стиля
-        if (favouritesStylesIds.includes(styleId)) {
-          isFavourite = true;
-          const heartIcon = stylesBlock.querySelector('#styleHeartIcon');
-          heartIcon.classList.add('filled-heart');
-        }
-      }})
   }
-
-  const styleHeartIcon = stylesBlock.querySelector('#styleHeartIcon') 
-  styleHeartIcon.addEventListener('click', () => {
-  styleHeartIcon.classList.toggle('filled-heart');
-  if(userId !== 'ALL'){
-    if(!isFavourite){
-      addStyleToFavourites(styleId);
-      isFavourite = true;
-    } 
-    else if(isFavourite){
-      removeStyleFromFavourites(styleId);
-      isFavourite = false;
-    } 
-  }
-});
 }
 
 
@@ -1292,6 +1258,44 @@ function handleNotEmptyCart() {
   emptyCartBlock.hidden = true;
 }
 
+async function deleteFromCart(itemId){
+  const shoppingCartRef = collection(db, 'shoppingCart');
+  const itemDocRef = doc(shoppingCartRef, itemId);
+
+  Swal.fire({
+    title: "Вы уверены, что хотите удалить товар из корзины?",
+    text: "Чтобы вернуть товар, необходимо добавить его в каталоге",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    cancelButtonText: "Отмена",
+    confirmButtonText: "Да, удалить!"
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        await deleteDoc(itemDocRef);
+        console.log('Документ успешно удален из корзины');
+        showAlert("Удалено!");
+        await getCartItemsCount(_userId).then(count => {
+          const countElement = document.getElementById('cartCounter');
+          countElement.textContent = count;
+          if(count > 0) {
+            renderCartModal();
+            handleNotEmptyCart()
+          }
+          else{
+            handleEmptyCart();
+          }
+        })
+
+      } catch (error) {
+        console.log('Ошибка при удалении документа:', error);
+        showAlert("Не удалось удалить товар из корзины!");
+      }
+    }
+  });
+}
 
 async function populateCartList(data, itemId){
   const userClothesItemsQuery = doc(clothesCollection, data.idCloth);
@@ -1312,7 +1316,7 @@ async function populateCartList(data, itemId){
           <div>
             <div class="flex justify-between text-base font-medium text-gray-100">
               <h3>
-                <a href="#">${productData.name}</a>
+                <a href="#" class="text-gray-700 dark:text-gray-100">${productData.name}</a>
               </h3>
               <p class="ml-4 text-sm text-red-500">₽${productData.price}</p>
             </div>
@@ -1321,7 +1325,7 @@ async function populateCartList(data, itemId){
             <p class="text-red-500">-${productData.discount}%</p>
 
             <div class="flex">
-              <button type="button" class="deleteFromCartButton font-medium text-purple-300 hover:text-purple-200">Удалить</button>
+              <button type="button" class="deleteFromCartButton font-medium text-purple-400 hover:text-purple-300">Удалить</button>
             </div>
           </div>
         </div>
@@ -1339,7 +1343,7 @@ async function populateCartList(data, itemId){
     
       const deleteFromCartButton = cartModalBlock.querySelector('.deleteFromCartButton');
       deleteFromCartButton.addEventListener('click', () => {
-        //deleteFromCart(itemId);
+        deleteFromCart(itemId);
       });
 
       cartModalList.appendChild(cartModalBlock);

@@ -113,7 +113,6 @@ function loadModel(model){
           console.log('success');
           console.log(gltf);
           const cloth = gltf.scene.children[0];
-          cloth.scale.set(10,10,10);
           cloth.name = "product";
           scene.add(cloth);
       },
@@ -580,7 +579,7 @@ async function updateProduct(data){
     const productGender = document.getElementById('select_genderProduct');
     const productSizes = document.getElementById('select_size');
     const productColors = document.getElementById('select_color');
-    const productMaterials = document.getElementById('select_material');
+    const productMaterial = document.getElementById('select_material');
     const productPrice = document.getElementById('price');
     const productDiscount = document.getElementById('discount');
     const productImage = document.getElementById('product_image');
@@ -593,20 +592,23 @@ async function updateProduct(data){
     productGender.value = '';
     clearSelect(productSizes, 'selected-sizes');
     clearSelect(productColors, 'selected-colors');
-    clearSelect(productMaterials, 'selected-materials');
+    productMaterial.value = '';
     productPrice.value = '';
     productDiscount.value = '';
     productImageName.value = '';
+    productImage.src = "";
     productModelName.value = '';
 
     
     await populateSelect('select_genderProduct', 'clothTypeGender');
     await populateSelect('select_typeProduct', 'clothType');
+    await populateSelect('select_material', 'materials');
+    modal.show();
     await populateSelect('select_size', 'sizes');
     await populateSelect('select_color', 'colors');
-    await populateSelect('select_material', 'materials');
 
-    modal.show();
+
+
 
     productColors.addEventListener('change', async() => {
       const firstColor = await getFirstColor(productColors);
@@ -632,8 +634,7 @@ async function updateProduct(data){
       const colorsArray = data.idColors;
       showMultiselectValues(productColors, colorsArray, 'selected-colors');
 
-      const materialsArray = data.idMaterial;
-      showMultiselectValues(productMaterials, materialsArray, 'selected-materials');
+      productMaterial.value = data.idMaterial;
 
       const imagePath = data.image;
       const storageImageRef = ref(storage, `images/${imagePath}.png`);
@@ -690,7 +691,6 @@ async function updateProduct(data){
       event.preventDefault();
       const selectedColorsOptions = Array.from(productColors.selectedOptions).map(option => parseInt(option.value));
       const selectedSizesOptions = Array.from(productSizes.selectedOptions).map(option => parseInt(option.value));
-      const selectedMaterialsOptions = Array.from(productMaterials.selectedOptions).map(option => parseInt(option.value));
       
       const imageFileName = productImageName.value.substring(0, productImageName.value.lastIndexOf('.'));
       const modelFileName = productModelName.value.substring(0, productModelName.value.lastIndexOf('.'));
@@ -721,7 +721,7 @@ async function updateProduct(data){
       //     });
       // }
 
-      let productOrdered = '0';
+      let productOrdered = 0;
 
       const date = new Date();
       const day = String(date.getDate()).padStart(2, '0');
@@ -745,13 +745,14 @@ async function updateProduct(data){
         idClothType: productTypeValue.value,
         idClothTypeGender: productGender.value,
         idColors: selectedColorsOptions,
-        idMaterial: selectedMaterialsOptions,
+        idMaterial: productMaterial.value,
         idSizes: selectedSizesOptions,
         image: imageFileName,
         model: modelFileName,
         ordered: productOrdered,
         createAt: productCreateAt,
-        isNew: productIsNew
+        isNew: productIsNew,
+        isActivated: true
       };
       console.log(product);
 
@@ -883,14 +884,6 @@ multiselectColor.addEventListener('change', function() {
   selectedValuesColor.innerHTML = '';
   const selectedOptions = Array.from(this.selectedOptions).map(option => option.text);
   selectedValuesColor.textContent = selectedOptions.join(', ');
-});
-
-const multiselectMaterial = document.getElementById('select_material');
-const selectedValuesMaterial = document.getElementById('selected-materials');
-multiselectMaterial.addEventListener('change', function() {
-  selectedValuesMaterial.innerHTML = '';
-  const selectedOptions = Array.from(this.selectedOptions).map(option => option.text);
-  selectedValuesMaterial.textContent = selectedOptions.join(', ');
 });
 
 

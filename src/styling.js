@@ -273,8 +273,8 @@ let selectedProducts = {
 const typeMappings = {
   'tops': ['1', '3', '5', '7'],
   'bottoms': ['2', '4', '6'],
-  'headdresses': ['8', '9', '10'],
-  'accessories': ['8', '9', '10']
+  'headdresses': ['8', '9', '10', '13'],
+  'accessories': ['11']
 };
 
 
@@ -900,17 +900,21 @@ async function createCreatedStyleBlock(data, list, index){
         Посмотреть</button>
     `;
 
-    for (const key in data) {
-      if (Object.prototype.hasOwnProperty.call(data, key)) {
-          const productId = data[key];
-          const product = await getProductById(productId);
+    const promises = Object.keys(data).map(async (key) => {
+      const productId = data[key];
+      const product = await getProductById(productId);
+      const storageImageRef = ref(storage, `images/${product.image}.png`);
+      return getDownloadURL(storageImageRef).then((imageUrl) => {
+        return { key, imageUrl, name: product.name };
+      });
+    });
 
-          const storageImageRef = ref(storage, `images/${product.image}.png`);
-          const imageUrl = await getDownloadURL(storageImageRef);
-          styleBlock.querySelector(`.${key}Image`).src = imageUrl;
-          styleBlock.querySelector(`.${key}Name`).textContent = product.name;
-      }
-    }
+    const results = await Promise.all(promises);
+
+    results.forEach(({ key, imageUrl, name }) => {
+      styleBlock.querySelector(`.${key}Image`).src = imageUrl;
+      styleBlock.querySelector(`.${key}Name`).textContent = name;
+    });
 
     styleBlock.querySelector('.lookStyleButton').addEventListener('click', async function(){
       for (const key in data) {
@@ -935,14 +939,16 @@ async function createCreatedStyleBlock(data, list, index){
   }
 }
 
-async function renderCreatedStyles(createdStyles){
+function renderCreatedStyles(createdStyles){
   const createdStylesList = document.getElementById('createdStylesList');
-  createdStylesList.innerHTML = '';
-  let index = 1; // Используйте let вместо const
+  createdStylesList.innerHTML = ``;
+
+  let index = 1;
   createdStyles.forEach((data) => {
     createCreatedStyleBlock(data, createdStylesList, index);
     index += 1;
   });
+  stylesHandler(true);
 }
 
 // Функция для фильтрации продуктов по типу и полу
@@ -965,7 +971,6 @@ async function productMatchesParameters(product, selectedParameters) {
          selectedParameters.price >= product.price;
 }
 
-// Функция для создания стиля с продуктами, включая выбранный продукт
 async function createStyleForProduct(productId, selectedParameters) {
   let selectedProducts = {
     'tops': null,
@@ -974,37 +979,38 @@ async function createStyleForProduct(productId, selectedParameters) {
     'accessories': null,
   };
 
-  // Получение данных выбранного продукта
-  const selectedProduct = await getProductById(productId);
+  // Получение данных выбранного продукта и определение его категории параллельно
+  const [selectedProduct, productTypes] = await Promise.all([
+    getProductById(productId),
+    Object.keys(selectedProducts)
+  ]);
+
   const selectedIdClothType = selectedProduct.typeId;
+  const selectedProductType = productTypes.find(type =>
+    typeMappings[type].includes(selectedIdClothType)
+  );
 
-  // Определение категории выбранного продукта
-  let selectedProductType;
-  for (const type in typeMappings) {
-    if (typeMappings[type].includes(selectedIdClothType)) {
-      selectedProductType = type;
-      break;
-    }
-  }
+  // Создание массива с типами продуктов, кроме выбранного
+  const otherProductTypes = productTypes.filter(type => type !== selectedProductType);
 
-  for (const type in selectedProducts) {
-    const products = await filterProductsByGenderAndType(selectedParameters.gender, type);
-    let matchingProducts = products.filter(product => productMatchesParameters(product, selectedParameters));
+  // Получение продуктов для каждого типа параллельно
+  const productPromises = otherProductTypes.map(type =>
+    filterProductsByGenderAndType(selectedParameters.gender, type)
+  );
 
-    // Если тип совпадает с типом выбранного продукта, убедимся, что он включен в стиль
-    if (type === selectedProductType) {
-      console.log('Совпало')
-      selectedProducts[type] = productId;
-      matchingProducts = matchingProducts.filter(product => product.id !== productId);
-      continue;
-    }
+  const productsByType = await Promise.all(productPromises);
 
-    // Если есть другие соответствующие продукты, выбираем случайный
-    if (matchingProducts.length > 0) {
-      const randomIndex = Math.floor(Math.random() * matchingProducts.length);
-      selectedProducts[type] = matchingProducts[randomIndex].id;
-    }
-  }
+  // Фильтрация и выбор продуктов
+  productsByType.forEach((products, index) => {
+    const matchingProducts = products.filter(product =>
+      productMatchesParameters(product, selectedParameters)
+    );
+    const type = otherProductTypes[index];
+    selectedProducts[type] = matchingProducts.length > 0 ? matchingProducts[Math.floor(Math.random() * matchingProducts.length)].id : null;
+  });
+
+  // Добавление выбранного продукта
+  selectedProducts[selectedProductType] = productId;
 
   console.log(`Стиль для продукта с ID ${productId}:`, selectedProducts);
   return selectedProducts;
@@ -1091,25 +1097,22 @@ const stylesHandler = (flag) => {
   }
 };
 
-const loading = document.getElementById('loading');
-
 const submitButton = document.getElementById('submitButton');
 submitButton.addEventListener('click', async function(event) {
   event.preventDefault();
-  loading.classList.remove('hidden');
   if (areAllPropertiesFilled(selectedParameters)) {
-    const createdStyles = [];
-    for (const productId of selectedParameters.products) {
-      const productsForStyle = await createStyleForProduct(productId, selectedParameters);
-      createdStyles.push(productsForStyle);
-    }
-    console.log('Созданные стили:');
-    console.log(createdStyles);
-    modal.hide();
-    await renderCreatedStyles(createdStyles);
-    stylesHandler(true);
-    loading.classList.add('hidden');
+    const stylePromises = selectedParameters.products.map(productId =>
+      createStyleForProduct(productId, selectedParameters)
+    );
 
+    const createdStyles = await Promise.all(stylePromises);
+
+    modal.hide();
+
+    const loadingScreen = document.getElementById('loadingScreen');
+    loadingScreen.classList.remove("hidden");
+    renderCreatedStyles(createdStyles);
+    loadingScreen.classList.add("hidden");
   } else {
     Swal.fire({
       icon: "error",

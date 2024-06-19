@@ -210,7 +210,14 @@ async function setProductDescription(product){
   const image = document.getElementById('image');
   name.textContent = product.name;
   description.textContent = product.description;
-  price.textContent = `${product.price} Руб.`;
+
+  const priceValue = product.price;
+  const discount = product.discount;
+  if(discount != 0){
+    price.textContent = `${Math.round(priceValue * (100 - discount) / 100)} руб.`;
+  }else{
+    price.textContent = `${priceValue} руб`;
+  }
 
   const productType = await getProductType(product.idClothType);
   type.textContent = productType;
@@ -620,7 +627,7 @@ async function createLastProductBlock(data, list, productId){
 
       discountPriceElement.textContent = `₽ ${price}`;
       discountPriceElement.classList.remove('hidden');
-      priceElement.textContent = `₽ ${price * (100 - discount) / 100}`;
+      priceElement.textContent = `₽ ${Math.round(price * (100 - discount) / 100)}`;
     }else{
       priceElement.textContent = `₽ ${price}`;
     }

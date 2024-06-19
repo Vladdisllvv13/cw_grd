@@ -237,7 +237,7 @@ async function updateUser(data){
           const user = await addDoc(usersCollection, newUser)
           const docRef = doc(db, 'users', user.id);
           const password = userPassword.value;
-          updateDoc(docRef, { password: password, purchaseId: '', idFavourites: [], idFavouriteStyles: [], idWardrobeClothes: [], idOrders: []});
+          updateDoc(docRef, { password: password, purchaseId: '', idFavourites: [], idFavouriteStyles: [], idWardrobeClothes: [], idOrders: [], idUsedPromo: []});
 
           Swal.fire({
             icon: "success",
