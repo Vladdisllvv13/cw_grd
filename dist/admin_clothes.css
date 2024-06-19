@@ -1,0 +1,165 @@
+.colorCircle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin-right: 5px;
+  border: 1px solid black;
+}
+
+.filled-heart {
+  fill: rgb(206, 25, 25);
+  stroke: black;
+}
+
+.darken-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Затемненный цвет */
+  z-index: 999; /* Устанавливаем поверх других элементов */
+  display: none; /* По умолчанию скрыт */
+}
+
+.darken-overlay.active {
+  display: block; /* Показываем затемнение при активации */
+}
+
+.swal2-container {
+  z-index: 9999;
+}
+
+.act {
+  background-color: rgb(103, 37, 129);
+  color: white;
+}
+
+.gradient {
+  background: linear-gradient(90deg, #2d044131 0%, #890cc4 100%);
+}
+
+/* Анимация для плавного появления/скрытия меню */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Применение анимации к меню */
+#modalMenu {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+#modalMenu.hidden {
+  animation: fadeOut 0.3s ease-in-out;
+}
+
+#modalMenu .bg-gray-900 {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Кнопка закрытия */
+#modalMenu .absolute {
+  top: 0;
+  right: 0;
+  margin: 10px;
+}
+
+#modalMenuContent::-webkit-scrollbar {
+  width: 0;
+}
+
+/* Скрыть скроллбар в IE 10+ */
+#modalMenuContent {
+  -ms-overflow-style: none;
+}
+
+/* Скрыть скроллбар в Firefox */
+#modalMenuContent {
+  overflow: -moz-scrollbars-none;
+}
+
+
+/* CSS для мобильных устройств */
+@media only screen and (max-width: 700px) {
+  #menuMobile {
+    display: block; /* Показать секцию на мобильных устройствах */
+  }
+}
+
+/* CSS для десктопных устройств */
+@media only screen and (min-width: 701px) {
+  #menuMobile {
+    display: none; /* Скрыть секцию на десктопных устройствах */
+  }
+}
+
+/* CSS для десктоп устройств */
+@media only screen and (max-width: 700px) {
+  #desktopMenu {
+    display: none; /* Показать секцию на мобильных устройствах */
+  }
+}
+
+/* CSS для десктопных устройств */
+@media only screen and (min-width: 701px) {
+  #desktopMenu {
+    display: block; /* Скрыть секцию на десктопных устройствах */
+  }
+}
+
+/* CSS для десктоп устройств */
+@media only screen and (max-width: 700px) {
+  #desktopFooter {
+    display: none; /* Показать секцию на мобильных устройствах */
+  }
+}
+
+/* CSS для десктопных устройств */
+@media only screen and (min-width: 701px) {
+  #desktopFooter {
+    display: block; /* Скрыть секцию на десктопных устройствах */
+  }
+}
+
+
+.draggable-element {
+  position: absolute;
+  height: 7em;
+  width: 7em;
+  transform: translate(-50%, -50%);
+  place-items: center;
+  cursor: move;
+}
+
+#con{
+  width: 400px;
+  height: 200px;
+}
+
+::selection{
+  color: #fff;
+  background: #6F36FF;
+}
+/* .wrapper{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: 450px;
+  width: 100%;
+  border-radius: 10px;
+  transform: translate(-50%, -50%);
+} */
+
+
+/*# sourceMappingURL=admin_clothes.css.map*/
