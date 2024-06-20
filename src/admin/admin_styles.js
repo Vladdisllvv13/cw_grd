@@ -505,7 +505,8 @@ async function updateStyle(data){
             timer: 1500
           });
           setTimeout(async function() {
-            const stylesSnapshot = await getDocs(stylesCollection);
+            const stylesItemsQuery = query(stylesCollection, where('idUser', '==', 'ALL'));
+            const stylesSnapshot = await getDocs(stylesItemsQuery);
             stylesData = await getStyles(stylesSnapshot);
             await renderStyles(stylesData);
             modal.hide();
@@ -528,7 +529,8 @@ async function updateStyle(data){
         });
         setTimeout(async function() {
           data = null;
-          const stylesSnapshot = await getDocs(stylesCollection);
+          const stylesItemsQuery = query(stylesCollection, where('idUser', '==', 'ALL'));
+          const stylesSnapshot = await getDocs(stylesItemsQuery);
           stylesData = await getStyles(stylesSnapshot);
           await renderStyles(stylesData);
           modal.hide();
