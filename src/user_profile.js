@@ -324,14 +324,16 @@ async function deleteStyle(styleId){
 
 // Получаем идентификатор пользователя из локального хранилища
 async function getUserId() {
-    try {
-      const userId = localStorage.getItem('userId');
-      if (userId === null) return 'ALL';
-      else return userId;
-    } catch (error) {
-        return 'ALL';
-    }
+  try {
+    const userId = localStorage.getItem('userId');
+    if (userId === null) return 'ALL';
+    else return userId;
+  } catch (error) {
+      return 'ALL';
   }
+}
+const _userId = await getUserId();
+if(_userId === 'ALL'){ window.location.href = 'index.html'; }
 
 //Получаем данные пользователя
 async function getUserData(userId) {
@@ -748,11 +750,11 @@ async function populateCartList(data, itemId){
               <h3>
                 <a href="#" class="text-gray-700 dark:text-gray-100">${productData.name}</a>
               </h3>
-              <p class="ml-4 text-sm text-red-500">₽${productData.price}</p>
+              <p class="discountPrice ml-4 text-sm text-red-500"></p>
             </div>
           </div>
           <div class="flex flex-1 items-end justify-between text-l">
-            <p class="text-red-500">-${productData.discount}%</p>
+            <p class="discount text-red-500"></p>
 
             <div class="flex">
               <button type="button" class="deleteFromCartButton font-medium text-purple-400 hover:text-purple-300">Удалить</button>
@@ -761,7 +763,21 @@ async function populateCartList(data, itemId){
         </div>
       </li>
       `;
+      const discountElement = cartModalBlock.querySelector('.discount');
+      const discountPriceElement = cartModalBlock.querySelector('.discountPrice');
       const clothImage = cartModalBlock.querySelector('.Img');
+
+      const price = productData.price;
+      const discount = productData.discount;
+      if(discount != 0){
+        discountElement.textContent = `-${discount}%`;
+        discountElement.hidden = false;
+  
+        discountPriceElement.textContent = `₽${Math.round(price * (100 - discount) / 100)}`;
+      }else{
+        discountPriceElement.textContent = `₽${price}`;
+      }
+
       const image = productData.image;
       const storageImageRef = ref(storage, `images/${image}.png`);
       const imageUrlPromise = getDownloadURL(storageImageRef);
@@ -816,7 +832,7 @@ const cartItemsCountText = document.getElementById('cartItemsCountText');
 const favouritesItemsCountText = document.getElementById('favouritesItemsCountText');
 const wardrobeItemsCountText = document.getElementById('wardrobeItemsCountText');
 
-const _userId = await getUserId();
+
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', function(){
   try {

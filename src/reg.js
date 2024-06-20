@@ -89,7 +89,8 @@ async function registerUser() {
       idOrders: [],
       idUsedPromo: [],
       purchaseId: "",
-      phone: ""
+      phone: "",
+      idRole: "2"
     };
   
     // Add the new user to the "users" collection in Firestore
@@ -273,7 +274,6 @@ async function goToProfile(){
       confirmButtonText: "Перейти",
       cancelButtonText: "Отмена",
     }).then((result) => {
-      /* Read more about isConfirmed, isDenied below */
       if (result.isConfirmed) {
         window.location.href = "auth.html"
       }

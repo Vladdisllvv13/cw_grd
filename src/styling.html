@@ -122,14 +122,7 @@
       }
 
   </style>
-  <style>
-    .gradient {
-      background: linear-gradient(90deg, #2d044131 0%, #890cc4 100%);
-    }
-    .gradientReverse {
-      background: linear-gradient(270deg, #2d044131 0%, #890cc4 100%);
-    }
-  </style>
+
     <style>
       .menu {
         display: block;
@@ -204,7 +197,7 @@
   <body class="element leading-normal tracking-normal text-gray-900 dark:text-white P-0 m-0 bg-center bg-no-repeat bg-cover rounded-lg bg-blend-multiply bg-gray-50 dark:bg-gray-900" style="font-family: 'Oswald', sans-serif; ">
 
     <!--Modal-->
-    <div class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+    <div class="modal menu opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
       <div class="modal-overlay absolute w-full h-full bg-neutral-200 dark:bg-neutral-900 opacity-95"></div>
 
       <div class="modal-container fixed w-full h-full z-50 overflow-y-auto ">
@@ -226,77 +219,64 @@
 
           <!--Body-->
           <p>Modal content can go here</p>
-                    <!-- Содержимое меню -->
-                    <div class="mt-0 border-gray-700 dark:border-gray-200 shadow-sm border-y">
-                      <p class="text-3xl px-4 py-12 mx-auto">Меню</p>
-                      <div class="grid max-w-screen-xl px-4 py-5 mx-auto text-xl text-gray-800 dark:text-gray-300 md:grid-cols-3 md:px-6">
-                          <ul class="hidden mb-4 space-y-4 md:mb-0 md:block" aria-labelledby="mega-menu-full-image-button">
-                              <li>
-                                  <a href="catalog.html" class="hover:underline hover:text-purple-600 dark:hover:text-purple-500">
-                                      Каталог
-                                  </a>
-                              </li>
-                              <li>
-                                  <a href="styling.html" class="hover:underline hover:text-purple-600 dark:hover:text-purple-500">
-                                      Подбор стиля
-                                  </a>
-                              </li>
-                              <li>
-                                  <a href="garderob.html" class="hover:underline hover:text-purple-600 dark:hover:text-purple-500">
-                                      Примерочная
-                                  </a>
-                              </li>
-                              <li>
-                                  <a href="auth.html" class="hover:underline hover:text-purple-600 dark:hover:text-blue-500">
-                                      Войти
-                                  </a>
-                              </li>
-                          </ul>
-                          <ul class="mb-4 space-y-4 md:mb-0">
-                              <li>
-                                  <a href="#" class="hover:underline hover:text-purple-600 dark:hover:text-blue-500">
-                                      Чат в Telegram
-                                  </a>
-                              </li>
-                              <li>
-                                  <a href="#" class="hover:underline hover:text-purple-600 dark:hover:text-blue-500">
-                                      Чат в VK
-                                  </a>
-                              </li>
-                              <li>
-                                  <a href="#" class="hover:underline hover:text-purple-600 dark:hover:text-blue-500">
-                                      Мы в Telegram
-                                  </a>
-                              </li>
-                              <li>
-                                  <a href="#" class="hover:underline hover:text-purple-600 dark:hover:text-blue-500">
-                                      Мы в VK
-                                  </a>
-                              </li>
-                          </ul>
-                          <a href="catalog.html" class="p-8 bg-local bg-gray-400 dark:bg-gray-500 bg-center bg-no-repeat bg-cover rounded-lg bg-blend-multiply hover:bg-blend-soft-light dark:hover:bg-blend-darken" style="background-image: url(/images/modalMenuClothes.png)">
-                              <p class="max-w-xl mb-5 font-extrabold leading-tight tracking-tight text-white">Перейдите в каталог для просмотра всей одежды.</p>
-                              <button type="button" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-center text-white border border-white rounded-lg hover:bg-white hover:text-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-700">
-                                  В каталог
-                                  <svg class="w-3 h-3 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-                                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
-                                  </svg>
-                              </button>
+            <!-- Содержимое меню -->
+            <div class="mt-0 border-gray-700 dark:border-gray-200 shadow-sm border-y">
+              <p class="text-3xl px-4 py-12 mx-auto">Меню</p>
+              <div class="grid max-w-screen-xl px-4 py-5 mx-auto text-xl text-gray-800 dark:text-gray-300 md:grid-cols-3 md:px-6">
+                  <ul class="hidden mb-4 space-y-4 md:mb-0 md:block" aria-labelledby="mega-menu-full-image-button">
+                      <li>
+                          <a href="catalog.html" class="hover:underline hover:text-purple-600 dark:hover:text-purple-500">
+                              Каталог
                           </a>
-                      </div>
-                  </div>
-          
-          <!--Footer-->
-          <div class="flex justify-between pt-2">
-            <button id="theme-toggle" type="button" class="border border-gray-200 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
-              <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-              <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
-            </button>
-            <button class="modal-close relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-200 dark:text-gray-900 rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800">
-              <span class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-gray-700 dark:bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0">
-              Закрыть
-              </span>
-              </button>
+                      </li>
+                      <li>
+                          <a href="styling.html" class="hover:underline hover:text-purple-600 dark:hover:text-purple-500">
+                              Подбор стиля
+                          </a>
+                      </li>
+                      <li>
+                          <a href="garderob.html" class="hover:underline hover:text-purple-600 dark:hover:text-purple-500">
+                              Примерочная
+                          </a>
+                      </li>
+                      <li>
+                          <a href="auth.html" class="hover:underline hover:text-purple-600 dark:hover:text-blue-500">
+                              Войти
+                          </a>
+                      </li>
+                  </ul>
+                  <ul class="mb-4 space-y-4 md:mb-0">
+                      <li>
+                          <a href="https://web.telegram.org/k/#-4275405982" class="hover:underline hover:text-purple-600 dark:hover:text-blue-500">
+                              Чат в Telegram
+                          </a>
+                      </li>
+                      <li>
+                          <a href="https://vk.com/im?sel=c117" class="hover:underline hover:text-purple-600 dark:hover:text-blue-500">
+                              Чат в VK
+                          </a>
+                      </li>
+                      <li>
+                          <a href="https://web.telegram.org/k/#-2165282680" class="hover:underline hover:text-purple-600 dark:hover:text-blue-500">
+                              Мы в Telegram
+                          </a>
+                      </li>
+                      <li>
+                          <a href="https://vk.com/club226286387" class="hover:underline hover:text-purple-600 dark:hover:text-blue-500">
+                              Мы в VK
+                          </a>
+                      </li>
+                  </ul>
+                  <a href="catalog.html" class="p-8 bg-local bg-gray-400 dark:bg-gray-500 bg-center bg-no-repeat bg-cover rounded-lg bg-blend-multiply hover:bg-blend-soft-light dark:hover:bg-blend-darken" style="background-image: url(/images/modalMenuClothes.png)">
+                      <p class="max-w-xl mb-5 font-extrabold leading-tight tracking-tight text-white">Перейдите в каталог для просмотра всей одежды.</p>
+                      <button type="button" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-center text-white border border-white rounded-lg hover:bg-white hover:text-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-700">
+                          В каталог
+                          <svg class="w-3 h-3 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
+                          </svg>
+                      </button>
+                  </a>
+              </div>
           </div>
 
         </div>
@@ -581,14 +561,16 @@
             <div class="flex flex-col lg:h-screen h-auto lg:px-8 md:px-7 px-4 lg:py-20 md:py-10 py-6 justify-between">
               <div>
                 <p id="nameText" class="lg:text-4xl text-3xl font-black leading-9 text-purple-600 object-center jusitfy-center w-full">Compton Style</p>
-                <img id="imageAside" loading="lazy" class="productImage p-4 h-94 w-80 object-cover object-center justify-center items-center transition duration-200 group-hover:scale-110" src="images/o-T.png"/>
+                <img id="imageAside" loading="lazy" class="productImage p-4 h-94 w-full object-scale-down object-cover object-center justify-center items-center transition duration-200 group-hover:scale-110" src="images/o-T.png"/>
                 <div class="flex items-center justify-between pt-16">
                   <p class="text-base leading-none text-purple-400">Тип</p>
                   <p id="typeText" class="text-base leading-none text-gray-700 dark:text-gray-200">Футболка</p>
                 </div>
-                <div class="flex items-center justify-between pt-5">
+                <div class="flex items-center justify-between pt-5 w-full">
                   <p class="text-base leading-none text-purple-400">Цвета</p>
-                  <p id="colorsText" class="text-base leading-none justify-end text-gray-700 dark:text-gray-200">Синий, Черный</p>
+                  <div class="ml-4 w-full ">
+                    <p id="colorsText" class="text-base leading-none justify-end object-end text-right text-gray-700 dark:text-gray-200">Синий, Черный</p>
+                  </div>
                 </div>
                 <div class="flex items-center justify-between pt-5">
                   <p class="text-base leading-none text-purple-400">Размеры</p>
@@ -875,10 +857,10 @@
   
           <ul class="mb-0 list-none">
             <li>
-              <a href="#!" class="text-gray-200 hover:underline">Группа ВКонтакте</a>
+              <a href="https://vk.com/club226286387" class="text-gray-200 hover:underline">Группа ВКонтакте</a>
             </li>
             <li>
-              <a href="#!" class="text-gray-200 hover:underline">Группа в Телеграм</a>
+              <a href="https://web.telegram.org/k/#-2165282680" class="text-gray-200 hover:underline">Группа в Телеграм</a>
             </li>
           </ul>
         </div>
@@ -888,10 +870,10 @@
   
           <ul class="mb-0 list-none">
             <li>
-              <a href="#!" class="text-gray-200 hover:underline">Чат в Телеграм</a>
+              <a href="https://web.telegram.org/k/#-4275405982" class="text-gray-200 hover:underline">Чат в Телеграм</a>
             </li>
             <li>
-              <a href="#!" class="text-gray-200 hover:underline">Чат ВКонтакте</a>
+              <a href="https://vk.com/im?sel=c117" class="text-gray-200 hover:underline">Чат ВКонтакте</a>
             </li>
           </ul>
         </div>
@@ -1005,12 +987,16 @@
   </script>
     <script>
       function goToFavourites(){
+        const userId = localStorage.getItem('userId');
+        if(userId === null || userId === 'ALL'){return;}
         window.location.href='favourites.html';
       }
       function goToMain(){
         window.location.href='index.html';
       }
       function goToCart(){
+        const userId = localStorage.getItem('userId');
+        if(userId === null || userId === 'ALL'){return;}
         window.location.href='cart.html';
       }
       function goToFittingRoom(){

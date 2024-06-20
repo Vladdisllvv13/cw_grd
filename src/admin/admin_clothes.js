@@ -435,7 +435,6 @@ async function createProductsTable(data, tableBody) {
     if(data.productGender == 'Мужская'){ productGenderElement.className = 'productGender w-2 h-2 rounded-full bg-indigo-400';}
     else{productGenderElement.className = 'productGender w-2 h-2 rounded-full bg-red-400';}
 
-    // Append the new row to the table body
     tableBody.appendChild(newRow);
     newRow.hidden = false;
 
@@ -467,7 +466,6 @@ async function createProductsTable(data, tableBody) {
     });
 
 
-    // Get the button element
     var button = newRow.querySelector('.dropbtn');
     // Get the dropdown content element
     var dropdownContent = newRow.querySelector('.dropdown-content');
@@ -599,7 +597,6 @@ async function updateProduct(data){
     productImage.src = "";
     productModelName.value = '';
 
-    
     await populateSelect('select_genderProduct', 'clothTypeGender');
     await populateSelect('select_typeProduct', 'clothType');
     await populateSelect('select_material', 'materials');
@@ -607,15 +604,10 @@ async function updateProduct(data){
     await populateSelect('select_size', 'sizes');
     await populateSelect('select_color', 'colors');
 
-
-
-
     productColors.addEventListener('change', async() => {
       const firstColor = await getFirstColor(productColors);
       if (model !== null) {setColor(firstColor); await showColors(productColors);};
     });
-
-
 
     if(data !== null) {
       productName.value = data.name;
@@ -650,8 +642,6 @@ async function updateProduct(data){
       await showColors(productColors);
     }
 
-
-
     const imageInput = document.getElementById('file-upload');
     imageInput.addEventListener('change', (event) => {
       const file = event.target.files[0];
@@ -665,7 +655,6 @@ async function updateProduct(data){
       productImageName.value = file.name;
     });
 
-    // const firstColor = 
     const productModel = document.getElementById('product_model');
     productModel.addEventListener('change', (event) => {
       const file = event.target.files[0];
@@ -702,24 +691,6 @@ async function updateProduct(data){
         const storageRef = ref(storage, `images/${imageFileName}.png`);
         await uploadBytes(storageRef, selectedFile);
       }
-
-      // const selectedModel = productModel.files[0];
-      // if (selectedModel) {
-      //   const formData = new FormData();
-      //   formData.append('file', selectedModel);
-
-      //   fetch('http://localhost:3001/upload', {
-      //     method: 'POST',
-      //     body: formData,
-      //   })
-      //     .then(response => response.text())
-      //     .then(data => {
-      //       console.log(data); // Выводим ответ сервера в консоль
-      //     })
-      //     .catch(error => {
-      //       console.error('Error:', error);
-      //     });
-      // }
 
       let productOrdered = 0;
 
@@ -900,94 +871,6 @@ addProductButton.addEventListener('click', function() {
 });
 
 
-
-async function applyFilters() {
-  const selectedColors = Array.from(document.querySelectorAll('input[name^="color"]:checked')).map((checkbox) => checkbox.value);
-  const selectedSizes = Array.from(document.querySelectorAll('input[name^="size"]:checked')).map((checkbox) => checkbox.value);
-  const selectedMaterials = Array.from(document.querySelectorAll('input[name^="material"]:checked')).map((checkbox) => checkbox.value);
-
-  filteredProducts = filteredProducts.filter((product) => {
-    const hasSelectedColor = product.idColors.some((color) => selectedColors.includes(color.toString()));
-    const hasSelectedSize = product.idSizes.some((size) => selectedSizes.includes(size.toString()));
-    const hasSelectedMaterial = selectedMaterials.includes(product.idMaterial.toString());
-    return hasSelectedColor && hasSelectedMaterial && hasSelectedSize;
-  });
-
-  renderClothes(filteredProducts);
-}
-
-async function createFilter(name, value, type, section){
-  const filterList = document.getElementById(section);
-  const filterBlock = document.createElement('div');
-  filterBlock.className = "flex items-center rounded";
-  filterBlock.innerHTML = `
-      <input checked id="filter-${type}-${name}" name="${type}[${name}]" value="${value}" type="checkbox" class="h-4 w-4 ml-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 rounded">
-      <label for="filter-${type}-${name}" class="ml-3 text-sm text-gray-300">${name}</label>
-    `;
-    filterList.appendChild(filterBlock);
-}
-
-//Рендерим Фильтры
-async function renderFilters() {
-  const colorsList = document.getElementById('filter-section-color');
-  colorsList.innerHTML = ''; // Очищаем лист
-  const colorsCollection = collection(db, 'colors');
-  const colorsSnapshot = await getDocs(colorsCollection);
-
-  colorsSnapshot.forEach((document) => {
-    const name = document.data().name;
-    const value = document.id;
-    createFilter(name, value, 'color', 'filter-section-color');
-  });
-
-  const materialsList = document.getElementById('filter-section-materials');
-  materialsList.innerHTML = ''; // Очищаем лист
-  const materialsCollection = collection(db, 'materials');
-  const materialsSnapshot = await getDocs(materialsCollection);
-
-  materialsSnapshot.forEach((document) => {
-    const name = document.data().name;
-    const value = document.id;
-    createFilter(name, value, 'material', 'filter-section-materials');
-  });
-
-  const sizesList = document.getElementById('filter-section-sizes');
-  sizesList.innerHTML = ''; // Очищаем лист
-  const sizesCollection = collection(db, 'sizes');
-  const sizesSnapshot = await getDocs(sizesCollection);
-
-  sizesSnapshot.forEach((document) => {
-    const name = document.data().name;
-    const value = document.id;
-    createFilter(name, value, 'size', 'filter-section-sizes');
-  });
-
-}
-
-
-async function sortItems(param){
-
-  console.log(param);
-
-  if (param === 'allSort') {
-    filteredProducts = filteredProducts.sort((a, b) => b.id - a.id);
-  } else if (param === 'nameSort') {
-    filteredProducts = filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-  } else if (param === 'dateSort') {
-    filteredProducts = filteredProducts.sort((a, b) => new Date(b.createAt) - new Date(a.createAt));
-  } else if (param === 'ordersSort') {
-    filteredProducts = filteredProducts.sort((a, b) => parseInt(b.ordered) - parseInt(a.ordered));
-  } else if (param === 'priceSort') {
-    filteredProducts = filteredProducts.sort((a, b) => parseInt(b.price) - parseInt(a.price));
-  } else if (param === 'typeSort') {
-    filteredProducts = filteredProducts.sort((a, b) => a.idClothType.localeCompare(b.idClothType));
-  }
-  
-  console.log(filteredProducts);
-  await renderProducts(filteredProducts);
-}
-
-
 async function searchProducts(text){
 
   const searchText = text.toLowerCase();
@@ -1027,13 +910,15 @@ searchButton.addEventListener('click', (event) => {
   searchProducts(searchInput.value);
 })
 
+const downloadRPButton = document.getElementById('downloadRP');
+downloadRPButton.addEventListener('click', (event) => {
+    // код для скачивания файла
+    const link = document.createElement('a');
+    link.href = 'word/Rp.docx';
+    link.download = 'Rp.docx';
+    link.click();
+})
 
-// const sortSelect = document.getElementById('sortSelect');
-// sortSelect.addEventListener('change', function(event) {
-//   const selectedValue = event.target.value;
-//   // Выполните необходимые действия при изменении значения <select>
-//   sortItems(selectedValue);
-// });
 
 const cartCollection = collection(db, 'shoppingCart');
 async function getCartItemsCount(idUser){

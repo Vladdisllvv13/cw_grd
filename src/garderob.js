@@ -16,39 +16,10 @@ const interactionManager = new InteractionManager(
   renderer.domElement
 );
 
-let tshirtCounter = 0;
-let coatCounter = 0;
-let pantsCounter = 0;
-let hatCounter = 0;
-
-let tshirtId = 0;
-let coatId = 0;
-let pantsId = 0;
-let hatId = 0;
-
 let isMale = true;
 let isFemale = false;
 
-let isClothes = true;
-let isStyles = false;
-
 let _productsData = [];
-
-// Получите идентификатор пользователя из локального хранилища
-async function getUserId(){
-  try{
-    const userId = localStorage.getItem('userId');
-    if(userId === null){
-      
-      return 'ALL'
-    }
-    else return userId;
-  }
-  catch(error){
-    return "ALL"
-  }
-}
-
 
 const firebaseConfig = {
     apiKey: "AIzaSyAgfHpqhm8BYiQTE30cusEJMC4uK8lTPis",
@@ -64,9 +35,6 @@ const db = getFirestore(firebaseApp);
 const storage = getStorage(firebaseApp);
 
 const clothesCollection = collection(db, 'clothes');
-const clothesSnapshot = await getDocs(clothesCollection);
-const clothesData = [];
-let userClothesData = [];
 
 let userStylesData = [];
 
@@ -83,7 +51,20 @@ const typeMappings = {
   'accessories': ['11']
 };
 
-
+// Получаем идентификатор пользователя из локального хранилища
+async function getUserId(){
+  try{
+    const userId = localStorage.getItem('userId');
+    if(userId === null){
+      
+      return 'ALL'
+    }
+    else return userId;
+  }
+  catch(error){
+    return "ALL"
+  }
+}
 
 const userId = await getUserId()
 if(userId === "ALL"){
@@ -104,30 +85,35 @@ try{
   }
 } catch(error){};
 
+//Получение цветов
 async function getProductColors(colorRefs) {
   const colorSnapshots = await Promise.all(colorRefs.map((colorRef) => getDoc(colorRef)));
   const colors = colorSnapshots.map((colorSnapshot) => colorSnapshot.data().hexColor).join(', ');
   return colors;
 }
 
+//Получение размеров
 async function getProductSizes(sizeRefs) {
   const sizeSnapshots = await Promise.all(sizeRefs.map((sizeRef) => getDoc(sizeRef)));
   const sizes = sizeSnapshots.map((sizeSnapshot) => sizeSnapshot.data().name).join(', ');
   return sizes;
 }
 
+//Получение типа
 async function getProductTypeName(productTypeRef) {
   const productTypeSnapshot = await getDoc(productTypeRef);
   const productTypeValue = productTypeSnapshot.data().name;
   return productTypeValue;
 }
 
+// Получение значения Мужская/Женская
 async function getProductGenderName(clothTypeRef) {
   const clothTypeSnapshot = await getDoc(clothTypeRef);
   const clothTypeValue = clothTypeSnapshot.data().name;
   return clothTypeValue;
 }
 
+// Получение данных о товаре
 async function getProducts(snapshot){
   const promises = [];
   const neededData = [];
@@ -155,8 +141,6 @@ async function getProducts(snapshot){
     promises.push(getProductGenderName(productGenderNameRef));
     promises.push(getProductSizes(sizeRefs));
     promises.push(getProductColors(colorRefs));
-
-
 
     neededData.push({
       idColors,
@@ -256,7 +240,7 @@ function setMaterial(currentColor, currentMetalness, currentRoughness, currentMa
 }
 
 
-//Загрузка модели
+//Загрузка модели манекена
 function loadMannequin(){
     const mannequinObject = scene.getObjectByName('mannequin');
     scene.remove(mannequinObject);
@@ -285,6 +269,7 @@ function loadMannequin(){
     );
 }
 
+// Функция перемещения камеры
 function moveCamera(positionX, positionY, positionZ){
   const coords = { x: camera.position.x, y: camera.position.y, z: camera.position.z  };
   new TWEEN.Tween(coords)
@@ -294,8 +279,10 @@ function moveCamera(positionX, positionY, positionZ){
       camera.position.set(coords.x, coords.y, coords.z)
     )
     .start();
+    controls.target = new THREE.Vector3(0,10,0);
 }
 
+// Обработчики кнопок "Навести камеру на.." 
 const topsCameraButton = document.getElementById(`topsCameraButton`);
 topsCameraButton.addEventListener("click", (event) => {
   event.stopPropagation();
@@ -317,6 +304,7 @@ accessoriesCameraButton.addEventListener("click", (event) => {
   moveCamera(0, 20, 12);
 });
 
+// Функция загрузки товара на сцену
 function loadCloth(modelName, type, firstColor){
   const loader = new GLTFLoader();
   loader.load(
@@ -351,6 +339,7 @@ function loadCloth(modelName, type, firstColor){
   );
 }
 
+// Назначение цвета модели
 function setColor(type, color){
   const productObject = scene.getObjectByName(type);
   productObject.material = setMaterial(color, 0, 0.9, texture);
@@ -369,15 +358,8 @@ const tick = () => {
     window.requestAnimationFrame(tick);
 };
 
-
-
-
-
-
-
-
+// Функция добавления стиля
 async function saveStyle(){
-  let styleClothes = [];
   if(userId === "ALL"){
     Swal.fire({
       icon: "error",
@@ -387,21 +369,7 @@ async function saveStyle(){
     return;
   }
   try{
-    if(tshirtCounter === 1 || coatCounter === 1 || pantsCounter === 1 || hatCounter === 1){
-      if(tshirtId != 0){
-        styleClothes.push(parseInt(tshirtId));
-      }
-      if(coatId != 0){
-        styleClothes.push(parseInt(coatId));
-      }
-      if(pantsId != 0){
-        styleClothes.push(parseInt(pantsId));
-      }
-      if(hatId != 0){
-        styleClothes.push(parseInt(hatId));
-      }
-    }
-  
+
     let styleHtml = `
       <div>Наименование</div>
       <input type="text" id="Name" class="swal2-input" placeholder="Наименование" value="" required>
@@ -442,23 +410,13 @@ async function saveStyle(){
           const newStyle = {
             name: selectedName,
             description: selectedDescription,
-            idClothes: styleClothes,
+            idClothes: Array.from(Object.values(selectedProducts)).filter(value => value !== null),
             idUser: userId,
             styleGender: gender
           };
     
           const stylesCollection = collection(db, 'styles');
           await addDoc(stylesCollection, newStyle);
-          if(userId === "1"){
-            const newStyleForAll = {
-              name: selectedName,
-              description: selectedDescription,
-              idClothes: styleClothes,
-              idUser: "ALL",
-              styleGender: gender
-            };
-            await addDoc(stylesCollection, newStyleForAll);
-          }
           getStyles();
           Swal.fire({
             icon: "success",
@@ -477,15 +435,14 @@ async function saveStyle(){
   }
 }
 
+// Обработчик добавления стиля
 const saveStyleContainer = document.getElementById('saveStyleContainer');
 const saveStyleButton = document.getElementById('saveStyleButton');
 saveStyleButton.addEventListener('click', function() {
   saveStyle();
 });
 
-
-
-//Создаем ClothData
+//Создаем блок товара
 async function createClothBlock(data, list) {
   try {
     let isFavourite = false;
@@ -511,7 +468,7 @@ async function createClothBlock(data, list) {
         <h3 class="sizesOne tracking-widest text-purple-500 text-xs font-medium title-font">${data.productSizes}</h3>
         <h1 class="headingOne text-lg text-gray-700 dark:text-gray-200 font-medium title-font">${data.productType}</h4>
         <div class="flex items-end mb-4">
-          <h5 class="headingTwo text-lg text-gray-800 dark:text-gray-100 text-gray-100 font-medium title-font">${data.name}</h5>
+          <h5 class="headingTwo text-lg text-gray-800 dark:text-gray-100 font-medium title-font">${data.name}</h5>
           <svg class="h-8 w-8 fill-current text-gray-500 hover:text-black ml-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <path id="heartIcon" d="M2 9.1371C2 14 6.01943 16.5914 8.96173 18.9109C10 19.7294 11 20.5 12 20.5C13 20.5 14 19.7294 15.0383 18.9109C17.9806 16.5914 22 14 22 9.1371C22 4.27416 16.4998 0.825464 12 5.50063C7.50016 0.825464 2 4.27416 2 9.1371Z" fill="#4f4f4f"/>
           </svg>
@@ -530,7 +487,7 @@ async function createClothBlock(data, list) {
 
     const colorsValues = data.productColors;
 
-    // Create color circles
+    // Создаем кружки цветов товара
     colorsValues.split(',').forEach((color) => {
       const colorCircle = document.createElement('div');
       colorCircle.className = 'colorCircle';
@@ -547,11 +504,8 @@ async function createClothBlock(data, list) {
         const userData = userDocSnapshot.data();
         let favouritesClothesIds = userData.idFavourites || [];
 
-        // Преобразуем идентификатор одежды в числовой формат
-        const clothIdNumber = parseInt(data.id, 10);
-
         // Проверяем, содержит ли массив уже выбранный идентификатор одежды
-        if (favouritesClothesIds.includes(clothIdNumber)) {
+        if (favouritesClothesIds.includes(data.id)) {
           isFavourite = true;
           const heartIcon = clothesBlock.querySelector('#heartIcon');
           heartIcon.classList.add('filled-heart');
@@ -593,7 +547,7 @@ async function createClothBlock(data, list) {
   }
 }
 
-// Обработчик события для кнопки "to wardrobe"
+// Функция добавления товара в избранное
 async function addToFavourites(clothId) {
   const userCollection = collection(db, 'users');
   const userId = await getUserId();
@@ -613,13 +567,10 @@ async function addToFavourites(clothId) {
       const userData = userDocSnapshot.data();
       let favouritesClothesIds = userData.idFavourites || [];
 
-      // Преобразуем идентификатор одежды в числовой формат
-      const clothIdNumber = parseInt(clothId, 10);
-
       // Проверяем, содержит ли массив уже выбранный идентификатор одежды
-      if (!favouritesClothesIds.includes(clothIdNumber)) {
+      if (!favouritesClothesIds.includes(clothId)) {
         // Добавляем идентификатор одежды к массиву
-        favouritesClothesIds.push(clothIdNumber);
+        favouritesClothesIds.push(clothId);
 
         // Обновляем данные пользователя в базе данных
         updateDoc(userDoc, { idFavourites: favouritesClothesIds }).then(() => {
@@ -641,26 +592,21 @@ async function addToFavourites(clothId) {
   });
 }
 
+// Удаление товара из избранного
 async function removeFromFavourites(clothId){
   try {
     const userCollection = collection(db, 'users');
     const userDoc = doc(userCollection, userId);
 
-    // Retrieve the user document
     const userDocSnapshot = await getDoc(userDoc);
     if (userDocSnapshot.exists()) {
       const userData = userDocSnapshot.data();
       let favouritesClothesIds = userData.idFavourites || [];
 
-      // Remove the selected cloth's ID from the wardrobeClothesIds array
       const clothIdNumber = parseInt(clothId, 10);
       favouritesClothesIds = favouritesClothesIds.filter((id) => id !== clothIdNumber);
 
-      // Update the user document with the modified wardrobeClothesIds array
       await updateDoc(userDoc, { idFavourites: favouritesClothesIds });
-
-      // Optional: You can also update the UI to reflect the deletion
-      // For example, remove the deleted cloth from the DOM
 
       Swal.fire({
         icon: "success",
@@ -676,6 +622,7 @@ async function removeFromFavourites(clothId){
   }
 }
 
+// Удаление товара из примерочной 
 async function deleteCloth(clothId){
   try {
     Swal.fire({
@@ -692,16 +639,14 @@ async function deleteCloth(clothId){
         try {
           const userDoc = doc(userCollection, userId);
 
-          // Retrieve the user document
+
           const userDocSnapshot = await getDoc(userDoc);
           if (userDocSnapshot.exists()) {
             const userData = userDocSnapshot.data();
             let wardrobeClothesIds = userData.idWardrobeClothes || [];
 
-            // Remove the selected cloth's ID from the wardrobeClothesIds array
             wardrobeClothesIds = wardrobeClothesIds.filter((id) => id !== clothId);
 
-            // Update the user document with the modified wardrobeClothesIds array
             await updateDoc(userDoc, { idWardrobeClothes: wardrobeClothesIds });
           }
   
@@ -761,7 +706,7 @@ async function removeFromScene(type){
         filledFields++;
       }
     }
-    if(filledFields < 2){
+    if(filledFields < 3){
       saveStyleContainer.style.display = 'none';
     }
     
@@ -793,8 +738,6 @@ async function addToScene(data) {
       removeFromScene(productType);
     });
 
-    saveStyleContainer.style.display = 'block';
-
     const colorsContainer = block.querySelector('.colorsContainer');
     colorsContainer.innerHTML = '';
 
@@ -820,6 +763,18 @@ async function addToScene(data) {
 
     loadCloth(data.model, productType, firstColor);
     selectedProducts[productType] = data.id;
+
+    // Подсчет заполненных полей
+    let filledFields = 0;
+    for (const key in selectedProducts) {
+      if (selectedProducts[key] !== null) {
+        filledFields++;
+      }
+    }
+    if(filledFields > 1){
+      saveStyleContainer.style.display = 'block';
+    }
+
   } catch (error) {
     console.error("Ошибка при добавлении одежды на сцену:", error);
   }
@@ -835,7 +790,8 @@ async function renderClothes(clothes) {
     createClothBlock(data, 'garderobClothesList');
   });
 }
-//Проверяем комбобоксы и поиск
+
+// Обработка товаров примерочной по мужской и женской
 async function handleSearchAndFilter(userClothesData) {
   try {
     const filteredClothesData = [];
@@ -857,84 +813,7 @@ async function handleSearchAndFilter(userClothesData) {
   }
 }
 
-async function addStyleToFavourites(styleId){
-  const userCollection = collection(db, 'users');
-  const userId = await getUserId();
-  if(userId === 'ALL'){
-    Swal.fire({
-      icon: "error",
-      title: "Упс...",
-      text: "Нельзя добавить стиль в избранное для незарегистрированного пользователя",
-    });
-    return;
-  }
-  const userDoc = doc(userCollection, userId);
-
-  // Получаем текущие данные пользователя
-  getDoc(userDoc).then((userDocSnapshot) => {
-    if (userDocSnapshot.exists()) {
-      const userData = userDocSnapshot.data();
-      let favouritesStylеsIds = userData.idFavouriteStyles || [];
-
-
-      // Проверяем, содержит ли массив уже выбранный идентификатор одежды
-      if (!favouritesStylеsIds.includes(styleId)) {
-        // Добавляем идентификатор одежды к массиву
-        favouritesStylеsIds.push(styleId);
-
-        // Обновляем данные пользователя в базе данных
-        updateDoc(userDoc, { idFavouriteStyles: favouritesStylеsIds }).then(() => {
-          Swal.fire({
-            icon: "success",
-            title: "Стиль добавлен в избранное!",
-            showConfirmButton: false,
-            timer: 1500
-          });
-          setTimeout(function() {
-          }, 2000);
-        }).catch((error) => {
-          console.error('Error updating user data:', error);
-        });
-      }
-    }
-  }).catch((error) => {
-    console.error('Error fetching user data:', error);
-  });
-}
-
-async function removeStyleFromFavourites(styleId){
-  try {
-    const userCollection = collection(db, 'users');
-    const userDoc = doc(userCollection, userId);
-
-    // Retrieve the user document
-    const userDocSnapshot = await getDoc(userDoc);
-    if (userDocSnapshot.exists()) {
-      const userData = userDocSnapshot.data();
-      let favouritesStylesIds = userData.idFavouriteStyles || [];
-
-      favouritesStylesIds = favouritesStylesIds.filter((id) => id !== styleId);
-
-      // Update the user document with the modified wardrobeClothesIds array
-      await updateDoc(userDoc, { idFavouriteStyles: favouritesStylesIds });
-
-      // Optional: You can also update the UI to reflect the deletion
-      // For example, remove the deleted cloth from the DOM
-
-      Swal.fire({
-        icon: "success",
-        title: "Стиль удален из избранного!",
-        showConfirmButton: false,
-        timer: 1500
-      });
-      setTimeout(function() {
-      }, 2000);
-    }
-  } catch (error) {
-    console.error('Error deleting style:', error);
-  }
-}
-
+// Функция удаления стиля
 async function deleteStyle(styleId){
   Swal.fire({
     title: "Вы уверены, что хотите удалить стиль?",
@@ -951,10 +830,9 @@ async function deleteStyle(styleId){
         const stylesCollection = collection(db, 'styles');
         const stylesDoc = doc(stylesCollection, styleId);
 
-        // Удаляем документ из коллекции "clothes" в Firestore
+        // Удаляем документ из коллекции "styles" в Firestore
         await deleteDoc(stylesDoc);
 
-        // Обновляем массив idWardrobeClothes каждого пользователя
         const usersCollection = collection(db, 'users');
         const usersQuerySnapshot = await getDocs(usersCollection);
 
@@ -962,10 +840,10 @@ async function deleteStyle(styleId){
           const userData = userDoc.data();
           let wardrobeStylesIds = userData.idFavouriteStyles || [];
 
-          // Удаляем идентификатор удаляемой одежды из массива idWardrobeClothes
+          // Удаляем идентификатор удаляемого стиля из массива wardrobeStylesIds
           wardrobeStylesIds = wardrobeStylesIds.filter((id) => id !== styleId);
           
-          // Обновляем документ пользователя в Firestore с измененным массивом idWardrobeClothes
+          // Обновляем документ пользователя в Firestore с измененным массивом wardrobeStylesIds
           await updateDoc(userDoc.ref, { idFavouriteStyles: wardrobeStylesIds });
         });
         getStyles();
@@ -987,8 +865,8 @@ async function deleteStyle(styleId){
   });
 }
 
+// Создание блока стилей 
 async function populateList(data, userStylesData, styleId, index) {
-  let isFavourite = false;
   const stylesLists = document.getElementById('garderobStylesList');
   stylesLists.className = "p-4 -m-4 justify-center items-center";
 
@@ -1024,8 +902,6 @@ async function populateList(data, userStylesData, styleId, index) {
     createClothBlock(data, 'garderobStylesList');
   });
 
-  
-
   if(userId !== 'ALL'){
     
     const removeStyleFromWardrobeButton = stylesBlock.querySelector('#removeStyleFromWardrobeButton');
@@ -1037,16 +913,15 @@ async function populateList(data, userStylesData, styleId, index) {
   }
 }
 
-
+// Получение стилей
 async function getStyles(){
   let i = 0;
   let userStylesItemsQuery = null;
   const stylesBody = document.getElementById('garderobStylesList');
   stylesBody.innerHTML = '';
 
-  // Запрос данных из коллекции shoppingCart для конкретного пользователя
   const stylesRef = collection(db, 'styles');
-  // Запрос данных из коллекции shoppingCart для конкретного пользователя
+  // Запрос данных из коллекции стилей для конкретного пользователя
   if(isMale){
     userStylesItemsQuery = query(stylesRef, 
       where('idUser', '==', userId),
@@ -1078,39 +953,34 @@ async function getStyles(){
 
 const garderobStylesBlock = document.getElementById('garderobStylesBlock');
 const garderobClothesBlock = document.getElementById('garderobClothesBlock');
+
 // Функция для обработки выбора одежды
 function handleClothesSelection() {
-  isClothes = true;
-  isStyles = false;
   garderobStylesBlock.hidden = true;
   garderobClothesBlock.hidden = false;
 }
 
 // Функция для обработки выбора стилей
 function handleStylesSelection() {
-  isStyles = true;
-  isClothes = false;
-  
   garderobStylesBlock.hidden = false;
   garderobClothesBlock.hidden = true;
+  getStyles();
 }
 
 // Функция для обработки выбора мужской одежды
 function handleMaleSelection() {
-  console.log('Выбрана мужская одежда');
   isMale = true;
   isFemale = false;
   handleSearchAndFilter(_productsData);
-  if(isStyles) getStyles();
+  getStyles();
 }
 
 // Функция для обработки выбора женской одежды
 function handleFemaleSelection() {
-  console.log('Выбрана женская одежда');
   isFemale = true;
   isMale = false;
   handleSearchAndFilter(_productsData);
-  if(isStyles) getStyles();
+  getStyles();
 }
 
 
@@ -1126,21 +996,11 @@ if(isFemale){
   maleButton.classList.remove('active');
 }
 
-// Добавляем обработчики событий для кнопок
+// Обработчик выбора манекена мужчины
 maleButton.addEventListener('click', function() {
-  // Добавляем класс активности к кнопке "Мужчина"
   maleButton.classList.add('active');
-  // Удаляем класс активности с кнопки "Женщина"
   femaleButton.classList.remove('active');
-  tshirtCounter = 0;
-  coatCounter = 0;
-  pantsCounter = 0;
-  hatCounter = 0;
 
-  tshirtId = 0;
-  coatId = 0;
-  pantsId = 0;
-  hatId = 0;
   // Вызываем функцию для обработки выбора мужской одежды
   handleMaleSelection();
   saveStyleContainer.style.display = 'none';
@@ -1149,10 +1009,9 @@ maleButton.addEventListener('click', function() {
   createScene();
 });
 
+// Обработчик выбора манекена женщины
 femaleButton.addEventListener('click', function() {
-  // Добавляем класс активности к кнопке "Женщина"
   femaleButton.classList.add('active');
-  // Удаляем класс активности с кнопки "Мужчина"
   maleButton.classList.remove('active');
 
   // Вызываем функцию для обработки выбора женской одежды
@@ -1168,11 +1027,11 @@ const clothesButton = document.getElementById('clothes');
 const stylesButton = document.getElementById('styles');
 
 
-// Добавляем обработчики событий для кнопок
+// Обработчик выбора блока одежды 
 clothesButton.addEventListener('click', function() {
-  // Добавляем класс активности к кнопке "Мужчина"
+  // Добавляем класс активности к кнопке "одежда"
   clothesButton.classList.add('active');
-  // Удаляем класс активности с кнопки "Женщина"
+  // Удаляем класс активности с кнопки "стили"
   stylesButton.classList.remove('active');
   console.log('выбрана одежда');
 
@@ -1183,10 +1042,11 @@ clothesButton.addEventListener('click', function() {
   createScene();
 });
 
+// Обработчик выбора блока стилей 
 stylesButton.addEventListener('click', function() {
-  // Добавляем класс активности к кнопке "Женщина"
+  // Добавляем класс активности к кнопке "стили"
   stylesButton.classList.add('active');
-  // Удаляем класс активности с кнопки "Мужчина"
+  // Удаляем класс активности с кнопки "одежда"
   clothesButton.classList.remove('active');
   console.log('выбраны стили');
 
@@ -1197,11 +1057,14 @@ stylesButton.addEventListener('click', function() {
   createScene();
 });
 
+// Функция создания сцены
 async function createScene(){
   await addFloor();
   await addLights();
   loadMannequin();
 }
+
+// Функция очищения блоков сцены с товарами
 async function clearUiBlocks(){
   const blocks = ['topsBlock', 'bottomsBlock', 'headdressesBlock', 'accessoriesBlock'];
 
@@ -1224,6 +1087,7 @@ async function clearUiBlocks(){
   }
 }
 
+// Кнопка возвращения камеры сцены 
 const returnCameraButton = document.getElementById('returnCameraButton');
 returnCameraButton.addEventListener('click', function() {
   moveCamera(0,18,15);
@@ -1234,6 +1098,23 @@ returnCameraButton.addEventListener('click', function() {
 
 const ui = document.getElementById('ui');
 
+//Получение данных товаров примерочной пользователя
+async function getProductsData(userWardrobeClothesIds) {
+  const clothesCollection = collection(db, 'clothes');
+
+  const promises = userWardrobeClothesIds.map(async (clothesId) => {
+    const docRef = doc(clothesCollection, clothesId);
+    const docSnap = await getDoc(docRef);
+    return docSnap;
+  });
+
+  const snapshots = await Promise.all(promises);
+
+  return snapshots;
+}
+
+
+// Получение количества товаров в корзине
 const cartCollection = collection(db, 'shoppingCart');
 async function getCartItemsCount(idUser){
   const cartQuery = query(cartCollection, where('idUser', '==', idUser));
@@ -1246,18 +1127,41 @@ const notEmptyCartBlock = document.getElementById('notEmptyCartBlock');
 const emptyCartBlock = document.getElementById('emptyCartBlock');
 const cartModalList = document.getElementById('cartModalList');
 
-// Функция для обработки выбора одежды
+// Функция для обработки пустой корзины
 function handleEmptyCart() {
   notEmptyCartBlock.hidden = true;
   emptyCartBlock.hidden = false;
 }
 
-// Функция для обработки выбора стилей
+// Функция для обработки непустой корзины
 function handleNotEmptyCart() {
   notEmptyCartBlock.hidden = false;
   emptyCartBlock.hidden = true;
 }
 
+// Показ уведомления
+async function showAlert(title){
+  let timerInterval;
+      Swal.fire({
+        title: title,
+        timer: 2000,
+        timerProgressBar: true,
+        didOpen: () => {
+          Swal.showLoading();
+          timerInterval = setInterval(() => {
+          }, 100);
+        },
+        willClose: () => {
+          clearInterval(timerInterval);
+        }
+      }).then((result) => {
+        if (result.dismiss === Swal.DismissReason.timer) {
+          console.log("I was closed by the timer");
+        }
+      }); 
+}
+
+// Удаление товара из корзины
 async function deleteFromCart(itemId){
   const shoppingCartRef = collection(db, 'shoppingCart');
   const itemDocRef = doc(shoppingCartRef, itemId);
@@ -1297,6 +1201,7 @@ async function deleteFromCart(itemId){
   });
 }
 
+// Создание товара корзины в меню 
 async function populateCartList(data, itemId){
   const userClothesItemsQuery = doc(clothesCollection, data.idCloth);
 
@@ -1318,11 +1223,11 @@ async function populateCartList(data, itemId){
               <h3>
                 <a href="#" class="text-gray-700 dark:text-gray-100">${productData.name}</a>
               </h3>
-              <p class="ml-4 text-sm text-red-500">₽${productData.price}</p>
+              <p class="discountPrice ml-4 text-sm text-red-500"></p>
             </div>
           </div>
           <div class="flex flex-1 items-end justify-between text-l">
-            <p class="text-red-500">-${productData.discount}%</p>
+            <p class="discount text-red-500"></p>
 
             <div class="flex">
               <button type="button" class="deleteFromCartButton font-medium text-purple-400 hover:text-purple-300">Удалить</button>
@@ -1331,7 +1236,21 @@ async function populateCartList(data, itemId){
         </div>
       </li>
       `;
+      const discountElement = cartModalBlock.querySelector('.discount');
+      const discountPriceElement = cartModalBlock.querySelector('.discountPrice');
       const clothImage = cartModalBlock.querySelector('.Img');
+
+      const price = productData.price;
+      const discount = productData.discount;
+      if(discount != 0){
+        discountElement.textContent = `-${discount}%`;
+        discountElement.hidden = false;
+  
+        discountPriceElement.textContent = `₽${Math.round(price * (100 - discount) / 100)}`;
+      }else{
+        discountPriceElement.textContent = `₽${price}`;
+      }
+
       const image = productData.image;
       const storageImageRef = ref(storage, `images/${image}.png`);
       const imageUrlPromise = getDownloadURL(storageImageRef);
@@ -1356,10 +1275,10 @@ async function populateCartList(data, itemId){
   });
 }
 
-
+// рендер корзины меню
 async function renderCartModal(){
   cartModalList.innerHTML = ``;
-  const userCartItemsQuery = query(cartCollection, where('idUser', '==', userId));
+  const userCartItemsQuery = query(cartCollection, where('idUser', '==', _userId));
   const querySnapshots = await getDocs(userCartItemsQuery);
   if(querySnapshots.empty){
     handleEmptyCart();
@@ -1376,20 +1295,7 @@ async function renderCartModal(){
   });
 }
 
-async function getProductsData(userWardrobeClothesIds) {
-  const clothesCollection = collection(db, 'clothes');
-
-  const promises = userWardrobeClothesIds.map(async (clothesId) => {
-    const docRef = doc(clothesCollection, clothesId);
-    const docSnap = await getDoc(docRef);
-    return docSnap;
-  });
-
-  const snapshots = await Promise.all(promises);
-
-  return snapshots;
-}
-
+//переход на страницу профиля
 async function goToProfile(){
   if(_userId !== 'ALL') window.location.href = "user_profile.html"
   else{
@@ -1407,6 +1313,7 @@ async function goToProfile(){
   }
 }
 
+// Выход из системы 
 async function exitUser(){
   Swal.fire({
     title: "Вы уверены, что хотите выйти?",
@@ -1441,12 +1348,12 @@ toProfileButtonMoile.addEventListener('click', goToProfile);
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', exitUser);
 
-async function main(){
-  await addFloor();
-  await addLights();
-  loadMannequin();
+let _userId = userId;
 
-  // Convert the IDs to a string format
+//Главная функция
+async function main(){
+  createScene();
+
   const userWardrobeClothesIds = userData.idWardrobeClothes.map(String);
   const userProducts = await getProductsData(userWardrobeClothesIds);
   const productsData = await getProducts(userProducts);

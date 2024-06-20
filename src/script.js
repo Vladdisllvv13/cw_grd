@@ -1,6 +1,42 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, getDoc, doc, updateDoc, addDoc, query, where, size, deleteDoc } from 'firebase/firestore';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import KeenSlider from 'keen-slider'
+
+//Создание объекта KeenSlider для секции с товарами
+const keenSlider = new KeenSlider(
+  '#keen-slider',
+  {
+    loop: true,
+    slides: {
+      origin: 'center',
+      perView: 1.25,
+      spacing: 16,
+    },
+    breakpoints: {
+      '(min-width: 1024px)': {
+        slides: {
+          origin: 'auto',
+          perView: 1.5,
+          spacing: 32,
+        },
+      },
+    },
+  },
+  []
+)
+
+const keenSliderPrevious = document.getElementById('keen-slider-previous')
+const keenSliderNext = document.getElementById('keen-slider-next')
+
+const keenSliderPreviousDesktop = document.getElementById('keen-slider-previous-desktop')
+const keenSliderNextDesktop = document.getElementById('keen-slider-next-desktop')
+
+keenSliderPrevious.addEventListener('click', () => keenSlider.prev())
+keenSliderNext.addEventListener('click', () => keenSlider.next())
+
+keenSliderPreviousDesktop.addEventListener('click', () => keenSlider.prev())
+keenSliderNextDesktop.addEventListener('click', () => keenSlider.next())
 
 const firebaseConfig = {
   apiKey: "AIzaSyAgfHpqhm8BYiQTE30cusEJMC4uK8lTPis",
@@ -20,7 +56,7 @@ const cartCollection = collection(db, 'shoppingCart');
 const clothesCollection = collection(db, 'clothes');
 let _userId;
 
-// Получите идентификатор пользователя из локального хранилища
+// Получение идентификатора пользователя
 async function getUserId() {
   try {
     const userId = localStorage.getItem('userId');
@@ -31,25 +67,28 @@ async function getUserId() {
   }
 }
 
-
+//Получение размеров товара из базы данных
 async function getProductSizes(sizeRefs) {
   const sizeSnapshots = await Promise.all(sizeRefs.map((sizeRef) => getDoc(sizeRef)));
   const sizes = sizeSnapshots.map((sizeSnapshot) => sizeSnapshot.data().name).join(', ');
   return sizes;
 }
 
+//Получение типа товара из базы данных
 async function getProductTypeName(productTypeRef) {
   const productTypeSnapshot = await getDoc(productTypeRef);
   const productTypeValue = productTypeSnapshot.data().name;
   return productTypeValue;
 }
 
-async function getProductGenderName(clothTypeRef) {
-  const clothTypeSnapshot = await getDoc(clothTypeRef);
-  const clothTypeValue = clothTypeSnapshot.data().name;
-  return clothTypeValue;
+//Получение значения мужская/женская
+async function getProductGenderName(genderTypeRef) {
+  const genderTypeSnapshot = await getDoc(genderTypeRef);
+  const genderTypeValue = genderTypeSnapshot.data().name;
+  return genderTypeValue;
 }
 
+//Получение необходимых полей товара из snapshot
 async function getProducts(snapshot){
   const promises = [];
   const neededData = [];
@@ -105,7 +144,7 @@ async function getProducts(snapshot){
   return neededData;
 }
 
-//Создаем ClothData
+//Создаем блок товара по скидке
 async function createSaleProductBlock(data, clothesList) {
   try {
     if(!data.isActivated){return;}
@@ -147,7 +186,6 @@ async function createSaleProductBlock(data, clothesList) {
     const discountPriceElement = clothesBlock.querySelector('.discountPrice');
     const isNewElement = clothesBlock.querySelector('.isNew');
     const imageElement = clothesBlock.querySelector('.productImage'); 
-
 
     const imagePath = data.image;
     const storageImageRef = ref(storage, `images/${imagePath}.png`);
@@ -192,7 +230,7 @@ async function createSaleProductBlock(data, clothesList) {
   }
 }
 
-//Рендерим все найденное
+//Рендер необходимых продуктов
 async function renderSaleProducts(products) {
 
   const saleProductsList = document.querySelector('.saleProductsList');
@@ -202,31 +240,38 @@ async function renderSaleProducts(products) {
   });
 }
 
+//Получение товаров по скидке
+async function filterProducts(){
+  const productsCollection = collection(db, 'clothes');
+  const q = query(productsCollection, where('discount', '>', 0));
+  const productsSnapshot = await getDocs(q);
+  return productsSnapshot;
+}
 
-
+//Получение количества товаров в корзине
 async function getCartItemsCount(idUser){
   const cartQuery = query(cartCollection, where('idUser', '==', idUser));
   const querySnapshot = await getDocs(cartQuery);
   return querySnapshot.size;
 }
 
-
 const notEmptyCartBlock = document.getElementById('notEmptyCartBlock');
 const emptyCartBlock = document.getElementById('emptyCartBlock');
 const cartModalList = document.getElementById('cartModalList');
 
-// Функция для обработки выбора одежды
+// Функция для обработки показа пустой корзины
 function handleEmptyCart() {
   notEmptyCartBlock.hidden = true;
   emptyCartBlock.hidden = false;
 }
 
-// Функция для обработки выбора стилей
+// Функция для обработки непустой корзины
 function handleNotEmptyCart() {
   notEmptyCartBlock.hidden = false;
   emptyCartBlock.hidden = true;
 }
 
+//Функция для показа уведомления пользователю
 async function showAlert(title){
   let timerInterval;
       Swal.fire({
@@ -249,6 +294,7 @@ async function showAlert(title){
       }); 
 }
 
+//Удаление товара из списка корзины меню
 async function deleteFromCart(itemId){
   const shoppingCartRef = collection(db, 'shoppingCart');
   const itemDocRef = doc(shoppingCartRef, itemId);
@@ -288,6 +334,7 @@ async function deleteFromCart(itemId){
   });
 }
 
+//Добавление товара в список корзины меню
 async function populateCartList(data, itemId){
   const userClothesItemsQuery = doc(clothesCollection, data.idCloth);
 
@@ -309,11 +356,11 @@ async function populateCartList(data, itemId){
               <h3>
                 <a href="#" class="text-gray-700 dark:text-gray-100">${productData.name}</a>
               </h3>
-              <p class="ml-4 text-sm text-red-500">₽${productData.price}</p>
+              <p class="discountPrice ml-4 text-sm text-red-500"></p>
             </div>
           </div>
           <div class="flex flex-1 items-end justify-between text-l">
-            <p class="text-red-500">-${productData.discount}%</p>
+            <p class="discount text-red-500"></p>
 
             <div class="flex">
               <button type="button" class="deleteFromCartButton font-medium text-purple-400 hover:text-purple-300">Удалить</button>
@@ -322,7 +369,21 @@ async function populateCartList(data, itemId){
         </div>
       </li>
       `;
+      const discountElement = cartModalBlock.querySelector('.discount');
+      const discountPriceElement = cartModalBlock.querySelector('.discountPrice');
       const clothImage = cartModalBlock.querySelector('.Img');
+
+      const price = productData.price;
+      const discount = productData.discount;
+      if(discount != 0){
+        discountElement.textContent = `-${discount}%`;
+        discountElement.hidden = false;
+  
+        discountPriceElement.textContent = `₽${Math.round(price * (100 - discount) / 100)}`;
+      }else{
+        discountPriceElement.textContent = `₽${price}`;
+      }
+
       const image = productData.image;
       const storageImageRef = ref(storage, `images/${image}.png`);
       const imageUrlPromise = getDownloadURL(storageImageRef);
@@ -347,7 +408,7 @@ async function populateCartList(data, itemId){
   });
 }
 
-
+//Функция, котороая создает элементы корзины товара
 async function renderCartModal(){
   cartModalList.innerHTML = ``;
   const userCartItemsQuery = query(cartCollection, where('idUser', '==', _userId));
@@ -367,13 +428,6 @@ async function renderCartModal(){
   });
 }
 
-async function filterProducts(){
-  const productsCollection = collection(db, 'clothes');
-  const q = query(productsCollection, where('discount', '>', 0));
-  const productsSnapshot = await getDocs(q);
-  return productsSnapshot;
-}
-
 async function goToProfile(){
   if(_userId !== 'ALL') window.location.href = "user_profile.html"
   else{
@@ -383,7 +437,6 @@ async function goToProfile(){
       confirmButtonText: "Перейти",
       cancelButtonText: "Отмена",
     }).then((result) => {
-      /* Read more about isConfirmed, isDenied below */
       if (result.isConfirmed) {
         window.location.href = "auth.html"
       }
@@ -424,7 +477,6 @@ toProfileButtonMoile.addEventListener('click', goToProfile);
 
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', exitUser);
-
 
 async function main() {
   const userId = await getUserId();

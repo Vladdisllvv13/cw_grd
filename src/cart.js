@@ -39,12 +39,13 @@ const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const storage = getStorage(firebaseApp);
 const clothesCollection = collection(db, 'clothes');
+const cartCollection = collection(db, 'shoppingCart');
 const usersCollection = collection(db, 'users');
 
 
 const userId = await getUserId()
   
-
+// Показ уведомления 
 async function showAlert(title){
   let timerInterval;
       Swal.fire({
@@ -66,23 +67,24 @@ async function showAlert(title){
         }
       }); 
 }
+
 const emptyCartSection = document.getElementById('emptyCartSection');
 const tableSection = document.getElementById('tableSection');
 
+// Показ пустой корзины 
 async function showEmptyCartSection(){
-  
-
   tableSection.hidden = true;
   emptyCartSection.hidden = false;
 }
 
+//Получение данных корзины с последующим показом
 async function getCart(){
   totalSum = 0;
   itemsCount = 0;
   const cartList = document.querySelector('#cartList');
   cartList.innerHTML = '';
 
-  // Запрос данных из коллекции shoppingCart для конкретного пользователя
+  // Запрос данных из коллекции shoppingCart
   const shoppingCartRef = collection(db, 'shoppingCart');
   // Запрос данных из коллекции shoppingCart для конкретного пользователя
   const userCartItemsQuery = query(shoppingCartRef, where('idUser', '==', userId));
@@ -103,9 +105,7 @@ async function getCart(){
   });
 }
 
-
-
-
+//Создание элемента товара корзины
 async function populateList(data, itemId) {
 
     const clothesRef = collection(db, 'clothes');
@@ -214,6 +214,7 @@ async function populateList(data, itemId) {
     });
 }
 
+//Удаление товара из корзины
 async function deleteFromCart(itemId){
   const shoppingCartRef = collection(db, 'shoppingCart');
   const itemDocRef = doc(shoppingCartRef, itemId);
@@ -257,6 +258,7 @@ async function deleteFromCart(itemId){
   });
 }
 
+//Функция использования промокода
 async function usePromo(value) {
   try {
     totalSum = 0;
@@ -297,6 +299,7 @@ async function usePromo(value) {
   }
 }
 
+// Обработчик нажатия кнопки Использовать промокод 
 const usePromoButton = document.getElementById('usePromoButton');
 const promoName = document.getElementById('promoName');
 usePromoButton.addEventListener('click', async(event) =>{
@@ -304,6 +307,7 @@ usePromoButton.addEventListener('click', async(event) =>{
   await usePromo(promoName.value);
 });
 
+// Запись данных товара в заказ
 async function writeItemToPurchase(data) {
   try {
     const { idColor: color, idSize: size, idCloth: idCloth, quantity: quantity } = data;
@@ -313,6 +317,7 @@ async function writeItemToPurchase(data) {
   }
 }
 
+// Добавление нового объекта добавления заказа
 async function checkoutPurchase() {
   try {
     const userId = await getUserId();
@@ -369,18 +374,20 @@ async function checkoutPurchase() {
 }
 
 
-
+// Обработчик для кнопки В каталог
 const toCatalogButton = document.getElementById('toCatalogButton');
 toCatalogButton.addEventListener('click', function() {
     window.location = 'catalog.html';
 });
 
+// Обработчик для кнопки Заказать
 const checkoutButton = document.getElementById('checkoutButton');
 checkoutButton.addEventListener('click', function() {
     if(itemsCount != 0) checkoutPurchase()
 });
 
-const cartCollection = collection(db, 'shoppingCart');
+
+// Получаем количество элементов из корзины
 async function getCartItemsCount(idUser){
   const cartQuery = query(cartCollection, where('idUser', '==', idUser));
   const querySnapshot = await getDocs(cartQuery);
@@ -392,19 +399,59 @@ const notEmptyCartBlock = document.getElementById('notEmptyCartBlock');
 const emptyCartBlock = document.getElementById('emptyCartBlock');
 const cartModalList = document.getElementById('cartModalList');
 
-// Функция для обработки выбора одежды
+// Если Корзина пустая
 function handleEmptyCart() {
   notEmptyCartBlock.hidden = true;
   emptyCartBlock.hidden = false;
 }
 
-// Функция для обработки выбора стилей
+// Если Корзина непустая
 function handleNotEmptyCart() {
   notEmptyCartBlock.hidden = false;
   emptyCartBlock.hidden = true;
 }
 
+// Удаление товара из корзины 
+async function deleteFromCartModal(itemId){
+  const shoppingCartRef = collection(db, 'shoppingCart');
+  const itemDocRef = doc(shoppingCartRef, itemId);
 
+  Swal.fire({
+    title: "Вы уверены, что хотите удалить товар из корзины?",
+    text: "Чтобы вернуть товар, необходимо добавить его в каталоге",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    cancelButtonText: "Отмена",
+    confirmButtonText: "Да, удалить!"
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        await deleteDoc(itemDocRef);
+        console.log('Документ успешно удален из корзины');
+        showAlert("Удалено!");
+        await getCartItemsCount(_userId).then(count => {
+          const countElement = document.getElementById('cartCounter');
+          countElement.textContent = count;
+          if(count > 0) {
+            renderCartModal();
+            handleNotEmptyCart()
+          }
+          else{
+            handleEmptyCart();
+          }
+        })
+
+      } catch (error) {
+        console.log('Ошибка при удалении документа:', error);
+        showAlert("Не удалось удалить товар из корзины!");
+      }
+    }
+  });
+}
+
+// Создаем товары корзины 
 async function populateCartList(data, itemId){
   const userClothesItemsQuery = doc(clothesCollection, data.idCloth);
 
@@ -426,11 +473,11 @@ async function populateCartList(data, itemId){
               <h3>
                 <a href="#" class="text-gray-700 dark:text-gray-100">${productData.name}</a>
               </h3>
-              <p class="ml-4 text-sm text-red-500">₽${productData.price}</p>
+              <p class="discountPrice ml-4 text-sm text-red-500"></p>
             </div>
           </div>
           <div class="flex flex-1 items-end justify-between text-l">
-            <p class="text-red-500">-${productData.discount}%</p>
+            <p class="discount text-red-500"></p>
 
             <div class="flex">
               <button type="button" class="deleteFromCartButton font-medium text-purple-400 hover:text-purple-300">Удалить</button>
@@ -439,7 +486,21 @@ async function populateCartList(data, itemId){
         </div>
       </li>
       `;
+      const discountElement = cartModalBlock.querySelector('.discount');
+      const discountPriceElement = cartModalBlock.querySelector('.discountPrice');
       const clothImage = cartModalBlock.querySelector('.Img');
+
+      const price = productData.price;
+      const discount = productData.discount;
+      if(discount != 0){
+        discountElement.textContent = `-${discount}%`;
+        discountElement.hidden = false;
+  
+        discountPriceElement.textContent = `₽${Math.round(price * (100 - discount) / 100)}`;
+      }else{
+        discountPriceElement.textContent = `₽${price}`;
+      }
+
       const image = productData.image;
       const storageImageRef = ref(storage, `images/${image}.png`);
       const imageUrlPromise = getDownloadURL(storageImageRef);
@@ -451,7 +512,7 @@ async function populateCartList(data, itemId){
     
       const deleteFromCartButton = cartModalBlock.querySelector('.deleteFromCartButton');
       deleteFromCartButton.addEventListener('click', () => {
-        deleteFromCart(itemId);
+        deleteFromCartModal(itemId);
       });
 
       cartModalList.appendChild(cartModalBlock);
@@ -464,7 +525,7 @@ async function populateCartList(data, itemId){
   });
 }
 
-
+// Рендер корзины в меню
 async function renderCartModal(){
   cartModalList.innerHTML = ``;
   const userCartItemsQuery = query(cartCollection, where('idUser', '==', _userId));
@@ -484,6 +545,7 @@ async function renderCartModal(){
   });
 }
 
+// Переход на страницу профиля
 async function goToProfile(){
   if(_userId !== 'ALL') window.location.href = "user_profile.html"
   else{
@@ -501,6 +563,7 @@ async function goToProfile(){
   }
 }
 
+// Выход из системы
 async function exitUser(){
   Swal.fire({
     title: "Вы уверены, что хотите выйти?",
@@ -535,8 +598,10 @@ toProfileButtonMoile.addEventListener('click', goToProfile);
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', exitUser);
 
+//Главная функция
 async function main(){
   const userId = await getUserId();
+  if(userId === 'ALL'){ window.location.href = 'index.html'; }
   _userId = userId;
   await getCart();
   const loadingScreen = document.getElementById('loadingScreen');

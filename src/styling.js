@@ -1,28 +1,100 @@
 import './catalog.css';
 import { Modal } from 'flowbite'
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDocs, getDoc, doc, updateDoc, addDoc, query, where, orderBy } from 'firebase/firestore';
+import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import './catalog.css';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAgfHpqhm8BYiQTE30cusEJMC4uK8lTPis",
+  authDomain: "virt-shop.firebaseapp.com",
+  databaseURL: "https://virt-shop-default-rtdb.firebaseio.com",
+  projectId: "virt-shop",
+  storageBucket: "virt-shop.appspot.com",
+  messagingSenderId: "72126462317",
+  appId: "1:72126462317:web:1eb5af9da767369cf84264",
+  measurementId: "G-ZS4NNVK5K5"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+const storage = getStorage(firebaseApp);
+
+const userCollection = collection(db, 'users');
+const clothesCollection = collection(db, 'clothes');
+const cartCollection = collection(db, 'shoppingCart');
+const clothesSnapshot = await getDocs(clothesCollection);
+let productsData = [];
+
+let selectedProducts = {
+  'tops': null,
+  'bottoms': null,
+  'headdresses': null,
+  'accessories': null,
+};
+const typeMappings = {
+  'tops': ['1', '3', '5', '7'],
+  'bottoms': ['2', '4', '6'],
+  'headdresses': ['8', '9', '10', '13'],
+  'accessories': ['11']
+};
+
+// Получите идентификатор пользователя из локального хранилища
+async function getUserId(){
+  try{
+    const userId = localStorage.getItem('userId');
+    if(userId === null){
+      return 'ALL'
+    }else return userId;
+  }
+  catch(error){
+    return "ALL"
+  }
+}
+
+let filteredProducts = [];
+
+let tops = [];
+let bottoms = [];
+let accessories = [];
+let headdresses = [];
+
+let selectedParameters = {
+  gender: 'Мужская',
+  colors: [],
+  sizes: [],
+  price: 10000,
+  products: []
+}
+
+const userId = await getUserId();
 
 const $modalElement = document.getElementById('crud-modal');
 const modal = new Modal($modalElement);
 
+// Получение всех фотографий и контента 
 const dragItems = document.querySelectorAll('.product-image');
 const dragContent = document.getElementById('dragContent');
 
+// Настройка элементов
 let currentDragItem = null;
 let initialMouseOffset = { x: 0, y: 0 };
 let initialDragItemPosition = { x: 0, y: 0 };
 let dragOrder = Array.from(dragItems);
 
+// Назначение событий перемещения фотографиям
 dragItems.forEach(item => {
-  item.addEventListener('mousedown', startDrag);
+  item.addEventListener('mousedown', startDrag); // Добавляем обработчик mousedown
   item.addEventListener('touchstart', startDrag); // Добавляем обработчик touchstart
-  item.addEventListener('mouseup', stopDrag);
+  item.addEventListener('mouseup', stopDrag); //Добавляем обработчик mouseup
   item.addEventListener('touchend', stopDrag); // Добавляем обработчик touchend
 });
 
+// 
 function startDrag(event) {
-  event.preventDefault(); // Предотвращаем стандартное поведение браузера для события touchstart
+  event.preventDefault(); // Предотвращаем стандартное поведение браузера
   if (event.type === 'touchstart') {
-    event = event.changedTouches[0]; // Получаем первое касание для touchstart
+    event = event.changedTouches[0]; // Получаем первое касание для touchstart и mouseup
   }
   currentDragItem = event.target.closest('.product-image');
   initialMouseOffset = {
@@ -44,8 +116,9 @@ function startDrag(event) {
   document.addEventListener('touchmove', drag); // Добавляем обработчик touchmove
 }
 
+// Функция перемещения
 function drag(event) {
-  event.preventDefault(); // Предотвращаем стандартное поведение браузера для события touchmove
+  event.preventDefault(); // Предотвращаем стандартное поведение браузера
   if (!currentDragItem) return;
   if (event.type === 'touchmove') {
     event = event.changedTouches[0]; // Получаем первое касание для touchmove
@@ -61,6 +134,7 @@ function drag(event) {
   currentDragItem.style.top = newTop + 'px';
 }
 
+// ОстановКа перемещения 
 function stopDrag() {
   if (!currentDragItem) return;
   // Обновление порядка элементов
@@ -98,6 +172,7 @@ let currentProductType = null;
 let currentImage = null;
 let currentGender = null;
 
+//Функция убрать товар
 function hideProduct(productType) {
   if (currentImage) {
     currentImage.hidden = true;
@@ -105,10 +180,6 @@ function hideProduct(productType) {
     asideHandler(false);
   }
 }
-
-let increaseCount = 0;
-let reduceCount = 0;
-const maxCount = 8;
 
 let resizeCount = 0;
 
@@ -139,6 +210,7 @@ reduceButton.addEventListener('click', () => handleImageSizeChange('reduce'));
 
 hideButton.addEventListener('click', () => hideProduct(currentProductType));
 
+// Функция показа подробной информации о товаре при двойном щелчке 
 async function showProductInterface(product, imageUrl, productTypeName){
   const name = document.getElementById('nameText');
   const type = document.getElementById('typeText');
@@ -168,6 +240,7 @@ async function showProductInterface(product, imageUrl, productTypeName){
 
 }
 
+// Функция доавления товара в конструктор стилей
 function addProductToCounstructor(product, imageUrl){
   const type = product.typeId;
   const gender = product.productGender;
@@ -207,145 +280,35 @@ function addProductToCounstructor(product, imageUrl){
   });
 }
 
-
-
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, getDoc, doc, updateDoc, addDoc, query, where, orderBy } from 'firebase/firestore';
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
-import './catalog.css';
-
-// Получите идентификатор пользователя из локального хранилища
-async function getUserId(){
-  try{
-    const userId = localStorage.getItem('userId');
-    if(userId === null){
-      return 'ALL'
-    }else return userId;
-  }
-  catch(error){
-    return "ALL"
-  }
-}
-
-let filteredProducts = [];
-
-let tops = [];
-let bottoms = [];
-let accessories = [];
-let headdresses = [];
-
-let selectedParameters = {
-  gender: 'Мужская',
-  colors: [],
-  sizes: [],
-  price: 10000,
-  products: []
-}
-
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAgfHpqhm8BYiQTE30cusEJMC4uK8lTPis",
-  authDomain: "virt-shop.firebaseapp.com",
-  databaseURL: "https://virt-shop-default-rtdb.firebaseio.com",
-  projectId: "virt-shop",
-  storageBucket: "virt-shop.appspot.com",
-  messagingSenderId: "72126462317",
-  appId: "1:72126462317:web:1eb5af9da767369cf84264",
-  measurementId: "G-ZS4NNVK5K5"
-};
-
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
-const storage = getStorage(firebaseApp);
-
-const userCollection = collection(db, 'users');
-const clothesCollection = collection(db, 'clothes');
-const cartCollection = collection(db, 'shoppingCart');
-const clothesSnapshot = await getDocs(clothesCollection);
-let productsData = [];
-
-let selectedProducts = {
-  'tops': null,
-  'bottoms': null,
-  'headdresses': null,
-  'accessories': null,
-};
-const typeMappings = {
-  'tops': ['1', '3', '5', '7'],
-  'bottoms': ['2', '4', '6'],
-  'headdresses': ['8', '9', '10', '13'],
-  'accessories': ['11']
-};
-
-
-const userId = await getUserId();
-
-var themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-var themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
-
-// Change the icons inside the button based on previous settings
-if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    themeToggleLightIcon.classList.remove('hidden');
-} else {
-    themeToggleDarkIcon.classList.remove('hidden');
-}
-
-var themeToggleBtn = document.getElementById('theme-toggle');
-
-themeToggleBtn.addEventListener('click', function() {
-
-    // toggle icons inside button
-    themeToggleDarkIcon.classList.toggle('hidden');
-    themeToggleLightIcon.classList.toggle('hidden');
-
-    // if set via local storage previously
-    if (localStorage.getItem('color-theme')) {
-        if (localStorage.getItem('color-theme') === 'light') {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('color-theme', 'dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('color-theme', 'light');
-        }
-
-    // if NOT set via local storage previously
-    } else {
-        if (document.documentElement.classList.contains('dark')) {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('color-theme', 'light');
-        } else {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('color-theme', 'dark');
-        }
-    }
-    
-});
-
-
+// Получение размеров
 async function getProductSizes(sizeRefs) {
   const sizeSnapshots = await Promise.all(sizeRefs.map((sizeRef) => getDoc(sizeRef)));
   const sizes = sizeSnapshots.map((sizeSnapshot) => sizeSnapshot.data().name).join(', ');
   return sizes;
 }
 
+// получение цветов
 async function getProductColors(colorRefs) {
   const colorSnapshots = await Promise.all(colorRefs.map((colorRef) => getDoc(colorRef)));
   const colors = colorSnapshots.map((colorSnapshot) => colorSnapshot.data().name).join(', ');
   return colors;
 }
 
+// получение типа
 async function getProductTypeName(productTypeRef) {
   const productTypeSnapshot = await getDoc(productTypeRef);
   const productTypeValue = productTypeSnapshot.data().name;
   return productTypeValue;
 }
 
+// Получение значения мужская/женская
 async function getProductGenderName(clothTypeRef) {
   const clothTypeSnapshot = await getDoc(clothTypeRef);
   const clothTypeValue = clothTypeSnapshot.data().name;
   return clothTypeValue;
 }
 
+// Получение данных товара
 async function getProducts(snapshot){
   const promises = [];
   const neededData = [];
@@ -406,10 +369,9 @@ async function getProducts(snapshot){
 }
 
 
-//Создаем ClothData
+//Создаем блоки товаров на странице
 async function createClothBlock(data, list) {
   try {
-    let isFavourite = false;
     const clothesList = document.getElementById(list);
     const clothesBlock = document.createElement('div');
     clothesBlock.className = "flex flex-shrink-0 justify-center items-center";
@@ -487,24 +449,6 @@ async function createClothBlock(data, list) {
       isNewElement.hidden = false;
     };
 
-      
-    if(userId !== 'ALL'){
-      const userDoc = doc(userCollection, userId);
-
-    // Получаем текущие данные пользователя
-    getDoc(userDoc).then((userDocSnapshot) => {
-      if (userDocSnapshot.exists()) {
-        const userData = userDocSnapshot.data();
-        let favouritesClothesIds = userData.idFavourites || [];
-
-        // Проверяем, содержит ли массив уже выбранный идентификатор одежды
-        if (favouritesClothesIds.includes(data.id)) {
-          isFavourite = true;
-        }
-
-      }})
-    }
-
     clothesBlock.querySelector('.clothContainer').addEventListener('click', () => {
       addProductToCounstructor(data, imageUrl);
     });
@@ -515,11 +459,28 @@ async function createClothBlock(data, list) {
   }
 }
 
+// Обработчик кнопки добавления стиля
 const saveStyleButton = document.getElementById('saveStyleButton');
 saveStyleButton.addEventListener('click', function(){
-  addStyle(selectedProducts);
+  // Проверка, что есть хотя бы два элемента не null
+  let nonNullCount = 0;
+  for (let key in selectedProducts) {
+    if (selectedProducts[key] !== null) {
+      nonNullCount++;
+      if (nonNullCount >= 2) {
+        break;
+      }
+    }
+  }
+
+  if (nonNullCount >= 2) {
+    addStyle(selectedProducts);
+  } else {
+    showAlert("Чтобы создать стиль, необходимо минимум 2 элемента!")
+  }
 });
 
+// Функция добавления стиля
 async function addStyle(selectedProducts){
 
   if(userId === "ALL"){
@@ -531,7 +492,6 @@ async function addStyle(selectedProducts){
     return;
   }
   
-
   try{
     let styleHtml = `
       <div>Наименование</div>
@@ -540,7 +500,6 @@ async function addStyle(selectedProducts){
       <input type="text" id="Description" class="swal2-input" placeholder="Описание" value="" required>
     `;
   
-    // Отображение модального окна с формой для ввода данных и предварительно заполненными значениями
     Swal.fire({
       title: 'Добавление стиля',
       html: styleHtml,
@@ -604,7 +563,7 @@ async function addStyle(selectedProducts){
 }
 
 
-//Рендерим все найденное
+//Рендерим товары
 async function renderClothes(products, list) {
   const productList = document.getElementById(list);
   productList.innerHTML = '';
@@ -614,9 +573,8 @@ async function renderClothes(products, list) {
 }
 
 
-
+// Фильтрация товаров по типу
 async function filterProducts(type){
-
   const types = typeMappings[type] || [];
 
   const productsCollection = collection(db, 'clothes');
@@ -626,7 +584,7 @@ async function filterProducts(type){
   return querySnapshot;
 }
 
-//Создаем ClothData
+//Создаем блок товара в модаьном окне
 async function createSurveyProductBlock(data, list) {
   try {
     const clothesBlock = document.createElement('div');
@@ -634,7 +592,7 @@ async function createSurveyProductBlock(data, list) {
     clothesBlock.className = "w-48 bg-white shadow-md rounded-xl duration-500 hover:shadow-xl";
     clothesBlock.innerHTML = `
       <div class="productContainer">
-        <img alt="Product" class="productImage h-42 w-36 mt-1 w-full object-cover rounded-t-xl object-cover object-center justify-center items-center transition duration-200" />
+        <img alt="Product" class="productImage h-48 mt-1 w-full rounded-t-xl object-center object-scale-down justify-center items-center transition duration-200" />
         <div class="px-4 py-3 w-48">
             <span class="text-gray-400 mr-3 uppercase text-xs">${data.productType}</span>
             <p class="text-lg font-bold text-black truncate block capitalize">${data.name}</p>
@@ -674,18 +632,19 @@ async function createSurveyProductBlock(data, list) {
   }
 }
 
-//Рендерим все найденное
-async function renderSurveyProducts(products, count = 9) {
+//Рендерим товары в модальном окне
+async function renderSurveyProducts(products, count = 6) {
   console.log(selectedParameters)
   const productList = document.getElementById('offeredProductsList');
   productList.innerHTML = '';
-  const randomProducts = products.sort(() => 0.5 - Math.random()).slice(0, count);
+  const neededProducts = products.sort(() => 0.5 - Math.random()).slice(0, count);
 
-  randomProducts.forEach((data) => {
+  neededProducts.forEach((data) => {
     createSurveyProductBlock(data, productList);
   });
 }
 
+// Показ фильтров цветов или размеров
 async function createSurveySelectFilter(name, id, type, filterList){
   const filterBlock = document.createElement('div');
   filterBlock.className = "px-2 w-1/4";
@@ -702,6 +661,7 @@ async function createSurveySelectFilter(name, id, type, filterList){
   filterList.appendChild(filterBlock);
 }
 
+// Создание фильтров цветов или размеров
 async function showSurveySelect(selectCollection){
   const list = document.getElementById(`${selectCollection}Select`);
   list.innerHTML = '';
@@ -715,6 +675,7 @@ async function showSurveySelect(selectCollection){
   });
 }
 
+// Функция применеия фильтров
 async function applyFilters() {
   const products = productsData;
 
@@ -742,108 +703,6 @@ async function applyFilters() {
   }
 }
 
-
-async function getCartItemsCount(idUser){
-  const cartQuery = query(cartCollection, where('idUser', '==', idUser));
-  const querySnapshot = await getDocs(cartQuery);
-  return querySnapshot.size;
-}
-
-const notEmptyCartBlock = document.getElementById('notEmptyCartBlock');
-const emptyCartBlock = document.getElementById('emptyCartBlock');
-const cartModalList = document.getElementById('cartModalList');
-
-// Функция для обработки выбора одежды
-function handleEmptyCart() {
-  notEmptyCartBlock.hidden = true;
-  emptyCartBlock.hidden = false;
-}
-
-// Функция для обработки выбора стилей
-function handleNotEmptyCart() {
-  notEmptyCartBlock.hidden = false;
-  emptyCartBlock.hidden = true;
-}
-
-
-async function populateCartList(data, itemId){
-  const userClothesItemsQuery = doc(clothesCollection, data.idCloth);
-
-  // Получение данных из запроса
-  getDoc(userClothesItemsQuery).then((doc) => {
-      if (doc.exists()) {
-      // Доступ к данным документа и вывод информации о каждом элементе одежды
-      const productData = doc.data();
-      const cartModalBlock = document.createElement('section');
-      cartModalBlock.innerHTML = `
-      <li class="flex items-center mb-2 rounded-md border border-2 border-gray-600 gradientReverse p-4 justify-center bg-opacity-75">
-        <div class="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
-          <img src="" alt="image" class="Img h-full w-full object-cover object-center">
-        </div>
-
-        <div class="ml-4 flex flex-1 flex-col">
-          <div>
-            <div class="flex justify-between text-base font-medium text-gray-100">
-              <h3>
-                <a href="#" class="text-gray-700 dark:text-gray-100">${productData.name}</a>
-              </h3>
-              <p class="ml-4 text-sm text-red-500">₽${productData.price}</p>
-            </div>
-          </div>
-          <div class="flex flex-1 items-end justify-between text-l">
-            <p class="text-red-500">-${productData.discount}%</p>
-
-            <div class="flex">
-              <button type="button" class="deleteFromCartButton font-medium text-purple-400 hover:text-purple-300">Удалить</button>
-            </div>
-          </div>
-        </div>
-      </li>
-      `;
-      const clothImage = cartModalBlock.querySelector('.Img');
-      const image = productData.image;
-      const storageImageRef = ref(storage, `images/${image}.png`);
-      const imageUrlPromise = getDownloadURL(storageImageRef);
-      imageUrlPromise.then((imageUrl) => {
-      clothImage.src = imageUrl;
-      }).catch((error) => {
-      console.log('Error retrieving image URL:', error);
-      });
-    
-      const deleteFromCartButton = cartModalBlock.querySelector('.deleteFromCartButton');
-      deleteFromCartButton.addEventListener('click', () => {
-        deleteFromCart(itemId);
-      });
-
-      cartModalList.appendChild(cartModalBlock);
-
-    } else {
-    console.log('Документ не найден!');
-    }
-  }).catch((error) => {
-      console.log('Ошибка:', error);
-  });
-}
-
-
-async function renderCartModal(){
-  cartModalList.innerHTML = ``;
-  const userCartItemsQuery = query(cartCollection, where('idUser', '==', userId));
-  const querySnapshots = await getDocs(userCartItemsQuery);
-  if(querySnapshots.empty){
-    handleEmptyCart();
-    return;
-  } 
-  // Получение данных из запроса
-  getDocs(userCartItemsQuery).then((querySnapshot) => {
-    querySnapshot.forEach((doc) => {
-      // Доступ к данным каждого документа и вывод информации о каждом элементе одежды
-      const data = doc.data();
-      populateCartList(data, doc.id)
-    });
-    
-  });
-}
 const genderSelect = document.getElementById('gender');
 genderSelect.addEventListener('change', function() {
   const selectedValue = this.value;
@@ -858,6 +717,7 @@ priceSelect.addEventListener('change', function() {
   applyFilters();
 });
 
+// Создание блока стиля
 async function createCreatedStyleBlock(data, list, index){
   try {
     console.log(`Создаем ${index} стиль..`);
@@ -939,6 +799,7 @@ async function createCreatedStyleBlock(data, list, index){
   }
 }
 
+// Рендер созданных стилей
 function renderCreatedStyles(createdStyles){
   const createdStylesList = document.getElementById('createdStylesList');
   createdStylesList.innerHTML = ``;
@@ -971,6 +832,7 @@ async function productMatchesParameters(product, selectedParameters) {
          selectedParameters.price >= product.price;
 }
 
+// Фуекция созданиия стиля для товара
 async function createStyleForProduct(productId, selectedParameters) {
   let selectedProducts = {
     'tops': null,
@@ -1062,11 +924,11 @@ async function getProductById(productId) {
     };
   } else {
     console.log('Нет такого продукта!');
-    return null; // Или другое подходящее действие
+    return null;
   }
 }
 
-
+//Функция проверки заполнения полей
 function areAllPropertiesFilled(selectedParameters) {
   return (
     selectedParameters.gender !== '' &&
@@ -1077,26 +939,7 @@ function areAllPropertiesFilled(selectedParameters) {
   );
 }
 
-let style = document.getElementById("style");
-let stylediv = document.getElementById("style-div");
-const stylesHandler = (flag) => {
-  if (flag) {
-    // Изменяем классы для анимации появления сайдбара
-    style.classList.remove("translate-x-[-100%]");
-    style.classList.add("translate-x-0");
-    stylediv.classList.remove("hidden");
-    flag = false;
-  } else {
-    // Изменяем классы для анимации скрытия сайдбара
-    style.classList.remove("translate-x-0");
-    style.classList.add("translate-x-m100");
-    setTimeout(function () {
-      stylediv.classList.add("hidden");
-    }, 700); // Время анимации установлено в 700ms, как в вашем CSS
-    flag = true;
-  }
-};
-
+// Обработчик для кнопки Подобрать стиль
 const submitButton = document.getElementById('submitButton');
 submitButton.addEventListener('click', async function(event) {
   event.preventDefault();
@@ -1122,18 +965,215 @@ submitButton.addEventListener('click', async function(event) {
   }
 });
 
+// Обработчик кнопки открытия модального окна
 const openStyleCreatorButton = document.getElementById('openStyleCreatorButton');
 openStyleCreatorButton.addEventListener('click', async function(event) {
   event.preventDefault();
   modal.show();
 });
 
+// обработчик кнопки открытия модального окна в блоке стилей
 const openStyleCreatorSideBarButton = document.getElementById('openStyleCreatorSideBarButton');
 openStyleCreatorSideBarButton.addEventListener('click', async function(event) {
   event.preventDefault();
   stylesHandler(false);
   modal.show();
 });
+
+let style = document.getElementById("style");
+let stylediv = document.getElementById("style-div");
+const stylesHandler = (flag) => {
+  if (flag) {
+    // Изменяем классы для анимации появления сайдбара
+    style.classList.remove("translate-x-[-100%]");
+    style.classList.add("translate-x-0");
+    stylediv.classList.remove("hidden");
+    flag = false;
+  } else {
+    // Изменяем классы для анимации скрытия сайдбара
+    style.classList.remove("translate-x-0");
+    style.classList.add("translate-x-m100");
+    setTimeout(function () {
+      stylediv.classList.add("hidden");
+    }, 700);
+    flag = true;
+  }
+};
+
+// Функции шапки
+async function getCartItemsCount(idUser){
+  const cartQuery = query(cartCollection, where('idUser', '==', idUser));
+  const querySnapshot = await getDocs(cartQuery);
+  return querySnapshot.size;
+}
+
+const notEmptyCartBlock = document.getElementById('notEmptyCartBlock');
+const emptyCartBlock = document.getElementById('emptyCartBlock');
+const cartModalList = document.getElementById('cartModalList');
+
+function handleEmptyCart() {
+  notEmptyCartBlock.hidden = true;
+  emptyCartBlock.hidden = false;
+}
+
+function handleNotEmptyCart() {
+  notEmptyCartBlock.hidden = false;
+  emptyCartBlock.hidden = true;
+}
+
+async function showAlert(title){
+  let timerInterval;
+      Swal.fire({
+        title: title,
+        timer: 2000,
+        timerProgressBar: true,
+        didOpen: () => {
+          Swal.showLoading();
+          timerInterval = setInterval(() => {
+          }, 100);
+        },
+        willClose: () => {
+          clearInterval(timerInterval);
+        }
+      }).then((result) => {
+        /* Read more about handling dismissals below */
+        if (result.dismiss === Swal.DismissReason.timer) {
+          console.log("I was closed by the timer");
+        }
+      }); 
+}
+
+async function deleteFromCart(itemId){
+  const shoppingCartRef = collection(db, 'shoppingCart');
+  const itemDocRef = doc(shoppingCartRef, itemId);
+
+  Swal.fire({
+    title: "Вы уверены, что хотите удалить товар из корзины?",
+    text: "Чтобы вернуть товар, необходимо добавить его в каталоге",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    cancelButtonText: "Отмена",
+    confirmButtonText: "Да, удалить!"
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        await deleteDoc(itemDocRef);
+        console.log('Документ успешно удален из корзины');
+        showAlert("Удалено!");
+        await getCartItemsCount(_userId).then(count => {
+          const countElement = document.getElementById('cartCounter');
+          countElement.textContent = count;
+          if(count > 0) {
+            renderCartModal();
+            handleNotEmptyCart()
+          }
+          else{
+            handleEmptyCart();
+          }
+        })
+
+      } catch (error) {
+        console.log('Ошибка при удалении документа:', error);
+        showAlert("Не удалось удалить товар из корзины!");
+      }
+    }
+  });
+}
+
+async function populateCartList(data, itemId){
+  const userClothesItemsQuery = doc(clothesCollection, data.idCloth);
+
+  // Получение данных из запроса
+  getDoc(userClothesItemsQuery).then((doc) => {
+      if (doc.exists()) {
+      // Доступ к данным документа и вывод информации о каждом элементе одежды
+      const productData = doc.data();
+      const cartModalBlock = document.createElement('section');
+      cartModalBlock.innerHTML = `
+      <li class="flex items-center mb-2 rounded-md border border-2 border-gray-600 gradientReverse p-4 justify-center bg-opacity-75">
+        <div class="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
+          <img src="" alt="image" class="Img h-full w-full object-cover object-center">
+        </div>
+
+        <div class="ml-4 flex flex-1 flex-col">
+          <div>
+            <div class="flex justify-between text-base font-medium text-gray-100">
+              <h3>
+                <a href="#" class="text-gray-700 dark:text-gray-100">${productData.name}</a>
+              </h3>
+              <p class="discountPrice ml-4 text-sm text-red-500"></p>
+            </div>
+          </div>
+          <div class="flex flex-1 items-end justify-between text-l">
+            <p class="discount text-red-500"></p>
+
+            <div class="flex">
+              <button type="button" class="deleteFromCartButton font-medium text-purple-400 hover:text-purple-300">Удалить</button>
+            </div>
+          </div>
+        </div>
+      </li>
+      `;
+      const discountElement = cartModalBlock.querySelector('.discount');
+      const discountPriceElement = cartModalBlock.querySelector('.discountPrice');
+      const clothImage = cartModalBlock.querySelector('.Img');
+
+      const price = productData.price;
+      const discount = productData.discount;
+      if(discount != 0){
+        discountElement.textContent = `-${discount}%`;
+        discountElement.hidden = false;
+  
+        discountPriceElement.textContent = `₽${Math.round(price * (100 - discount) / 100)}`;
+      }else{
+        discountPriceElement.textContent = `₽${price}`;
+      }
+
+      const image = productData.image;
+      const storageImageRef = ref(storage, `images/${image}.png`);
+      const imageUrlPromise = getDownloadURL(storageImageRef);
+      imageUrlPromise.then((imageUrl) => {
+      clothImage.src = imageUrl;
+      }).catch((error) => {
+      console.log('Error retrieving image URL:', error);
+      });
+    
+      const deleteFromCartButton = cartModalBlock.querySelector('.deleteFromCartButton');
+      deleteFromCartButton.addEventListener('click', () => {
+        deleteFromCart(itemId);
+      });
+
+      cartModalList.appendChild(cartModalBlock);
+
+    } else {
+    console.log('Документ не найден!');
+    }
+  }).catch((error) => {
+      console.log('Ошибка:', error);
+  });
+}
+
+
+async function renderCartModal(){
+  cartModalList.innerHTML = ``;
+  const userCartItemsQuery = query(cartCollection, where('idUser', '==', _userId));
+  const querySnapshots = await getDocs(userCartItemsQuery);
+  if(querySnapshots.empty){
+    handleEmptyCart();
+    return;
+  } 
+  // Получение данных из запроса
+  getDocs(userCartItemsQuery).then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      // Доступ к данным каждого документа и вывод информации о каждом элементе одежды
+      const data = doc.data();
+      populateCartList(data, doc.id)
+    });
+    
+  });
+}
 
 async function goToProfile(){
   if(_userId !== 'ALL') window.location.href = "user_profile.html"
@@ -1187,16 +1227,23 @@ const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', exitUser);
 
 const _userId = await getUserId();
+
+// Главная функция
 async function main(){
 
   productsData = await getProducts(clothesSnapshot);
 
+  // Создание фильтров
   showSurveySelect('colors');
   showSurveySelect('sizes');
+
+  // Завершение загрузки
   const loadingScreen = document.getElementById('loadingScreen');
   loadingScreen.classList.add("hidden");
+  // Открытие модального окна
   modal.show();
 
+  // Получение товаров по категориям
   const topsSnapshot = await filterProducts('tops');
   tops = await getProducts(topsSnapshot);
   const bottomsSnapshot = await filterProducts('bottoms');
@@ -1205,6 +1252,8 @@ async function main(){
   headdresses = await getProducts(headdressesSnapshot);
   const accessoriesSnapshot = await filterProducts('accessories');
   accessories = await getProducts(accessoriesSnapshot);
+
+  // Рендеринг товаров
   renderClothes(tops, 'topsList');
   renderClothes(bottoms, 'bottomsList');
   renderClothes(headdresses, 'headdressesList');

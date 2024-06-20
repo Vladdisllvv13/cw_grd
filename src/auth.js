@@ -23,7 +23,7 @@ const clothesCollection = collection(db, 'clothes');
 const registerButton = document.getElementById('authUserButton');
 registerButton.addEventListener('click', authUser);
 
-// Получите идентификатор пользователя из локального хранилища
+// Получаем идентификатор пользователя из локального хранилища
 async function getUserId() {
   try {
     const userId = localStorage.getItem('userId');
@@ -34,8 +34,9 @@ async function getUserId() {
   }
 }
 
+//Функция для выполнения входа в систему
 async function authUser() {
-  // Retrieve the values from the input fields
+  // Берем значения из полей
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
 
@@ -51,12 +52,12 @@ async function authUser() {
       text: "Неправильный электронный адрес или пароль!",
     });
   } else {
-    // Пользователь найден, выполните вход в систему
     
-      // Получите идентификатор пользователя из первого документа в результате запроса
+    // Получаем идентификатор пользователя из первого документа в результате запроса
     const userId = querySnapshot.docs[0].id;
+    const userData = querySnapshot.docs[0].data();
 
-    // Сохраните идентификатор пользователя в локальном хранилище
+    // Сохраняем идентификатор пользователя в локальном хранилище
     localStorage.setItem('userId', userId);
 
     let timerInterval;
@@ -72,42 +73,44 @@ async function authUser() {
       willClose: () => {
         clearInterval(timerInterval);
       }
-    }).then((result) => {
-      /* Read more about handling dismissals below */
-      if (result.dismiss === Swal.DismissReason.timer) {
-        console.log("I was closed by the timer");
+    }).then(() => {
+      switch(userData.idRole){
+        case '1':
+          window.location.href = "admin.html";
+          break;
+        case '2':
+          window.location.href = "index.html";
+          break;
+        default:
+          alert( "Не удалось распознать роль пользователя" );
       }
-      if(userId === '1'){
-        window.location.href = "admin.html";
-      }
-      else window.location.href = "index.html";
     });  
   }
 }
 
+// Получаем количество элементов из корзины
 async function getCartItemsCount(idUser){
   const cartQuery = query(cartCollection, where('idUser', '==', idUser));
   const querySnapshot = await getDocs(cartQuery);
   return querySnapshot.size;
 }
 
-
 const notEmptyCartBlock = document.getElementById('notEmptyCartBlock');
 const emptyCartBlock = document.getElementById('emptyCartBlock');
 const cartModalList = document.getElementById('cartModalList');
 
-// Функция для обработки выбора одежды
+// Если Корзина пустая
 function handleEmptyCart() {
   notEmptyCartBlock.hidden = true;
   emptyCartBlock.hidden = false;
 }
-
-// Функция для обработки выбора стилей
+// Если Корзина непустая
 function handleNotEmptyCart() {
   notEmptyCartBlock.hidden = false;
   emptyCartBlock.hidden = true;
 }
 
+// Показываем уведомление
 async function showAlert(title){
   let timerInterval;
       Swal.fire({
@@ -129,7 +132,8 @@ async function showAlert(title){
         }
       }); 
 }
-  
+
+// Удаление товара из корзины в меню
 async function deleteFromCart(itemId){
   const shoppingCartRef = collection(db, 'shoppingCart');
   const itemDocRef = doc(shoppingCartRef, itemId);
@@ -169,6 +173,7 @@ async function deleteFromCart(itemId){
   });
 }
 
+// Создаем товары корзины 
 async function populateCartList(data, itemId){
   const userClothesItemsQuery = doc(clothesCollection, data.idCloth);
 
@@ -190,11 +195,11 @@ async function populateCartList(data, itemId){
               <h3>
                 <a href="#" class="text-gray-700 dark:text-gray-100">${productData.name}</a>
               </h3>
-              <p class="ml-4 text-sm text-red-500">₽${productData.price}</p>
+              <p class="discountPrice ml-4 text-sm text-red-500"></p>
             </div>
           </div>
           <div class="flex flex-1 items-end justify-between text-l">
-            <p class="text-red-500">-${productData.discount}%</p>
+            <p class="discount text-red-500"></p>
 
             <div class="flex">
               <button type="button" class="deleteFromCartButton font-medium text-purple-400 hover:text-purple-300">Удалить</button>
@@ -203,7 +208,21 @@ async function populateCartList(data, itemId){
         </div>
       </li>
       `;
+      const discountElement = cartModalBlock.querySelector('.discount');
+      const discountPriceElement = cartModalBlock.querySelector('.discountPrice');
       const clothImage = cartModalBlock.querySelector('.Img');
+
+      const price = productData.price;
+      const discount = productData.discount;
+      if(discount != 0){
+        discountElement.textContent = `-${discount}%`;
+        discountElement.hidden = false;
+  
+        discountPriceElement.textContent = `₽${Math.round(price * (100 - discount) / 100)}`;
+      }else{
+        discountPriceElement.textContent = `₽${price}`;
+      }
+
       const image = productData.image;
       const storageImageRef = ref(storage, `images/${image}.png`);
       const imageUrlPromise = getDownloadURL(storageImageRef);
@@ -227,8 +246,8 @@ async function populateCartList(data, itemId){
       console.log('Ошибка:', error);
   });
 }
-  
-  
+
+// Рендер корзины в меню
 async function renderCartModal(){
   cartModalList.innerHTML = ``;
   const userCartItemsQuery = query(cartCollection, where('idUser', '==', _userId));
@@ -248,6 +267,7 @@ async function renderCartModal(){
   });
 }
 
+// Переход а страницу профиля
 async function goToProfile(){
   if(_userId !== 'ALL') window.location.href = "user_profile.html"
   else{
@@ -265,6 +285,7 @@ async function goToProfile(){
   }
 }
 
+// Выход из системы
 async function exitUser(){
   Swal.fire({
     title: "Вы уверены, что хотите выйти?",
@@ -299,8 +320,9 @@ toProfileButtonMoile.addEventListener('click', goToProfile);
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', exitUser);
 
-let _userId = "ALL";
+let _userId;
 
+//Главная функция
 async function main(){
   const userId = await getUserId();
   _userId = userId;

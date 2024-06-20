@@ -3,7 +3,7 @@ import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, addDoc, quer
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import './catalog.css';
 
-// Получите идентификатор пользователя из локального хранилища
+// Получаем идентификатор пользователя из локального хранилища
 async function getUserId(){
   try{
     const userId = localStorage.getItem('userId');
@@ -39,25 +39,30 @@ let userClothesData = [];
 // Получаем данные о пользователе
 const userCollection = collection(db, 'users');
 const userId = await getUserId()
+if(userId === 'ALL'){window.location.href = 'index.html';}
 
+//Полчуение размера
 async function getProductSizes(sizeRefs) {
   const sizeSnapshots = await Promise.all(sizeRefs.map((sizeRef) => getDoc(sizeRef)));
   const sizes = sizeSnapshots.map((sizeSnapshot) => sizeSnapshot.data().name).join(', ');
   return sizes;
 }
 
+//Полчуение типа товара
 async function getProductTypeName(productTypeRef) {
   const productTypeSnapshot = await getDoc(productTypeRef);
   const productTypeValue = productTypeSnapshot.data().name;
   return productTypeValue;
 }
 
+// Получение инф-ции о мужской/женской 
 async function getProductGenderName(clothTypeRef) {
   const clothTypeSnapshot = await getDoc(clothTypeRef);
   const clothTypeValue = clothTypeSnapshot.data().name;
   return clothTypeValue;
 }
 
+// Получение товаров
 async function getProducts(snapshot){
   const promises = [];
   const neededData = [];
@@ -127,7 +132,7 @@ async function getUserFavorites(clothesData){
 
 
 
-//Создаем ClothData
+//Создаем блок товара
 async function createClothBlock(data, list) {
   try {
     let isFavourite;
@@ -141,7 +146,7 @@ async function createClothBlock(data, list) {
             <div class="bg-white bg-opacity-50 absolute top-0 right-0 px-2 py-1"><p class="text-gray-800 dark:text-white fonr-normal text-base leading-4">${data.productSizes}</p></div>
             <div class="relative group">
                 <div class="flex justify-center items-center opacity-0 bg-gradient-to-t from-gray-200 dark:from-gray-800 via-gray-300 dark:via-gray-800 to-opacity-30 group-hover:opacity-50 absolute top-0 left-0 h-full w-full"></div>
-                <img class="productImage w-full group-hover:scale-105"/>
+                <img class="productImage h-64 object-center object-scale-down w-full group-hover:scale-105"/>
                 <div class="absolute bottom-0 p-8 w-full opacity-0 group-hover:opacity-100">
                     <button class="productButton font-medium text-base leading-4 text-gray-800 bg-white py-3 w-full">Подробнее</button>
                     <button class="removeFromFavouritesButton bg-transparent font-medium text-base leading-4 border-2 border-white py-3 w-full mt-2 text-white">Удалить из избранного</button>
@@ -225,61 +230,12 @@ async function createClothBlock(data, list) {
   }
 }
 
-// Обработчик события для кнопки "to wardrobe"
-async function addToFavourites(clothId) {
-  const userCollection = collection(db, 'users');
-  const userId = await getUserId();
-  console.log(userId);
-  if(userId === 'ALL'){
-    Swal.fire({
-      icon: "error",
-      title: "Упс...",
-      text: "Нельзя добавить одежду в избранное для незарегистрированного пользователя!",
-    });
-    return;
-  }
-  const userDoc = doc(userCollection, userId);
-
-  // Получаем текущие данные пользователя
-  getDoc(userDoc).then((userDocSnapshot) => {
-    if (userDocSnapshot.exists()) {
-      const userData = userDocSnapshot.data();
-      let favouritesClothesIds = userData.idFavourites || [];
-
-      // Преобразуем идентификатор одежды в числовой формат
-      const clothIdNumber = clothId;
-
-      // Проверяем, содержит ли массив уже выбранный идентификатор одежды
-      if (!favouritesClothesIds.includes(clothIdNumber)) {
-        // Добавляем идентификатор одежды к массиву
-        favouritesClothesIds.push(clothIdNumber);
-
-        // Обновляем данные пользователя в базе данных
-        updateDoc(userDoc, { idFavourites: favouritesClothesIds }).then(() => {
-          Swal.fire({
-            icon: "success",
-            title: "Одежда добавлена в избранное!",
-            showConfirmButton: false,
-            timer: 1500
-          });
-          setTimeout(function() {
-          }, 2000);
-        }).catch((error) => {
-          console.error('Error updating user data:', error);
-        });
-      }
-    }
-  }).catch((error) => {
-    console.error('Error fetching user data:', error);
-  });
-}
-
+// Удаление товара из избранного
 async function removeFromFavourites(clothId){
   try {
     const userCollection = collection(db, 'users');
     const userDoc = doc(userCollection, userId);
 
-    // Retrieve the user document
     const userDocSnapshot = await getDoc(userDoc);
     if (userDocSnapshot.exists()) {
       const userData = userDocSnapshot.data();
@@ -288,11 +244,7 @@ async function removeFromFavourites(clothId){
 
       favouritesClothesIds = favouritesClothesIds.filter((id) => id !== clothId);
 
-      // Update the user document with the modified wardrobeClothesIds array
       await updateDoc(userDoc, { idFavourites: favouritesClothesIds });
-
-      // Optional: You can also update the UI to reflect the deletion
-      // For example, remove the deleted cloth from the DOM
 
       Swal.fire({
         icon: "success",
@@ -331,7 +283,7 @@ async function renderClothes(clothes) {
 }
 
 
-
+// Получение количества товаров
 async function getCartItemsCount(idUser){
   const cartQuery = query(cartCollection, where('idUser', '==', idUser));
   const querySnapshot = await getDocs(cartQuery);
@@ -343,19 +295,19 @@ const notEmptyCartBlock = document.getElementById('notEmptyCartBlock');
 const emptyCartBlock = document.getElementById('emptyCartBlock');
 const cartModalList = document.getElementById('cartModalList');
 
-// Функция для обработки выбора одежды
+// Функция для обработки пустой корзины
 function handleEmptyCart() {
   notEmptyCartBlock.hidden = true;
   emptyCartBlock.hidden = false;
 }
 
-// Функция для обработки выбора стилей
+// Функция для обработки непустой корзины
 function handleNotEmptyCart() {
   notEmptyCartBlock.hidden = false;
   emptyCartBlock.hidden = true;
 }
 
-
+//Создание элемента корзины меню
 async function populateCartList(data, itemId){
   const userClothesItemsQuery = doc(clothesCollection, data.idCloth);
 
@@ -415,7 +367,7 @@ async function populateCartList(data, itemId){
   });
 }
 
-
+//рендер еорзины меню
 async function renderCartModal(){
   cartModalList.innerHTML = ``;
   const userCartItemsQuery = query(cartCollection, where('idUser', '==', userId));
@@ -435,20 +387,7 @@ async function renderCartModal(){
   });
 }
 
-async function getProductsData(userWardrobeClothesIds) {
-  const clothesCollection = collection(db, 'clothes');
-
-  const promises = userWardrobeClothesIds.map(async (clothesId) => {
-    const docRef = doc(clothesCollection, clothesId);
-    const docSnap = await getDoc(docRef);
-    return docSnap;
-  });
-
-  const snapshots = await Promise.all(promises);
-
-  return snapshots;
-}
-
+//Переход на страницу входа
 async function goToProfile(){
   if(userId !== 'ALL') window.location.href = "user_profile.html"
   else{
@@ -466,6 +405,7 @@ async function goToProfile(){
   }
 }
 
+// Выход из профиля
 async function exitUser(){
   Swal.fire({
     title: "Вы уверены, что хотите выйти?",
@@ -500,6 +440,7 @@ toProfileButtonMoile.addEventListener('click', goToProfile);
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', exitUser);
 
+// Главная функция
 async function main(){
     
   if(userId !== 'ALL'){

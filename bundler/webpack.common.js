@@ -20,7 +20,6 @@ module.exports = {
         admin_orders: path.resolve(__dirname, '../src/admin/admin_orders.js'),
         admin_news: path.resolve(__dirname, '../src/admin/admin_news.js'),
         user_profile: path.resolve(__dirname, '../src/user_profile.js'),
-        checkout: path.resolve(__dirname, '../src/checkout.js'),
         styling: path.resolve(__dirname, '../src/styling.js'),
         purchase: path.resolve(__dirname, '../src/purchase.js'),
       },
@@ -130,12 +129,6 @@ module.exports = {
             minify: true,
             chunks: ['user_profile'],
             filename: 'user_profile.html',
-          }),
-          new HtmlWebpackPlugin({
-            template: path.resolve(__dirname, '../src/checkout.html'),
-            minify: true,
-            chunks: ['checkout'],
-            filename: 'checkout.html',
           }),
           new HtmlWebpackPlugin({
             template: path.resolve(__dirname, '../src/styling.html'),

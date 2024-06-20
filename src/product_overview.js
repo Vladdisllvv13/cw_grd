@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import './catalog.css';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAgfHpqhm8BYiQTE30cusEJMC4uK8lTPis",
@@ -37,49 +38,6 @@ async function getUserId() {
       return 'ALL';
   }
 }
-
-
-
-var themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-var themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
-
-// Change the icons inside the button based on previous settings
-if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    themeToggleLightIcon.classList.remove('hidden');
-} else {
-    themeToggleDarkIcon.classList.remove('hidden');
-}
-
-var themeToggleBtn = document.getElementById('theme-toggle');
-
-themeToggleBtn.addEventListener('click', function() {
-
-    // toggle icons inside button
-    themeToggleDarkIcon.classList.toggle('hidden');
-    themeToggleLightIcon.classList.toggle('hidden');
-
-    // if set via local storage previously
-    if (localStorage.getItem('color-theme')) {
-        if (localStorage.getItem('color-theme') === 'light') {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('color-theme', 'dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('color-theme', 'light');
-        }
-
-    // if NOT set via local storage previously
-    } else {
-        if (document.documentElement.classList.contains('dark')) {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('color-theme', 'light');
-        } else {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('color-theme', 'dark');
-        }
-    }
-    
-});
 
 // Получите идентификатор пользователя из локального хранилища
 async function getProductId() {
@@ -123,7 +81,7 @@ async function showColorCircles(product){
       const colorCircle = document.createElement('div');
       colorCircle.innerHTML = 
       `
-      <button data-ui="checked active" data-tooltip-target="tooltip-bottom" data-tooltip-placement="bottom" type="button" class="bg-gray-200 dark:bg-gray-800 colorCircle p-2.5 border border-2 border-gray-800 dark:border-gray-200 rounded-full transition-all duration-300 hover:border-purple-500 focus-within:border-purple-500">
+      <button data-ui="checked active" data-tooltip-target="tooltip-bottom" data-tooltip-placement="bottom" type="button" class="bg-gray-200 dark:bg-gray-800 colorValueCircle p-2.5 border border-2 border-gray-800 dark:border-gray-200 rounded-full transition-all duration-300 hover:border-purple-500 focus-within:border-purple-500">
         <svg width="20" height="20" viewBox="0 0 40 40" fill="none"
           xmlns="http://www.w3.org/2000/svg">
           <circle cx="20" cy="20" r="20" fill="${hexColor}"/>
@@ -135,10 +93,10 @@ async function showColorCircles(product){
       </div>    
       `;
 
-      const colorButton = colorCircle.querySelector('.colorCircle');
+      const colorButton = colorCircle.querySelector('.colorValueCircle');
       colorButton.addEventListener('click', () => {
         // Снимаем выделение со всех кнопок
-        const allColorButtons = colorsList.querySelectorAll('.colorCircle');
+        const allColorButtons = colorsList.querySelectorAll('.colorValueCircle');
         allColorButtons.forEach(btn => btn.classList.remove('border-purple-500'));
 
         // Выделяем выбранную кнопку
@@ -233,6 +191,12 @@ async function setProductDescription(product){
   showSizes(product);
 
   const mainDescription = document.querySelector('.mainDescription');
+
+  if(_isFavourite){
+    const favouriteIcon = document.getElementById('favouriteIcon');
+    favouriteIcon.classList.add('filled');
+  }
+
   mainDescription.hidden = false;
 }
 
@@ -267,14 +231,6 @@ async function addToFavourites(clothId) {
 
         // Обновляем данные пользователя в базе данных
         updateDoc(userDoc, { idFavourites: favouritesClothesIds }).then(() => {
-          Swal.fire({
-            icon: "success",
-            title: "Одежда добавлена в избранное!",
-            showConfirmButton: false,
-            timer: 1500
-          });
-          setTimeout(function() {
-          }, 2000);
         }).catch((error) => {
           console.error('Error updating user data:', error);
         });
@@ -301,15 +257,6 @@ async function removeFromFavourites(clothId){
       // Update the user document with the modified wardrobeClothesIds array
       await updateDoc(userDoc, { idFavourites: favouritesClothesIds });
 
-      // Optional: You can also update the UI to reflect the deletion
-      // For example, remove the deleted cloth from the DOM
-
-      Swal.fire({
-        icon: "success",
-        title: "Одежда удалена из избранного!",
-        showConfirmButton: false,
-        timer: 1500
-      });
       setTimeout(function() {
       }, 2000);
     }
@@ -321,6 +268,23 @@ async function removeFromFavourites(clothId){
 const productCountValue = document.getElementById('productCount')
 
 async function addToCart(){
+  const userId = await getUserId();
+  if(userId === 'ALL'){
+    Swal.fire({
+      icon: "error",
+      title: "Упс...",
+      text: "Нельзя добавить одежду в корзину для незарегистрированного пользователя!",
+    });
+    return;
+  }
+  if(_selectedColor == null || _selectedSize == null){
+    Swal.fire({
+      icon: "error",
+      title: "Упс...",
+      text: "Не выбран цвет или размер!",
+    });
+    return;
+  }
   const cartItem = {
     idCloth: _productId,
     idUser: _userId,
@@ -425,6 +389,8 @@ addToFavouritesButton.addEventListener('click', function(){
       removeFromFavourites(_productId);
       _isFavourite = false;
     } 
+    const favouriteIcon = document.getElementById('favouriteIcon');
+    favouriteIcon.classList.toggle('filled');
   }
 });
 addToFittingRoomButton.addEventListener('click', function(){

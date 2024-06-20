@@ -90,49 +90,6 @@
 }
 
 
-/* CSS для мобильных устройств */
-@media only screen and (max-width: 700px) {
-  #menuMobile {
-    display: block; /* Показать секцию на мобильных устройствах */
-  }
-}
-
-/* CSS для десктопных устройств */
-@media only screen and (min-width: 701px) {
-  #menuMobile {
-    display: none; /* Скрыть секцию на десктопных устройствах */
-  }
-}
-
-/* CSS для десктоп устройств */
-@media only screen and (max-width: 700px) {
-  #desktopMenu {
-    display: none; /* Показать секцию на мобильных устройствах */
-  }
-}
-
-/* CSS для десктопных устройств */
-@media only screen and (min-width: 701px) {
-  #desktopMenu {
-    display: block; /* Скрыть секцию на десктопных устройствах */
-  }
-}
-
-/* CSS для десктоп устройств */
-@media only screen and (max-width: 700px) {
-  #desktopFooter {
-    display: none; /* Показать секцию на мобильных устройствах */
-  }
-}
-
-/* CSS для десктопных устройств */
-@media only screen and (min-width: 701px) {
-  #desktopFooter {
-    display: block; /* Скрыть секцию на десктопных устройствах */
-  }
-}
-
-
 .draggable-element {
   position: absolute;
   height: 7em;
@@ -151,12 +108,15 @@
   color: #fff;
   background: #6F36FF;
 }
-/* .wrapper{
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  max-width: 450px;
-  width: 100%;
-  border-radius: 10px;
-  transform: translate(-50%, -50%);
-} */
+
+.favourite-icon {
+  transition: fill 0.5s ease-in-out;
+}
+
+.favourite-icon.filled {
+  fill: #4F46E5;
+}
+
+.favourite-icon.unfilled {
+  fill: none;
+}

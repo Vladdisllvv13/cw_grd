@@ -31,7 +31,7 @@ const addressInput = document.getElementById('addressInput');
 const pickUpPointSelect = document.getElementById('pickUpPointSelect');
 const orderDatePicker = document.getElementById('orderDatePicker');
 
-// Получите идентификатор пользователя из локального хранилища
+// Получаем идентификатор пользователя из локального хранилища
 async function getUserId() {
   try {
     const userId = localStorage.getItem('userId');
@@ -42,42 +42,7 @@ async function getUserId() {
   }
 }
 
-var themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-var themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
-
-// Change the icons inside the button based on previous settings
-if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    themeToggleLightIcon.classList.remove('hidden');
-} else {
-    themeToggleDarkIcon.classList.remove('hidden');
-}
-
-var themeToggleBtn = document.getElementById('theme-toggle');
-themeToggleBtn.addEventListener('click', function() {
-    // toggle icons inside button
-    themeToggleDarkIcon.classList.toggle('hidden');
-    themeToggleLightIcon.classList.toggle('hidden');
-    // if set via local storage previously
-    if (localStorage.getItem('color-theme')) {
-        if (localStorage.getItem('color-theme') === 'light') {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('color-theme', 'dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('color-theme', 'light');
-        }
-    // if NOT set via local storage previously
-    } else {
-        if (document.documentElement.classList.contains('dark')) {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('color-theme', 'light');
-        } else {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('color-theme', 'dark');
-        }
-    }
-});
-
+// Вывод товара заказа 
 async function populateList(data, size, color, quantity) {
   const purchaseItemsList = document.getElementById('purchaseItemsList');
   const purchaseItemsItem = document.createElement('div');
@@ -117,16 +82,19 @@ async function populateList(data, size, color, quantity) {
   purchaseItemsList.appendChild(purchaseItemsItem);
 }
 
+// Получение цены товара
 async function getPriceData(purchaseData) {
   const productsData = purchaseData.price;
   return productsData;
 }
 
+// Получение всех товаров заказа
 async function getProductsData(purchaseData) {
   const productsData = purchaseData.products;
   return productsData;
 }
 
+// Получение данных товара
 async function getProductsFromClothesCollection(productsData) {
   const clothesCollection = collection(db, 'clothes');
   const clothesDocRefs = Object.keys(productsData).map(productId => doc(clothesCollection, productId));
@@ -135,6 +103,7 @@ async function getProductsFromClothesCollection(productsData) {
   return clothesSnapshots;
 }
 
+// Получение данных заказа
 async function getPurchaseData(user) {
   const purchaseCollection = collection(db, 'purchase');
   const userPurchaseItemsQuery = doc(purchaseCollection, user.purchaseId);
@@ -148,6 +117,7 @@ async function getPurchaseData(user) {
   }
 }
 
+// Обрабатываем товары заказа 
 async function renderItemsList(user) {
   const purchaseData = await getPurchaseData(user);
   if (purchaseData) {
@@ -192,6 +162,7 @@ orderTypeSelect.addEventListener('change', function() {
   }
 });
 
+// Функция создания кода заказа 
 function generateCode() {
   const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const arr = new Uint32Array(1);
@@ -200,6 +171,7 @@ function generateCode() {
   return `${charset.charAt(random)}-${Array(8).fill(0).map(() => charset.charAt(Math.floor(Math.random() * charset.length))).join("")}`;
 }
 
+// Функция подтверждения заказа
 async function confirmOrder(){
   try{
     const surname = surnameText.value;
@@ -265,7 +237,7 @@ async function confirmOrder(){
 
         Swal.fire({
           icon: "success",
-          title: "Заказ оформлен!",
+          title: `Заказ оформлен! Номер заказа: ${code}`,
           showConfirmButton: false,
           timer: 1500
         });
@@ -292,7 +264,7 @@ orderConfirmButton.addEventListener('click', function(event) {
   confirmOrder();
 });
 
-
+// Функции для шапки 
 const cartCollection = collection(db, 'shoppingCart');
 async function getCartItemsCount(idUser){
   const cartQuery = query(cartCollection, where('idUser', '==', idUser));
@@ -305,13 +277,11 @@ const notEmptyCartBlock = document.getElementById('notEmptyCartBlock');
 const emptyCartBlock = document.getElementById('emptyCartBlock');
 const cartModalList = document.getElementById('cartModalList');
 
-// Функция для обработки выбора одежды
 function handleEmptyCart() {
   notEmptyCartBlock.hidden = true;
   emptyCartBlock.hidden = false;
 }
 
-// Функция для обработки выбора стилей
 function handleNotEmptyCart() {
   notEmptyCartBlock.hidden = false;
   emptyCartBlock.hidden = true;
@@ -470,6 +440,7 @@ toProfileButtonMoile.addEventListener('click', goToProfile);
 const exitButton = document.getElementById('exitButton');
 exitButton.addEventListener('click', exitUser);
 
+// Главная функция
 async function main(){
   const userId = await getUserId();
   _userId = userId;
