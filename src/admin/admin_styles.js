@@ -179,8 +179,6 @@ async function createStylesTable(data, tableBody) {
     <td class="text-sm pr-6 whitespace-no-wrap tracking-normal leading-4">
       <div aria-label="documents" role="contentinfo" class="relative w-10 text-gray-100">
           <div class="absolute top-0 right-0 w-5 h-5 mr-2 -mt-1 rounded-full bg-indigo-700 text-white flex justify-center items-center text-xs">${data.uses}</div>
-          <img class="dark:hidden" src="../images/purchase-white.svg" alt="icon-tabler-file">
-          <img class="dark:block hidden text-gray-900 bg-gray-900" src="https://tuk-cdn.s3.amazonaws.com/can-uploader/compact_table_with_actions_and_select-svg8dark.svg" alt="icon-tabler-file">
       </div>
     </td>
     <td class="pr-6">
